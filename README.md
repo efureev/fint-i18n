@@ -2,7 +2,9 @@
 
 [![codecov](https://codecov.io/gh/efureev/fint-i18n/branch/main/graph/badge.svg)](https://codecov.io/gh/efureev/fint-i18n)
 [![npm version](https://badge.fury.io/js/@feugene%2Ffint-i18n.svg)](https://badge.fury.io/js/@feugene%2Ffint-i18n)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/@feugene/fint-i18n)](https://bundlephobia.com/package/@feugene/fint-i18n)
+[![bundle size](https://badgen.net/bundlephobia/minzip/@feugene/fint-i18n)](https://bundlephobia.com/package/@feugene/fint-i18n)
+[![dependency count](https://badgen.net/bundlephobia/dependency-count/@feugene/fint-i18n)](https://bundlephobia.com/package/@feugene/fint-i18n)
+
 
 [Русская версия (Russian version)](./README.ru.md)
 
