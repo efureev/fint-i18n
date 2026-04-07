@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "strict": true,
+    "jsx": "preserve",
+    "jsxImportSource": "vue",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true,
+    "noEmit": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@feugene/fint-i18n": ["src/index.ts"],
+      "@feugene/fint-i18n/core": ["src/core/index.ts"],
+      "@feugene/fint-i18n/vue": ["src/vue/index.ts"],
+      "@feugene/fint-i18n/plugins": ["src/plugins/index.ts"]
+    },
+    "types": ["vite/client"]
+  },
+  "vueCompilerOptions": {
+    "target": 3.3
+  },
+  "include": [
+    "vite.config.ts",
+    "vite-env.d.ts",
+    "bench/**/*.ts",
+    "playground/uno.config.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.vue",
+    "playground/src/**/*.ts",
+    "playground/src/**/*.vue"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

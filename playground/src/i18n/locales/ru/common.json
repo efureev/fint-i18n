@@ -1,0 +1,7 @@
+{
+  "welcome": "Добро пожаловать, {name}!",
+  "changeLang": "Сменить язык",
+  "currentLang": "Текущий язык: {lang}",
+  "blocks": "Загруженные блоки: {blocks}",
+  "namePlaceholder": "Введите ваше имя..."
+}

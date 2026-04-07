@@ -1,0 +1,7 @@
+{
+  "welcome": "Welcome, {name}!",
+  "changeLang": "Switch Language",
+  "currentLang": "Current language: {lang}",
+  "blocks": "Loaded blocks: {blocks}",
+  "namePlaceholder": "Enter your name..."
+}

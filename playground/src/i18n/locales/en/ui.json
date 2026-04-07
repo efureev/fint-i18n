@@ -1,0 +1,61 @@
+{
+  "header": {
+    "eyebrow": "Feature playground",
+    "title": "@feugene/fint-i18n Playground",
+    "description": "A focused sandbox for validating runtime behavior, lazy blocks, Vue integration and developer ergonomics.",
+    "localeBadge": "Locale",
+    "toggleHint": "Switch the active locale and observe reactive updates across the page."
+  },
+  "sections": {
+    "basic": {
+      "eyebrow": "1. Basic translation",
+      "title": "Reactive `t()` usage",
+      "description": "Update the name field to verify interpolation and instant locale switching.",
+      "inputLabel": "Visitor name"
+    },
+    "directive": {
+      "eyebrow": "2. Directives",
+      "title": "`v-t` and `v-t.once`",
+      "description": "Compare reactive text updates with the one-time directive variant.",
+      "normalLabel": "Reactive `v-t`",
+      "onceLabel": "Static `v-t.once`",
+      "onceHint": "This value intentionally does not change after a locale switch."
+    },
+    "lazy": {
+      "eyebrow": "3. Lazy blocks",
+      "title": "On-demand component scope",
+      "description": "Mount the async auth component to load the `auth` translation block only when the UI actually needs it.",
+      "button": "Load auth component",
+      "loading": "Loading component and translation block..."
+    },
+    "partial": {
+      "eyebrow": "4. Partial loading",
+      "title": "Deep JSON block loading",
+      "description": "Load a nested block directly or request the full page bundle and compare the resulting data.",
+      "loadArticles": "Load `page.articles`",
+      "loadArticlesHint": "Direct nested block",
+      "loadPage": "Load full `page` block",
+      "loadPageHint": "Parent block fallback",
+      "fullPageLabel": "Full page data"
+    }
+  },
+  "status": {
+    "ready": "Ready",
+    "loaded": "Loaded",
+    "pending": "Pending"
+  },
+  "debug": {
+    "title": "Runtime debug",
+    "loadedMessages": "Loaded messages",
+    "runtimeHooks": "Runtime hooks",
+    "empty": "No hooks emitted yet",
+    "clear": "Clear",
+    "blocks": "blocks",
+    "keys": "keys"
+  },
+  "footer": {
+    "lazy": "Lazy blocks",
+    "vue": "Vue integration",
+    "scope": "Scoped loaders"
+  }
+}

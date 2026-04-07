@@ -1,0 +1,86 @@
+{
+  "name": "@feugene/fint-i18n",
+  "version": "0.1.0",
+  "description": "Lightweight Vue 3 i18n library with lazy-loading blocks and template caching",
+  "author": "feugene <feugene@example.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/efureev/fint-i18n#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/efureev/fint-i18n.git"
+  },
+  "bugs": {
+    "url": "https://github.com/efureev/fint-i18n/issues"
+  },
+  "keywords": [
+    "vue",
+    "i18n",
+    "localization",
+    "lazy-loading",
+    "vue3",
+    "translation"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/types/core/index.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./vue": {
+      "types": "./dist/types/vue/index.d.ts",
+      "import": "./dist/vue.js"
+    },
+    "./plugins": {
+      "types": "./dist/types/plugins/index.d.ts",
+      "import": "./dist/plugins.js"
+    }
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "vue": "^3.5.32"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^7.7.3",
+    "@iconify-json/lucide": "^1.2.101",
+    "@types/node": "^25.5.2",
+    "@unocss/eslint-plugin": "^66.6.7",
+    "@unocss/reset": "^66.6.7",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/test-utils": "^2.4.6",
+    "eslint": "^10.2.0",
+    "globals": "^17.4.0",
+    "jsdom": "^29.0.1",
+    "rollup-plugin-visualizer": "^7.0.1",
+    "typescript": "^5.9.3",
+    "unocss": "^66.6.7",
+    "vite": "^8.0.5",
+    "vitest": "^4.1.2",
+    "vue": "^3.5.32",
+    "vue-tsc": "^3.2.6"
+  },
+  "scripts": {
+    "dev": "vite --config playground/vite.config.ts",
+    "playground": "vite --config playground/vite.config.ts",
+    "playground:build": "vite build --config playground/vite.config.ts",
+    "build:analyze": "ANALYZE=true vite build && vue-tsc -p tsconfig.build.json",
+    "build": "vite build && vue-tsc -p tsconfig.build.json",
+    "prepublishOnly": "yarn build",
+    "bench": "mkdir -p dist/analysis && vitest bench --run --config vite.config.ts --environment node --outputJson dist/analysis/bench-results.json bench/core.bench.ts",
+    "type-check": "vue-tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  }
+}
