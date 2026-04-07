@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.7.3",
+    "@codecov/vite-plugin": "^1.9.1",
     "@iconify-json/lucide": "^1.2.101",
     "@types/node": "^25.5.2",
     "@unocss/eslint-plugin": "^66.6.7",
