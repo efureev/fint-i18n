@@ -89,6 +89,9 @@ jobs:
     needs: build-and-test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -115,9 +118,13 @@ jobs:
         with:
           node-version: 24
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@feugene'
+          scope: '@efureev'
 
       - name: Publish to GitHub Packages
-        run: npm publish
+        run: |
+          # У GitHub Packages имя пакета (scope) должно совпадать с владельцем репозитория (efureev)
+          # Чтобы не менять основной package.json, временно меняем имя перед публикацией в GPR
+          sed -i 's/"name": "@feugene\/fint-i18n"/"name": "@efureev\/fint-i18n"/' package.json
+          npm publish --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
