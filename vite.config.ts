@@ -10,6 +10,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     exclude: ['**/node_modules/**', '**/dist/**', '**/playground/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**', '**/{karma,rollup,webpack,vite,vitest}.config.*'],
+    reporters: ['default', 'junit'],
+    outputFile: {
+      junit: './junit-report.xml' // Файл будет создан в корне проекта
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'lcov', 'html', 'json-summary'],

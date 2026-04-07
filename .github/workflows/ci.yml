@@ -49,6 +49,13 @@ jobs:
       - name: Test playground
         run: yarn test:coverage:playground
 
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./junit-report.xml
+
       - name: Upload playground coverage to Codecov
         uses: codecov/codecov-action@v6
         with:
