@@ -4,7 +4,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createFintI18n } from '@feugene/fint-i18n'
+import { createFintI18n } from '@feugene/fint-i18n/core'
 import { installI18n } from '@feugene/fint-i18n/vue'
 import Playground from '../Playground.vue'
 import { loaders } from '../i18n/messages'
