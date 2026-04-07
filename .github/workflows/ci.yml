@@ -36,7 +36,39 @@ jobs:
         run: yarn lint
 
       - name: Test
-        run: yarn test:run
+        run: yarn test:coverage:package
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/package/lcov.info
+          flags: package
+          name: fint-i18n-package
+
+      - name: Test playground
+        run: yarn test:coverage:playground
+
+      - name: Upload playground coverage to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/playground/lcov.info
+          flags: playground
+          name: fint-i18n-playground
+
+      - name: Add coverage summary to GITHUB_STEP_SUMMARY
+        if: always()
+        run: |
+          if [ -f coverage/package/coverage-summary.json ]; then
+            echo "### Package Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Total | Covered | Percentage |" >> $GITHUB_STEP_SUMMARY
+            echo "| --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+            echo "| Lines | $(jq -r '.total.lines.total' coverage/package/coverage-summary.json) | $(jq -r '.total.lines.covered' coverage/package/coverage-summary.json) | $(jq -r '.total.lines.pct' coverage/package/coverage-summary.json)% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Statements | $(jq -r '.total.statements.total' coverage/package/coverage-summary.json) | $(jq -r '.total.statements.covered' coverage/package/coverage-summary.json) | $(jq -r '.total.statements.pct' coverage/package/coverage-summary.json)% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Functions | $(jq -r '.total.functions.total' coverage/package/coverage-summary.json) | $(jq -r '.total.functions.covered' coverage/package/coverage-summary.json) | $(jq -r '.total.functions.pct' coverage/package/coverage-summary.json)% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Branches | $(jq -r '.total.branches.total' coverage/package/coverage-summary.json) | $(jq -r '.total.branches.covered' coverage/package/coverage-summary.json) | $(jq -r '.total.branches.pct' coverage/package/coverage-summary.json)% |" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Build package
         run: yarn build

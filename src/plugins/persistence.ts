@@ -21,8 +21,8 @@ export class PersistencePlugin implements FintI18nPlugin {
   install(i18n: FintI18n) {
     const storageKey = this.options.key!
     const storage = this.options.storage || (typeof window !== 'undefined' ? window.localStorage : undefined)
-    
-    if (!storage) return
+
+    if (!storage || typeof storage.getItem !== 'function') return
 
     // Load initial locale
     const saved = storage.getItem(storageKey)

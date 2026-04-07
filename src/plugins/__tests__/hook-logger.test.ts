@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createFintI18n } from '../../core'
-import { HookLoggerPlugin } from '../../plugins'
+import { createFintI18n } from '@/core'
+import { HookLoggerPlugin } from '@/plugins'
 
 describe('HookLoggerPlugin', () => {
   it('should log all called hooks to the configured logger', async () => {
@@ -37,7 +37,7 @@ describe('HookLoggerPlugin', () => {
     )
     expect(logger).toHaveBeenCalledWith(
       '[fint-i18n] Hook "onTranslate" called',
-      { key: 'common.missing', params: undefined, result: 'common.missing' }
+      { key: 'common.missing', params: undefined, result: undefined }
     )
     expect(logger).toHaveBeenCalledWith(
       '[fint-i18n] Hook "onMissingKey" called',

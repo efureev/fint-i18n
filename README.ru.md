@@ -1,5 +1,8 @@
 # @feugene/fint-i18n
 
+[![codecov](https://codecov.io/gh/efureev/fint-i18n/branch/main/graph/badge.svg)](https://codecov.io/gh/efureev/fint-i18n)
+[![npm version](https://badge.fury.io/js/@feugene%2Ffint-i18n.svg)](https://badge.fury.io/js/@feugene%2Ffint-i18n)
+
 Библиотека локализации для Vue 3 с ленивой загрузкой блоков, компиляцией шаблонов и расширяемыми плагинами.
 
 ## Особенности

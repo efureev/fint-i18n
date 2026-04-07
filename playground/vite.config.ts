@@ -20,6 +20,16 @@ export default defineConfig({
       '@feugene/fint-i18n/plugins': fileURLToPath(new URL('../src/plugins/index.ts', import.meta.url)),
     },
   },
+  test: {
+    environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      reportsDirectory: '../coverage/playground',
+      include: ['src/**/*.vue', 'src/**/*.ts'],
+      exclude: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+    },
+  },
   server: {
     port: 3000,
   },

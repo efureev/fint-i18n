@@ -54,10 +54,10 @@ export class FintI18n {
     const data = this.hooks.emitSync('onTranslate', {
       key,
       params: cleanParams,
-      result: this.resolve(locale, key, cleanParams) || key
+      result: this.resolve(locale, key, cleanParams)
     })
 
-    const result = data.result
+    const result = data.result ?? key
 
     if (result === key) {
       const fallbackLocale = options?.fallbackLocale || this.fallbackLocale

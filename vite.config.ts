@@ -7,6 +7,17 @@ import { visualizer } from 'rollup-plugin-visualizer'
 const isAnalyze = process.env.ANALYZE === 'true'
 
 export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    exclude: ['**/node_modules/**', '**/dist/**', '**/playground/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**', '**/{karma,rollup,webpack,vite,vitest}.config.*'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'lcov', 'html', 'json-summary'],
+      reportsDirectory: 'coverage/package',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/index.ts'],
+    },
+  },
   plugins: [
     vue(),
     ...(isAnalyze

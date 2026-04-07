@@ -11,7 +11,7 @@ export interface FintI18nHooks {
   'beforeLoadBlock': HookFn<string>
   'afterLoadBlock': HookFn<{ block: string, locale: Locale, messages: any }>
   'onMissingKey': HookFn<{ key: string, locale: Locale }>
-  'onTranslate': HookFn<{ key: string, params?: any, result: string }>
+  'onTranslate': HookFn<{ key: string, params?: any, result: string | undefined }>
 }
 
 export class HookManager {
@@ -26,7 +26,7 @@ export class HookManager {
     else {
       this.hooks.set(name, [fn])
     }
-    
+
     return () => this.off(name, fn)
   }
 

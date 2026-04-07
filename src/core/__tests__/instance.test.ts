@@ -1,7 +1,7 @@
 import { describe, it, expect, expectTypeOf, vi } from 'vitest'
 import { reactive, ref } from 'vue'
-import { createFintI18n } from '../instance'
-import type { Locale, LocaleLoaderCollection, LocaleLoaderSource } from '../types'
+import { createFintI18n } from '@/core'
+import type { Locale, LocaleLoaderCollection, LocaleLoaderSource } from '@/core'
 
 describe('FintI18n', () => {
   it('should translate basic keys', async () => {
@@ -236,5 +236,43 @@ describe('FintI18n', () => {
 
     expectTypeOf(collection).toMatchTypeOf<LocaleLoaderCollection>()
     expectTypeOf(source).toMatchTypeOf<LocaleLoaderSource>()
+  })
+
+  it('should return key if missing and no fallback', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    expect(i18n.t('missing')).toBe('missing')
+  })
+
+  it('should handle block merging with non-object values', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    i18n.mergeMessages('en', 'raw', 'simple string' as any)
+    expect(i18n.t('raw')).toBe('simple string')
+  })
+
+  it('should handle nested block merging', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    i18n.mergeMessages('en', 'a.b.c', { d: 'deep' })
+    expect(i18n.t('a.b.c.d')).toBe('deep')
+  })
+
+  it('should handle registration of multiple blocks', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    i18n.registerBlocks(['a', 'b'])
+    // @ts-expect-error: accessing private property for testing
+    expect(i18n.blockUsageCounters.get('a')).toBe(1)
+    // @ts-expect-error: accessing private property for testing
+    expect(i18n.blockUsageCounters.get('b')).toBe(1)
+  })
+
+  it('should check parent blocks in isBlockLoaded', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    i18n.markBlockLoaded('pages', 'en')
+    expect(i18n.isBlockLoaded('pages.home', 'en')).toBe(true)
+  })
+
+  it('should return undefined from resolve for unknown values', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    // @ts-expect-error: testing invalid input
+    expect(i18n.resolve('en', 'unknown')).toBeUndefined()
   })
 })
