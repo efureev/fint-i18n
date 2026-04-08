@@ -33,12 +33,9 @@
     "vite.config.ts",
     "vite-env.d.ts",
     "bench/**/*.ts",
-    "playground/uno.config.ts",
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.vue",
-    "playground/src/**/*.ts",
-    "playground/src/**/*.vue"
   ],
   "exclude": ["node_modules", "dist"]
 }
