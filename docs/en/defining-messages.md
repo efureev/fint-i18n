@@ -6,7 +6,7 @@ The `@feugene/fint-i18n` library offers flexible ways to define messages: from s
 
 Messages are standard JS objects (or JSON files). Unlimited nesting is supported.
 
-```json
+```json5
 // common.json
 {
   "welcome": "Welcome, {name}!",
