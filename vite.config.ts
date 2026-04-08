@@ -9,7 +9,7 @@ export default defineConfig(({mode}) => {
     const env = loadEnv(mode, process.cwd(), '')
     const isAnalyze = env.ANALYZE === 'true' || process.env.ANALYZE === 'true'
     const codecovToken = env.CODECOV_TOKEN || process.env.CODECOV_TOKEN
-    
+
     return {
         test: {
             environment: 'jsdom',
@@ -65,10 +65,6 @@ export default defineConfig(({mode}) => {
         resolve: {
             alias: {
                 '@': fileURLToPath(new URL('./src', import.meta.url)),
-                '@feugene/fint-i18n/core': fileURLToPath(new URL('./src/core/index.ts', import.meta.url)),
-                '@feugene/fint-i18n/vue': fileURLToPath(new URL('./src/vue/index.ts', import.meta.url)),
-                '@feugene/fint-i18n/plugins': fileURLToPath(new URL('./src/plugins/index.ts', import.meta.url)),
-                '@feugene/fint-i18n': fileURLToPath(new URL('./src/index.ts', import.meta.url)),
             },
         },
         build: {
