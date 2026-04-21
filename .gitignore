@@ -5,3 +5,4 @@
 yarn.lock
 junit-report.xml
 .env
+.DS_Store
