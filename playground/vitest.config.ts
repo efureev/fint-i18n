@@ -1,17 +1,9 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import UnoCSS from 'unocss/vite'
 import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  root: fileURLToPath(new URL('./', import.meta.url)),
-  base: '/fint-i18n/',
-  plugins: [
-    vue(),
-    UnoCSS({
-      configFile: fileURLToPath(new URL('./uno.config.ts', import.meta.url)),
-    }),
-  ],
+  plugins: [vue()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -20,7 +12,14 @@ export default defineConfig({
       '@feugene/fint-i18n/plugins': fileURLToPath(new URL('../src/plugins/index.ts', import.meta.url)),
     },
   },
-  server: {
-    port: 3000,
+  test: {
+    environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      reportsDirectory: '../coverage/playground',
+      include: ['src/**/*.vue', 'src/**/*.ts'],
+      exclude: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+    },
   },
 })

@@ -37,6 +37,14 @@
       "loadPage": "Загрузить весь блок `page`",
       "loadPageHint": "Fallback через родительский блок",
       "fullPageLabel": "Данные полной страницы"
+    },
+    "wildcard": {
+      "eyebrow": "5. Wildcard-регистрация",
+      "title": "Загрузка соседей через `widgets.*`",
+      "description": "Одна регистрация `widgets.*` разворачивается во все дочерние блоки (`widgets.alpha`, `widgets.beta`, `widgets.gamma`) и загружает их параллельно.",
+      "button": "Загрузить `widgets.*`",
+      "buttonHint": "Паттерн разворачивается один раз и переиспользуется при смене локали",
+      "loadedBadge": "Загружено блоков: {count}"
     }
   },
   "status": {

@@ -1,0 +1,4 @@
+{
+  "title": "Alpha widget",
+  "description": "Loaded via wildcard `widgets.*` registration."
+}

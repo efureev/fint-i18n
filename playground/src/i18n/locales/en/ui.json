@@ -37,6 +37,14 @@
       "loadPage": "Load full `page` block",
       "loadPageHint": "Parent block fallback",
       "fullPageLabel": "Full page data"
+    },
+    "wildcard": {
+      "eyebrow": "5. Wildcard registration",
+      "title": "Load siblings via `widgets.*`",
+      "description": "A single registration `widgets.*` expands into every direct child block (`widgets.alpha`, `widgets.beta`, `widgets.gamma`) and loads them in parallel.",
+      "button": "Load `widgets.*`",
+      "buttonHint": "Pattern is expanded once, then reused on locale change",
+      "loadedBadge": "Loaded {count} blocks"
     }
   },
   "status": {

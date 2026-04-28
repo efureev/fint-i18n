@@ -74,13 +74,13 @@
     "build:analyze": "ANALYZE=true vite build && vue-tsc -p tsconfig.build.json",
     "build": "vite build && vue-tsc -p tsconfig.build.json",
     "prepublishOnly": "yarn build",
-    "bench": "mkdir -p dist/analysis && vitest bench --run --config vite.config.ts --environment node --outputJson dist/analysis/bench-results.json bench/core.bench.ts",
+    "bench": "mkdir -p dist/analysis && vitest bench --run --config vitest.config.ts --environment node --outputJson dist/analysis/bench-results.json bench/core.bench.ts",
     "type-check": "vue-tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "yarn test:coverage:package && yarn test:coverage:playground",
     "test:coverage:package": "vitest run --coverage",
-    "test:coverage:playground": "vitest run --config playground/vite.config.ts --coverage",
+    "test:coverage:playground": "vitest run --config playground/vitest.config.ts --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   }
