@@ -293,7 +293,7 @@ describe('FintI18n', () => {
       i18n.registerBlocks(['components.*'])
 
       // @ts-expect-error: accessing private property for testing
-      const counters = i18n.blockUsageCounters as Map<string, number>
+      const counters = i18n.blockUsageCounters
       expect(counters.get('components.first')).toBe(1)
       expect(counters.get('components.second')).toBe(1)
       expect(counters.get('components.deep.x')).toBeUndefined()
@@ -316,7 +316,7 @@ describe('FintI18n', () => {
       i18n.registerBlocks(['components.**'])
 
       // @ts-expect-error: accessing private property for testing
-      const counters = i18n.blockUsageCounters as Map<string, number>
+      const counters = i18n.blockUsageCounters
       expect(counters.get('components.first')).toBe(1)
       expect(counters.get('components.deep.x')).toBe(1)
       expect(counters.get('components.deep.y.z')).toBe(1)
@@ -384,7 +384,7 @@ describe('FintI18n', () => {
       i18n.unregisterUsage('components.*')
 
       // @ts-expect-error: accessing private property for testing
-      const counters = i18n.blockUsageCounters as Map<string, number>
+      const counters = i18n.blockUsageCounters
       expect(counters.get('components.first')).toBe(1)
       expect(counters.get('components.second')).toBe(1)
 
@@ -411,7 +411,7 @@ describe('FintI18n', () => {
       expect(warn.mock.calls[0][0]).toContain('did not match any registered block')
 
       // @ts-expect-error: accessing private property for testing
-      const counters = i18n.blockUsageCounters as Map<string, number>
+      const counters = i18n.blockUsageCounters
       expect(counters.size).toBe(0)
       warn.mockRestore()
     })

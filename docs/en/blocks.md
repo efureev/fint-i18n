@@ -140,10 +140,12 @@ Correct approaches:
 2. **A single shared loader** on the parent block (if you want to ship everything in one file):
 
    ```typescript
-   ru: {
-     components: () => import('./locales/ru/components.json'),
+   export const loaders = {
+    ru: {
+        components: () => import('./locales/ru/components.json'),
+    }
    }
-
+   
    i18n.registerBlocks(['components'])
    await i18n.loadUsedBlocks('ru')
    ```

@@ -140,8 +140,10 @@ await i18n.loadUsedBlocks('ru')
 2. **Один общий loader** на родительский блок (если хотите грузить всё одним файлом):
 
    ```typescript
-   ru: {
-     components: () => import('./locales/ru/components.json'),
+   export const loaders = {
+    ru: {
+        components: () => import('./locales/ru/components.json'),
+    }
    }
 
    i18n.registerBlocks(['components'])
