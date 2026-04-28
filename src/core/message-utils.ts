@@ -19,7 +19,7 @@ export function deepMerge(target: any, source: any): void {
 
 export function mergeMessageValues(target: MessageValue, source: MessageValue): MessageValue {
   if (isMessageObject(target) && isMessageObject(source)) {
-    const merged = reactive({}) as MessageSchema
+    const merged = reactive({})
     deepMerge(merged, target)
     deepMerge(merged, source)
     return merged
