@@ -14,12 +14,18 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    include: ['playground/src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'src/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: '../coverage/playground',
-      include: ['src/**/*.vue', 'src/**/*.ts'],
-      exclude: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+      include: ['playground/src/**/*.vue', 'playground/src/**/*.ts'],
+      exclude: ['playground/src/**/__tests__/**', 'playground/src/**/*.test.ts', 'playground/src/**/*.spec.ts'],
     },
   },
 })
