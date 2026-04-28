@@ -102,6 +102,108 @@ await i18n.loadBlock('page.articles')
 
 В этом случае будет использован loader блока `page`.
 
+> [!IMPORTANT]
+> Резолв идёт только **«снизу вверх»** (child → parent), но **не «сверху вниз»**.
+> Имя блока в `loaders` — это **полный путь блока**, а не «контейнер» для дочерних блоков.
+
+### Пример: вложенные блоки не разворачиваются автоматически
+
+```typescript
+// messages.ts
+export const loaders = {
+  ru: {
+    'components.first':  () => import('./locales/components/first/ru.json'),
+    'components.second': () => import('./locales/components/second/ru.json'),
+  },
+}
+
+i18n.registerBlocks(['components'])
+await i18n.loadUsedBlocks('ru')
+```
+
+В этом примере `components.first` и `components.second` **не будут загружены**:
+
+- `registerBlocks(['components'])` увеличит счётчик использования **именно** для имени `components` — никакой развёртки префикса не происходит.
+- `loadUsedBlocks('ru')` вызовет `loadBlock('components', 'ru')`.
+- В реестре нет ни точного `components`, ни родителя выше, поэтому резолвер вернёт `null` и в консоли появится предупреждение:
+  `[fint-i18n] No loader for block "components" in locale "ru"`.
+
+Корректные варианты:
+
+1. **Гранулярная регистрация** дочерних блоков (соответствует loaders выше):
+
+   ```typescript
+   i18n.registerBlocks(['components.first', 'components.second'])
+   await i18n.loadUsedBlocks('ru')
+   ```
+
+2. **Один общий loader** на родительский блок (если хотите грузить всё одним файлом):
+
+   ```typescript
+   ru: {
+     components: () => import('./locales/ru/components.json'),
+   }
+
+   i18n.registerBlocks(['components'])
+   await i18n.loadUsedBlocks('ru')
+   ```
+
+3. **Wildcard-регистрация** — см. дальше.
+
+## Wildcard-регистрация: `prefix.*` и `prefix.**`
+
+Если блоки с общим префиксом регистрируются часто, можно сослаться на них одним именем-паттерном вместо перечисления. Поддерживаются две формы:
+
+- `prefix.*`  — все блоки, у которых **сразу после** `prefix.` идёт ровно один сегмент (без точек). Это «прямые потомки».
+- `prefix.**` — все блоки, **начинающиеся** с `prefix.` (любая глубина вложенности).
+
+Сам родительский литерал `prefix` в развёртку **не входит** — для него по-прежнему нужен отдельный loader/регистрация, если он используется.
+
+```typescript
+// messages.ts
+export const loaders = {
+  ru: {
+    'components.first':       () => import('./locales/components/first/ru.json'),
+    'components.second':      () => import('./locales/components/second/ru.json'),
+    'components.deep.widget': () => import('./locales/components/deep/widget/ru.json'),
+  },
+}
+
+// Грузим только прямых потомков components.* — first и second
+i18n.registerBlocks(['components.*'])
+await i18n.loadUsedBlocks('ru')
+
+// Грузим всё дерево components.** — first, second, deep.widget
+i18n.registerBlocks(['components.**'])
+await i18n.loadUsedBlocks('ru')
+```
+
+Где работает паттерн:
+
+- `i18n.registerBlocks([...])` / `i18n.registerUsage(name)` — счётчик использования увеличивается у каждого совпавшего блока (не у самого паттерна).
+- `i18n.unregisterUsage(name)` — снимает счётчики у тех же child-блоков, что и регистрация (паттерн разворачивается через общий кэш).
+- `i18n.loadBlock('prefix.*' | 'prefix.**')` — параллельно грузит все совпавшие блоки.
+- `useI18nScope(['components.*'])` — работает прозрачно: register → load → unregister на размонтировании.
+
+> [!IMPORTANT]
+> Развёртка паттерна делается **по всем известным лоадерам всех локалей** один раз и кэшируется. Поэтому она опирается на тот набор блоков, который был передан в `createFintI18n` при инициализации. Лоадеры, добавленные позже динамически, в развёртку не попадут.
+
+> [!TIP]
+> Если совпадений нет — в консоль выводится предупреждение
+> `[fint-i18n] Pattern "..." did not match any registered block`. Это удобный способ ловить опечатки в префиксах.
+
+### Производительность
+
+- Имена всех блоков кэшируются один раз в виде объединённого списка по всем локалям.
+- Развёртка конкретного паттерна делается за один проход и тоже кэшируется по строке паттерна на инстансе `FintI18n`.
+- Сравнение префикса выполняется без `String.prototype.startsWith`/regexp — посимвольно (`charCodeAt`), без выделения подстрок.
+- В рантайме повторный `registerUsage('components.*')` не платит за поиск по словарю — берёт готовый массив child-имён из кэша.
+
+### Когда не использовать
+
+- Если у вас всего один-два дочерних блока — явное перечисление (`['components.first', 'components.second']`) понятнее и сохраняет автокомплит TS по ключам блоков.
+- Если набор блоков формируется динамически (например, добавляется через дополнительный package collection после старта) — паттерн не «обновится» автоматически.
+
 ## Мержинг loaders из нескольких пакетов
 
 `createFintI18n()` может принять несколько package collections:

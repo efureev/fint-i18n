@@ -1,7 +1,7 @@
 import { reactive, ref, type Ref, watch } from 'vue'
 import { compileTemplate, type MessageFunction } from './compiler'
 import { HookManager } from './hooks'
-import { LocaleLoaderRegistry } from './loader-registry'
+import { isBlockPattern, LocaleLoaderRegistry } from './loader-registry'
 import { deepMerge, getMessageValue, isMessageObject, mergeMessageValues } from './message-utils'
 import { normalizeTranslateParams } from './translate-params'
 import type { FintI18nOptions, Locale, MessageValue, TranslateOptions } from './types'
@@ -16,6 +16,9 @@ export class FintI18n {
   private loadingBlocks: Map<string, Promise<void>> = new Map()
   private loadedBlocks: Map<Locale, Set<string>> = new Map()
   private blockUsageCounters: Map<string, number> = new Map()
+  // Кэш развёртки wildcard-паттернов: pattern → конкретные имена блоков.
+  // Кэшируется один раз (при первом обращении), т.к. набор лоадеров неизменен после конструктора.
+  private patternExpansionCache: Map<string, string[]> = new Map()
   private pendingUsedBlockLoads: Map<Locale, Promise<void>> = new Map()
   private skipNextUsedBlockLoadLocale: Locale | null = null
 
@@ -110,8 +113,36 @@ export class FintI18n {
     this.compiledMessages[locale][key] = fn
   }
 
+  /**
+   * Развернуть wildcard-паттерн в список конкретных имён блоков.
+   * Результат кэшируется по строке паттерна (набор лоадеров неизменен).
+   * Не-паттерны возвращают пустой массив.
+   */
+  private expandPattern = (pattern: string): string[] => {
+    const cached = this.patternExpansionCache.get(pattern)
+    if (cached) return cached
+
+    const expanded = this.loaderRegistry.expandPattern(pattern)
+    this.patternExpansionCache.set(pattern, expanded)
+    return expanded
+  }
+
   public loadBlock = async (blockName: string, locale?: Locale): Promise<void> => {
     const targetLocale = locale || this.locale.value
+
+    // Wildcard-паттерн: разворачиваем и грузим конкретные блоки параллельно.
+    if (isBlockPattern(blockName)) {
+      const expanded = this.expandPattern(blockName)
+      if (expanded.length === 0) {
+        console.warn(
+          `[fint-i18n] Pattern "${blockName}" did not match any registered block (locale "${targetLocale}")`,
+        )
+        return
+      }
+      await Promise.all(expanded.map(name => this.loadBlock(name, targetLocale)))
+      return
+    }
+
     const loadKey = `${targetLocale}:${blockName}`
 
     if (this.isBlockLoaded(blockName, targetLocale)) return
@@ -289,16 +320,58 @@ export class FintI18n {
     this.hooks.emitSync('onLocaleChange', { locale: newLocale, previous })
   }
 
+  /**
+   * Зарегистрировать использование блока.
+   *
+   * Поддерживается wildcard-паттерн (`prefix.*`, `prefix.**`) — он разворачивается в
+   * конкретные имена зарегистрированных блоков (один раз, с кэшированием), и счётчик
+   * увеличивается для каждого из них. Если паттерн не дал совпадений — выводится warning.
+   */
   public registerUsage = (blockName: string) => {
+    if (isBlockPattern(blockName)) {
+      const expanded = this.expandPattern(blockName)
+      if (expanded.length === 0) {
+        console.warn(`[fint-i18n] Pattern "${blockName}" did not match any registered block`)
+        return
+      }
+      for (let i = 0; i < expanded.length; i++) {
+        this.incrementUsage(expanded[i])
+      }
+      return
+    }
+
+    this.incrementUsage(blockName)
+  }
+
+  public registerBlocks = (blockNames: string[]) => {
+    for (let i = 0; i < blockNames.length; i++) {
+      this.registerUsage(blockNames[i])
+    }
+  }
+
+  /**
+   * Снять регистрацию использования блока.
+   * Wildcard-паттерн раскрывается тем же кэшем, что и в `registerUsage`,
+   * поэтому снимаются счётчики ровно у тех же child-блоков.
+   */
+  public unregisterUsage = (blockName: string) => {
+    if (isBlockPattern(blockName)) {
+      const expanded = this.expandPattern(blockName)
+      for (let i = 0; i < expanded.length; i++) {
+        this.decrementUsage(expanded[i])
+      }
+      return
+    }
+
+    this.decrementUsage(blockName)
+  }
+
+  private incrementUsage = (blockName: string) => {
     const count = this.blockUsageCounters.get(blockName) || 0
     this.blockUsageCounters.set(blockName, count + 1)
   }
 
-  public registerBlocks = (blockNames: string[]) => {
-    blockNames.forEach(b => this.registerUsage(b))
-  }
-
-  public unregisterUsage = (blockName: string) => {
+  private decrementUsage = (blockName: string) => {
     const count = this.blockUsageCounters.get(blockName) || 0
     if (count <= 1) {
       this.blockUsageCounters.delete(blockName)

@@ -102,6 +102,108 @@ await i18n.loadBlock('page.articles')
 
 In this case, the loader for the `page` block will be used.
 
+> [!IMPORTANT]
+> Resolution only walks **child → parent**, never **parent → children**.
+> A block name in `loaders` is the **full path of the block**, not a "container" for nested blocks.
+
+### Example: nested blocks are NOT auto-expanded
+
+```typescript
+// messages.ts
+export const loaders = {
+  ru: {
+    'components.first':  () => import('./locales/components/first/ru.json'),
+    'components.second': () => import('./locales/components/second/ru.json'),
+  },
+}
+
+i18n.registerBlocks(['components'])
+await i18n.loadUsedBlocks('ru')
+```
+
+In this example, `components.first` and `components.second` **will not be loaded**:
+
+- `registerBlocks(['components'])` increments the usage counter **exactly** for the name `components` — no prefix expansion happens.
+- `loadUsedBlocks('ru')` calls `loadBlock('components', 'ru')`.
+- The registry has neither an exact `components` loader nor a parent above it, so the resolver returns `null` and you'll see the warning:
+  `[fint-i18n] No loader for block "components" in locale "ru"`.
+
+Correct approaches:
+
+1. **Granular registration** of the child blocks (matches the loaders above):
+
+   ```typescript
+   i18n.registerBlocks(['components.first', 'components.second'])
+   await i18n.loadUsedBlocks('ru')
+   ```
+
+2. **A single shared loader** on the parent block (if you want to ship everything in one file):
+
+   ```typescript
+   ru: {
+     components: () => import('./locales/ru/components.json'),
+   }
+
+   i18n.registerBlocks(['components'])
+   await i18n.loadUsedBlocks('ru')
+   ```
+
+3. **Wildcard Registration** — see the next section.
+
+## Wildcard Registration: `prefix.*` and `prefix.**`
+
+If you often register blocks that share a prefix, you can refer to them with a single pattern name instead of listing them. Two forms are supported:
+
+- `prefix.*`  — all blocks that have **exactly one** segment (no dots) after `prefix.`. These are "direct children".
+- `prefix.**` — all blocks that **start with** `prefix.` (any nesting depth).
+
+The parent literal `prefix` itself is **not** included in the expansion — if you use it, register/load it separately.
+
+```typescript
+// messages.ts
+export const loaders = {
+  ru: {
+    'components.first':       () => import('./locales/components/first/ru.json'),
+    'components.second':      () => import('./locales/components/second/ru.json'),
+    'components.deep.widget': () => import('./locales/components/deep/widget/ru.json'),
+  },
+}
+
+// Load direct children of components.* — first and second
+i18n.registerBlocks(['components.*'])
+await i18n.loadUsedBlocks('ru')
+
+// Load the whole components.** subtree — first, second, deep.widget
+i18n.registerBlocks(['components.**'])
+await i18n.loadUsedBlocks('ru')
+```
+
+Where the pattern works:
+
+- `i18n.registerBlocks([...])` / `i18n.registerUsage(name)` — usage counter is incremented for each matched block (not for the pattern itself).
+- `i18n.unregisterUsage(name)` — decrements the same children that the matching `registerUsage` incremented (the pattern is expanded via a shared cache).
+- `i18n.loadBlock('prefix.*' | 'prefix.**')` — loads all matched blocks in parallel.
+- `useI18nScope(['components.*'])` — works transparently: register → load → unregister on unmount.
+
+> [!IMPORTANT]
+> Pattern expansion is done **once across all known loaders of all locales** and cached. It relies on the set of blocks passed to `createFintI18n` at init time. Loaders added later (dynamically) won't be picked up by an existing expansion.
+
+> [!TIP]
+> If no blocks match, you'll see a warning:
+> `[fint-i18n] Pattern "..." did not match any registered block`. It's a handy way to catch typos in prefixes.
+
+### Performance
+
+- All block names are cached once as a single, locale-merged list.
+- A specific pattern is expanded in a single pass and cached by pattern string on the `FintI18n` instance.
+- Prefix comparison avoids `String.prototype.startsWith` and regexp — it's a per-character `charCodeAt` loop with no substring allocation.
+- Repeated `registerUsage('components.*')` calls don't re-scan the loader map — they reuse the cached list of child names.
+
+### When not to use it
+
+- If you only have one or two child blocks, listing them explicitly (`['components.first', 'components.second']`) is clearer and preserves TS autocomplete on block keys.
+- If your block set is built dynamically (e.g. extended via an additional package collection after startup), the pattern won't refresh automatically.
+
 ## Merging Loaders from Multiple Packages
 
 `createFintI18n()` can accept multiple package collections:
