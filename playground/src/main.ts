@@ -6,12 +6,14 @@ import '@unocss/reset/tailwind.css'
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { installI18n } from '@feugene/fint-i18n/vue'
 import { PersistencePlugin } from '@feugene/fint-i18n/plugins'
-import { loaders } from './i18n/messages'
+import { en, ru } from './i18n/messages'
 
 const i18n = createFintI18n({
   locale: 'en',
   fallbackLocale: 'en',
-  loaders,
+  // Per-locale imports keep the bundle tree-shakable: only the languages
+  // listed here end up in the production build.
+  loaders: [en, ru],
   plugins: [
     new PersistencePlugin({ key: 'fint-i18n-playground-locale' })
   ]

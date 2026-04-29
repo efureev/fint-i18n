@@ -35,28 +35,57 @@ src/
       ru/
         common.json
         auth.json
-    messages.ts    # Loader configuration
+    messages/
+      en.ts        # English locale loaders
+      ru.ts        # Russian locale loaders
+      index.ts     # Per-locale re-exports (see below)
   main.ts          # Application initialization
 ```
 
-### 2. Exporting package-level loaders (`i18n/messages.ts`)
+> [!TIP]
+> Each locale lives in its own module. This lets the application and any
+> donor packages import only the languages they actually need, while the
+> bundler tree-shakes the rest. See
+> [Authoring localization packages](./authoring-localization-packages.md).
 
-Loaders allow the library to load translations asynchronously, splitting them into chunks.
+### 2. Per-locale loader exports (`i18n/messages/*`)
+
+Loaders allow the library to load translations asynchronously, splitting
+them into chunks. Each language is declared in its own file — this is the
+recommended layout both for applications and for donor packages.
 
 ```typescript
-// src/i18n/messages.ts
+// src/i18n/messages/en.ts
 import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
 
-export const appLocaleLoaders: LocaleLoaderCollection = {
+export const en: LocaleLoaderCollection = {
   en: {
-    common: () => import('./locales/en/common.json'),
-    auth: () => import('./locales/en/auth.json'),
+    common: () => import('../locales/en/common.json'),
+    auth: () => import('../locales/en/auth.json'),
   },
-  ru: {
-    common: () => import('./locales/ru/common.json'),
-    auth: () => import('./locales/ru/auth.json'),
-  }
 }
+
+export default en
+```
+
+```typescript
+// src/i18n/messages/ru.ts
+import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
+
+export const ru: LocaleLoaderCollection = {
+  ru: {
+    common: () => import('../locales/ru/common.json'),
+    auth: () => import('../locales/ru/auth.json'),
+  },
+}
+
+export default ru
+```
+
+```typescript
+// src/i18n/messages/index.ts
+export { en } from './en'
+export { ru } from './ru'
 ```
 
 ### 3. Initialization in `main.ts`
@@ -67,13 +96,15 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { installI18n } from '@feugene/fint-i18n/vue'
-import { appLocaleLoaders } from './i18n/messages'
-import { fintDsLocaleLoaders } from '@feugene/fint-ds/i18n'
+// Import only the locales the application actually ships.
+import { en as appEn, ru as appRu } from './i18n/messages'
+import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'en',           // Initial language
   fallbackLocale: 'en',   // Fallback language
-  loaders: [appLocaleLoaders, fintDsLocaleLoaders],
+  // Locales not listed here are tree-shaken out of the production bundle.
+  loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 
 const app = createApp(App)
@@ -82,7 +113,8 @@ app.mount('#app')
 ```
 
 > [!TIP]
-> If you have only one package with translations, `loaders` can still be passed as a single `LocaleLoaderCollection` without an array.
+> If you have only one locale and one package with translations, `loaders`
+> can still be passed as a single `LocaleLoaderCollection` without an array.
 
 ## Merge and Resolve Rules
 

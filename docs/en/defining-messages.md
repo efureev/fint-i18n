@@ -35,47 +35,70 @@ When calling `t()`, these parameters will be replaced by their corresponding val
 This is the recommended method for most applications. Translations are loaded on demand, splitting your application into chunks.
 
 ```typescript
-// messages.ts
+// messages/en.ts
 import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
 
-export const appLocaleLoaders: LocaleLoaderCollection = {
+export const en: LocaleLoaderCollection = {
   en: {
-    common: () => import('./locales/en/common.json'),
-    admin: () => import('./locales/en/admin.json'),
+    common: () => import('../locales/en/common.json'),
+    admin: () => import('../locales/en/admin.json'),
   },
-  ru: {
-    common: () => import('./locales/ru/common.json'),
-    admin: () => import('./locales/ru/admin.json'),
-  }
 }
+
+export default en
 ```
 
-Such a `LocaleLoaderCollection` can be exported from a package as a public i18n contract and then integrated into an application with a single line.
+```typescript
+// messages/ru.ts
+import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
+
+export const ru: LocaleLoaderCollection = {
+  ru: {
+    common: () => import('../locales/ru/common.json'),
+    admin: () => import('../locales/ru/admin.json'),
+  },
+}
+
+export default ru
+```
+
+```typescript
+// messages/index.ts
+export { en } from './en'
+export { ru } from './ru'
+```
+
+Each locale lives in its own module and is exported by name — this lets the
+application import only the languages it needs while the bundler tree-shakes
+the rest. See [Authoring localization
+packages](./authoring-localization-packages.md) for the full guideline.
 
 ### 2. Composition of Loaders from Multiple Packages
 
 ```typescript
 import { createFintI18n } from '@feugene/fint-i18n/core'
-import { appLocaleLoaders } from './messages'
-import { fintDsLocaleLoaders } from '@feugene/fint-ds/i18n'
+import { en as appEn, ru as appRu } from './messages'
+import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'en',
   fallbackLocale: 'en',
-  loaders: [appLocaleLoaders, fintDsLocaleLoaders],
+  // Only the locales the application actually ships are bundled.
+  loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 ```
 
-If multiple packages declare the same block, their loaders will be executed sequentially in the order of the `loaders: [...]` array.
+If multiple collections declare the same block, their loaders will be
+executed sequentially in the order of the `loaders: [...]` array.
 
 ### 3. Multiple Loaders for a Single Block
 
 ```typescript
-export const appLocaleLoaders: LocaleLoaderCollection = {
+export const en: LocaleLoaderCollection = {
   en: {
     common: [
-      () => import('./locales/en/common.base.json'),
-      () => import('./locales/en/common.override.json'),
+      () => import('../locales/en/common.base.json'),
+      () => import('../locales/en/common.override.json'),
     ],
   },
 }

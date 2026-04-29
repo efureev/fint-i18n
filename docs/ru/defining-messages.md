@@ -35,47 +35,70 @@
 Это рекомендуемый способ для большинства приложений. Переводы загружаются по требованию, разделяя ваше приложение на чанки.
 
 ```typescript
-// messages.ts
+// messages/en.ts
 import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
 
-export const appLocaleLoaders: LocaleLoaderCollection = {
+export const en: LocaleLoaderCollection = {
   en: {
-    common: () => import('./locales/en/common.json'),
-    admin: () => import('./locales/en/admin.json'),
+    common: () => import('../locales/en/common.json'),
+    admin: () => import('../locales/en/admin.json'),
   },
-  ru: {
-    common: () => import('./locales/ru/common.json'),
-    admin: () => import('./locales/ru/admin.json'),
-  }
 }
+
+export default en
 ```
 
-Такую `LocaleLoaderCollection` можно экспортировать из пакета как публичный i18n-контракт и затем подключать в приложении одной строкой.
+```typescript
+// messages/ru.ts
+import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
+
+export const ru: LocaleLoaderCollection = {
+  ru: {
+    common: () => import('../locales/ru/common.json'),
+    admin: () => import('../locales/ru/admin.json'),
+  },
+}
+
+export default ru
+```
+
+```typescript
+// messages/index.ts
+export { en } from './en'
+export { ru } from './ru'
+```
+
+Каждая локаль живёт в отдельном модуле и экспортируется именованно — это
+позволяет приложению импортировать только нужные языки, а сборщику — выбросить
+остальные при tree-shaking. Подробнее см. [Authoring localization
+packages](./authoring-localization-packages.md).
 
 ### 2. Композиция loaders из нескольких пакетов
 
 ```typescript
 import { createFintI18n } from '@feugene/fint-i18n/core'
-import { appLocaleLoaders } from './messages'
-import { fintDsLocaleLoaders } from '@feugene/fint-ds/i18n'
+import { en as appEn, ru as appRu } from './messages'
+import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'en',
   fallbackLocale: 'en',
-  loaders: [appLocaleLoaders, fintDsLocaleLoaders],
+  // Указываем только те локали, что реально нужны приложению.
+  loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 ```
 
-Если несколько пакетов объявляют один и тот же block, их loaders будут выполнены последовательно в порядке массива `loaders: [...]`.
+Если несколько коллекций объявляют один и тот же block, их loaders будут выполнены
+последовательно в порядке массива `loaders: [...]`.
 
 ### 3. Несколько loaders для одного блока
 
 ```typescript
-export const appLocaleLoaders: LocaleLoaderCollection = {
+export const en: LocaleLoaderCollection = {
   en: {
     common: [
-      () => import('./locales/en/common.base.json'),
-      () => import('./locales/en/common.override.json'),
+      () => import('../locales/en/common.base.json'),
+      () => import('../locales/en/common.override.json'),
     ],
   },
 }

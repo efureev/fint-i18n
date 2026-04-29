@@ -25,6 +25,7 @@ You can find detailed information about the library in the relevant sections:
 
 - 📦 **[Installation and Getting Started](./docs/en/installation.md)**: How to install the package and configure it in a Vue application.
 - 📂 **[Defining Messages](./docs/en/defining-messages.md)**: JSON formats, loaders, and dynamic merging.
+- 🌐 **[Authoring localization packages](./docs/en/authoring-localization-packages.md)**: Per-locale export contract for tree-shakable donor packages.
 - 🚀 **[Usage](./docs/en/usage.md)**: How to use `t()`, `$t`, and the `v-t` directive.
 - 📘 **[API Reference](./docs/en/api.md)**: Detailed description of all functions, methods, and composables.
 - 🔌 **[Plugins](./docs/en/plugins.md)**: Extending functionality via the hook system and built-in plugins.
@@ -41,13 +42,14 @@ You can find detailed information about the library in the relevant sections:
 import { createApp } from 'vue'
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { installI18n } from '@feugene/fint-i18n/vue'
-import { appLocaleLoaders } from './i18n/messages'
-import { fintDsLocaleLoaders } from '@feugene/fint-ds/i18n'
-
+import { en as appEn, ru as appRu } from './i18n/messages'
+import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 const i18n = createFintI18n({
   locale: 'en',
   fallbackLocale: 'en',
-  loaders: [appLocaleLoaders, fintDsLocaleLoaders],
+  // Import only the locales the application actually ships — bundlers will
+  // tree-shake the rest out of the final build.
+  loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 
 const app = createApp(App)

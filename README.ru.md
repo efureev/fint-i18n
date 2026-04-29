@@ -20,6 +20,7 @@
 
 - 📦 **[Установка и начало работы](./docs/ru/installation.md)**: Как установить пакет и настроить его в приложении Vue.
 - 📂 **[Определение сообщений](./docs/ru/defining-messages.md)**: Форматы JSON, лоадеры и динамический мердж.
+- 🌐 **[Гайд для авторов локализационных пакетов](./docs/ru/authoring-localization-packages.md)**: Контракт per-locale экспортов для tree-shakable пакетов-доноров.
 - 🚀 **[Использование](./docs/ru/usage.md)**: Как использовать `t()`, `$t` и директиву `v-t`.
 - 📘 **[Справочник API](./docs/ru/api.md)**: Подробное описание всех функций, методов и композаблов.
 - 🔌 **[Плагины](./docs/ru/plugins.md)**: Расширение функционала через систему хуков и встроенные плагины.
@@ -36,13 +37,14 @@
 import { createApp } from 'vue'
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { installI18n } from '@feugene/fint-i18n/vue'
-import { appLocaleLoaders } from './i18n/messages'
-import { fintDsLocaleLoaders } from '@feugene/fint-ds/i18n'
-
+import { en as appEn, ru as appRu } from './i18n/messages'
+import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 const i18n = createFintI18n({
   locale: 'en',
   fallbackLocale: 'en',
-  loaders: [appLocaleLoaders, fintDsLocaleLoaders],
+  // Импортируйте только те локали, которые реально нужны приложению —
+  // остальные сборщик удалит при tree-shaking.
+  loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 
 const app = createApp(App)
