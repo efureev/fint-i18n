@@ -393,6 +393,83 @@ describe('FintI18n', () => {
       expect(counters.get('components.second')).toBeUndefined()
     })
 
+    it('combines multiple "all"-loader collections from different packages (Variant 3)', async () => {
+      // Имитируем три "пакета", каждый из которых публикует свой
+      // `<pkg>/i18n/all` — массив `LocaleLoaderCollection[]` с per-locale записями
+      // (ровно так выглядит реальный расклад файлов вида en.ts/ru.ts/...,
+      // объединённых в `all.ts`). Локали у пакетов умышленно разные.
+      const corePkg: LocaleLoaderCollection[] = [
+        { ru: { core: vi.fn().mockResolvedValue({ default: { title: 'Ядро' } }) } },
+        { en: { core: vi.fn().mockResolvedValue({ default: { title: 'Core' } }) } },
+        { es: { core: vi.fn().mockResolvedValue({ default: { title: 'Núcleo' } }) } },
+        // Общий блок `common` из ядра — должен мержиться с одноимённым из аналитики (см. ниже).
+        { en: { common: vi.fn().mockResolvedValue({ default: { brand: 'Acme', tagline: 'core-tagline' } }) } },
+      ]
+      const billingPkg: LocaleLoaderCollection[] = [
+        { ru: { billing: vi.fn().mockResolvedValue({ default: { invoice: 'Счёт' } }) } },
+        { en: { billing: vi.fn().mockResolvedValue({ default: { invoice: 'Invoice' } }) } },
+      ]
+      const analyticsPkg: LocaleLoaderCollection[] = [
+        { en: { analytics: vi.fn().mockResolvedValue({ default: { event: 'Event' } }) } },
+        { gr: { analytics: vi.fn().mockResolvedValue({ default: { event: 'Συμβάν' } }) } },
+        // Расширяем `common` для `en`: пересекающийся ключ `tagline` должен
+        // перетереть значение из ядра — приоритет у поздних коллекций.
+        { en: { common: vi.fn().mockResolvedValue({ tagline: 'analytics-tagline' }) } },
+      ]
+
+      const loaders: LocaleLoaderSource = [
+        ...corePkg,
+        ...billingPkg,
+        ...analyticsPkg,
+      ]
+
+      const i18n = createFintI18n({
+        locale: 'en',
+        fallbackLocale: 'en',
+        loaders,
+      })
+
+      // EN: видны блоки из всех трёх пакетов.
+      await i18n.loadBlock('core')
+      await i18n.loadBlock('billing')
+      await i18n.loadBlock('analytics')
+      await i18n.loadBlock('common')
+
+      expect(i18n.t('core.title')).toBe('Core')
+      expect(i18n.t('billing.invoice')).toBe('Invoice')
+      expect(i18n.t('analytics.event')).toBe('Event')
+      // Слияние блоков `common` из core+analytics, причём поздняя коллекция перекрывает.
+      expect(i18n.t('common.brand')).toBe('Acme')
+      expect(i18n.t('common.tagline')).toBe('analytics-tagline')
+
+      // RU: только core + billing (analytics в `ru` не публикует).
+      await i18n.setLocale('ru')
+      await i18n.loadBlock('core')
+      await i18n.loadBlock('billing')
+      expect(i18n.t('core.title')).toBe('Ядро')
+      expect(i18n.t('billing.invoice')).toBe('Счёт')
+      // Нет аналитики в ru — ключ не существует ни в активной, ни в fallback-локали (en есть).
+      // Здесь сознательно проверяем fallback на `en` для `analytics`.
+      await i18n.loadBlock('analytics')
+      expect(i18n.t('analytics.event')).toBe('Event')
+
+      // ES: только core (billing/analytics не публикуют es) — fallback на en.
+      await i18n.setLocale('es')
+      await i18n.loadBlock('core')
+      expect(i18n.t('core.title')).toBe('Núcleo')
+      await i18n.loadBlock('billing')
+      expect(i18n.t('billing.invoice')).toBe('Invoice')
+
+      // GR: только analytics (core/billing не публикуют gr) — fallback на en.
+      await i18n.setLocale('gr')
+      await i18n.loadBlock('analytics')
+      expect(i18n.t('analytics.event')).toBe('Συμβάν')
+      await i18n.loadBlock('core')
+      expect(i18n.t('core.title')).toBe('Core')
+      await i18n.loadBlock('billing')
+      expect(i18n.t('billing.invoice')).toBe('Invoice')
+    })
+
     it('warns and skips load when pattern matches nothing', async () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const i18n = createFintI18n({
