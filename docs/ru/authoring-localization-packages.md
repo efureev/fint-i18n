@@ -94,6 +94,11 @@ import { en, ru } from 'my-package/i18n'
 
 ### Опциональный `all.ts`
 
+Иногда всё-таки нужен «жирный» экспорт со всеми локалями сразу — для
+демо-страниц, e2e-тестов, инструментов локализации, скриптов аудита. Для
+этого ровно один файл — `src/i18n/all.ts` — собирает все per-locale
+модули в один массив:
+
 ```ts
 // src/i18n/all.ts — для демо, инструментов, e2e-тестов
 import { en } from './en'
@@ -104,8 +109,72 @@ export const all = [en, ru, de /* ... */]
 export default all
 ```
 
-Этот экспорт **намеренно** заставляет тянуть все локали. Используйте его
-только там, где tree-shaking не важен.
+#### Куда его размещать
+
+- Файл лежит **рядом** с per-locale модулями, в той же папке `src/i18n/`,
+  но **не реэкспортируется** из `index.ts`. Это критично: если `all`
+  будет реэкспортирован из главного барелла, любой `import { en } from
+  '<pkg>/i18n'` потянет в граф ещё и `ru`, `de`, … и весь смысл
+  per-locale экспорта пропадёт.
+- В сборке он публикуется как **отдельный подпуть** —
+  `<package>/i18n/all`, а не из основного `<package>/i18n`.
+
+#### Как экспонировать через `package.json`
+
+В `exports` пакета добавляется отдельная запись для `./i18n/all`:
+
+```jsonc
+// package.json
+{
+  "name": "my-package",
+  "sideEffects": false,
+  "exports": {
+    "./i18n": {
+      "types": "./dist/i18n/index.d.ts",
+      "import": "./dist/i18n/index.js"
+    },
+    "./i18n/all": {
+      "types": "./dist/i18n/all.d.ts",
+      "import": "./dist/i18n/all.js"
+    }
+  }
+}
+```
+
+Ключевые моменты:
+
+- `./i18n` и `./i18n/all` — **разные entry points** в `exports`. Импорт
+  одного НЕ тянет другой.
+- `"sideEffects": false` (или явный whitelist без `i18n/*`) обязателен —
+  иначе сборщик будет считать побочными эффектами все per-locale модули
+  и не сможет их отбросить.
+- Для TypeScript добавляется парный `types` на каждый подпуть; иначе
+  `import '<pkg>/i18n/all'` не получит типов в потребителе с
+  `moduleResolution: bundler|node16|nodenext`.
+- Для пользователей с `tsconfig.moduleResolution: node10` (старый
+  алгоритм) дополнительно желательно прописать `typesVersions` —
+  fallback на `dist/i18n/all.d.ts`.
+
+#### Как использовать на стороне потребителя
+
+```ts
+// Production-сборка приложения — импортируем только нужные локали.
+import { en, ru } from 'my-package/i18n'
+
+// Storybook / e2e / playground — допустим разовый «жирный» импорт.
+import all from 'my-package/i18n/all'
+
+createFintI18n({
+  locale: 'en',
+  fallbackLocale: 'en',
+  loaders: all, // == [en, ru, de, ...]
+})
+```
+
+> [!WARNING]
+> Никогда не импортируйте `<pkg>/i18n/all` в production-бандле
+> приложения: это эквивалентно отказу от tree-shaking локалей. Используйте
+> его только в окружениях, где размер сборки не важен.
 
 ## Контракт пакета
 

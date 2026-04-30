@@ -88,6 +88,15 @@ export { en } from './en'
 export { ru } from './ru'
 ```
 
+> [!TIP]
+> If you need a fat aggregate of every locale (for demos, e2e tests,
+> tooling), put it in a separate `src/i18n/messages/all.ts` and import it
+> explicitly (`./i18n/messages/all`). **Do not re-export `all` from
+> `index.ts`** — otherwise any `import { en } from './i18n/messages'`
+> would pull every language into the graph and break tree-shaking. The
+> matching `package.json#exports` setup for donor packages is described
+> in [Authoring localization packages](./authoring-localization-packages.md#optional-allts).
+
 ### 3. Initialization in `main.ts`
 
 ```typescript

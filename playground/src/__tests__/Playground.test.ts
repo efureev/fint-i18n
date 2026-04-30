@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { installI18n } from '@feugene/fint-i18n/vue'
 import Playground from '../Playground.vue'
-import { loaders } from '../i18n/messages'
+import { loaders } from '../i18n/messages/all'
 
 const mountedWrappers: ReturnType<typeof mount>[] = []
 

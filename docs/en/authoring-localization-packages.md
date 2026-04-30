@@ -95,6 +95,10 @@ removed by tree-shaking, regardless of how big the underlying JSON or
 
 ### Optional `all.ts`
 
+A fat aggregate is sometimes legitimately needed — demo pages, e2e
+tests, localization tooling, audit scripts. A single file —
+`src/i18n/all.ts` — collects every per-locale module into one array:
+
 ```ts
 // src/i18n/all.ts — for demos, tooling, e2e tests
 import { en } from './en'
@@ -105,8 +109,71 @@ export const all = [en, ru, de /* ... */]
 export default all
 ```
 
-This export **deliberately** pulls every locale in. Use it only where
-tree-shaking is not a concern.
+#### Where to put it
+
+- The file lives **next to** the per-locale modules in the same
+  `src/i18n/` folder, but is **not re-exported** from `index.ts`. This
+  is critical: if `all` were re-exported from the main barrel, any
+  `import { en } from '<pkg>/i18n'` would drag `ru`, `de`, … back into
+  the graph and the whole point of per-locale exports would be lost.
+- It is published as a **separate subpath** — `<package>/i18n/all` — not
+  from the main `<package>/i18n` entry.
+
+#### How to expose it via `package.json`
+
+Add a dedicated entry for `./i18n/all` to the package's `exports`:
+
+```jsonc
+// package.json
+{
+  "name": "my-package",
+  "sideEffects": false,
+  "exports": {
+    "./i18n": {
+      "types": "./dist/i18n/index.d.ts",
+      "import": "./dist/i18n/index.js"
+    },
+    "./i18n/all": {
+      "types": "./dist/i18n/all.d.ts",
+      "import": "./dist/i18n/all.js"
+    }
+  }
+}
+```
+
+Key points:
+
+- `./i18n` and `./i18n/all` are **distinct entry points** in `exports`.
+  Importing one does NOT pull in the other.
+- `"sideEffects": false` (or an explicit whitelist that does not include
+  `i18n/*`) is required — otherwise the bundler will treat every
+  per-locale module as side-effecting and refuse to drop it.
+- Provide a paired `types` entry per subpath; otherwise `import
+  '<pkg>/i18n/all'` will lack types under
+  `moduleResolution: bundler|node16|nodenext`.
+- For consumers stuck on `tsconfig.moduleResolution: node10` (legacy),
+  declare a matching `typesVersions` fallback for `dist/i18n/all.d.ts`.
+
+#### Consumer usage
+
+```ts
+// Application production build — pull only the locales you ship.
+import { en, ru } from 'my-package/i18n'
+
+// Storybook / e2e / playground — a one-off fat import is acceptable.
+import all from 'my-package/i18n/all'
+
+createFintI18n({
+  locale: 'en',
+  fallbackLocale: 'en',
+  loaders: all, // == [en, ru, de, ...]
+})
+```
+
+> [!WARNING]
+> Never import `<pkg>/i18n/all` from a production application bundle —
+> doing so opts out of locale tree-shaking entirely. Reserve it for
+> environments where bundle size is irrelevant.
 
 ## Package contract
 

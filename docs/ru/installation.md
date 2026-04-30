@@ -88,6 +88,15 @@ export { en } from './en'
 export { ru } from './ru'
 ```
 
+> [!TIP]
+> Если нужен «жирный» агрегат всех локалей (для демо, e2e, инструментов),
+> заведите отдельный `src/i18n/messages/all.ts` и импортируйте его явно
+> (`./i18n/messages/all`). **Не реэкспортируйте `all` из `index.ts`** —
+> иначе любой `import { en } from './i18n/messages'` потянет в граф все
+> языки и tree-shaking сломается. Подробности и пример настройки
+> `package.json#exports` для пакетов-доноров — в
+> [Authoring localization packages](./authoring-localization-packages.md#опциональный-allts).
+
 ### 3. Инициализация в `main.ts`
 
 ```typescript
