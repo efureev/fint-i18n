@@ -175,9 +175,87 @@ type VTValue = string | { path: string, params?: Record<string, any> };
 
 ---
 
+## Vue Plugin (`installI18n`)
+
+Registers the `FintI18n` instance in a Vue application: provides it via `provide/inject`, optionally registers global properties (`$t`, `$i18n`) and the `v-t` directive. Imported from `@feugene/fint-i18n/vue`.
+
+```typescript
+import type { App } from 'vue'
+
+type GlobalInstallFn = (app: App, i18n: FintI18n) => void
+
+interface InstallI18nOptions {
+  /**
+   * Controls registration of the `v-t` directive.
+   * - `string` — register the directive under the given name (e.g. `'i18n'` → `v-i18n`).
+   * - `true` or omitted — register under the default name `'t'` (`v-t`).
+   * - `false` — do not register the directive.
+   */
+  directive?: string | boolean
+
+  /**
+   * Controls registration of global properties (`$t`, `$i18n`).
+   * - function — called instead of the default registration; you implement
+   *   the binding yourself (e.g. expose a different name or attach extra utilities);
+   * - `true` — performs the default registration (`app.config.globalProperties.$t = i18n.t`,
+   *   `app.config.globalProperties.$i18n = i18n`);
+   * - `false` — nothing is registered.
+   * If the option is omitted, the value of `i18n.globalInstall` is used (default: `true`).
+   */
+  globalInstall?: boolean | GlobalInstallFn
+}
+
+declare function installI18n(app: App, i18n: FintI18n, options?: InstallI18nOptions): void
+```
+
+**Behavior:**
+- Always calls `app.provide(FINT_I18N_KEY, i18n)`, so `useFintI18n()` and `useI18nScope()` work regardless of `globalInstall`.
+- The effective value of `globalInstall` is computed as `options.globalInstall ?? i18n.globalInstall`.
+- If a function is passed, it fully replaces the default registration — neither `$t` nor `$i18n` will be set automatically.
+
+#### Examples
+
+Default registration (equivalent to omitting the option):
+
+```typescript
+installI18n(app, i18n) // registers $t, $i18n and the v-t directive
+```
+
+Disable global properties (recommended when using only composables / the `v-t` directive):
+
+```typescript
+installI18n(app, i18n, { globalInstall: false })
+```
+
+Custom registration — for example, expose under different names or add helpers:
+
+```typescript
+import { installI18n } from '@feugene/fint-i18n/vue'
+
+installI18n(app, i18n, {
+  globalInstall: (app, i18n) => {
+    app.config.globalProperties.$tr = i18n.t
+    app.config.globalProperties.$i18n = i18n
+    app.config.globalProperties.$locale = i18n.locale
+  },
+})
+```
+
+Customize the directive name or disable it:
+
+```typescript
+installI18n(app, i18n, { directive: 'i18n' }) // v-i18n="..."
+installI18n(app, i18n, { directive: false })  // do not register the directive
+```
+
+---
+
 ## Global Properties
 
-When registered via `installI18n(app, i18n)` from `@feugene/fint-i18n/vue`, the following are available in templates:
+When registered via `installI18n(app, i18n)` from `@feugene/fint-i18n/vue` with `globalInstall` enabled (default), the following are available in templates:
 
 - **`$t`**: Global equivalent of the `t()` function.
 - **`$i18n`**: Access to the i18n instance.
+
+> [!TIP]
+> If `globalInstall: false` is passed (or `i18n.globalInstall === false` and the option is omitted), `$t`/`$i18n` are not registered. Use `useFintI18n()` / `useI18nScope()` or pass a custom registration function to expose properties under your own names.

@@ -1,6 +1,6 @@
 {
   "name": "@feugene/fint-i18n",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Lightweight Vue 3 i18n library with lazy-loading blocks and template caching",
   "author": "feugene <feugene@example.com>",
   "license": "MIT",
