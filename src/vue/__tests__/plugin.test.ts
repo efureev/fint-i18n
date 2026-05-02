@@ -12,28 +12,53 @@ describe('Vue Plugin', () => {
     installI18n(app, i18n)
     
     // Check if provided
-    // We can't easily check app._context.provides directly in a clean way, 
-    // but we can check globalProperties if globalInstall is true
+    // We can't easily check app._context.provides directly in a clean way,
+    // but we can check globalProperties (registered by default).
   })
 
-  it('should set global properties when globalInstall is true', () => {
+  it('should set global properties by default', () => {
     const app = createApp({})
-    const i18n = createFintI18n({ locale: 'en', globalInstall: true })
-    
+    const i18n = createFintI18n({ locale: 'en' })
+
     installI18n(app, i18n)
-    
+
     expect(app.config.globalProperties.$t).toBe(i18n.t)
     expect(app.config.globalProperties.$i18n).toBe(i18n)
   })
 
-  it('should NOT set global properties when globalInstall is false', () => {
+  it('should set global properties when options.globalInstall is true', () => {
     const app = createApp({})
-    const i18n = createFintI18n({ locale: 'en', globalInstall: false })
-    
-    installI18n(app, i18n)
-    
+    const i18n = createFintI18n({ locale: 'en' })
+
+    installI18n(app, i18n, { globalInstall: true })
+
+    expect(app.config.globalProperties.$t).toBe(i18n.t)
+    expect(app.config.globalProperties.$i18n).toBe(i18n)
+  })
+
+  it('should NOT set global properties when options.globalInstall is false', () => {
+    const app = createApp({})
+    const i18n = createFintI18n({ locale: 'en' })
+
+    installI18n(app, i18n, { globalInstall: false })
+
     expect(app.config.globalProperties.$t).toBeUndefined()
     expect(app.config.globalProperties.$i18n).toBeUndefined()
+  })
+
+  it('should call custom globalInstall function instead of default registration', () => {
+    const app = createApp({})
+    const i18n = createFintI18n({ locale: 'en' })
+    const custom = vi.fn((a, _i) => {
+      a.config.globalProperties.$tr = _i.t
+    })
+
+    installI18n(app, i18n, { globalInstall: custom })
+
+    expect(custom).toHaveBeenCalledWith(app, i18n)
+    expect(app.config.globalProperties.$t).toBeUndefined()
+    expect(app.config.globalProperties.$i18n).toBeUndefined()
+    expect(app.config.globalProperties.$tr).toBe(i18n.t)
   })
 
   it('should register directive with default name', () => {

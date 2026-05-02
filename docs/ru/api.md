@@ -24,7 +24,6 @@ interface FintI18nOptions {
   fallbackLocale?: Locale;                                  // Резервный язык
   loaders?: LocaleLoaderSource;                             // Одна или несколько коллекций loaders
   plugins?: FintI18nPlugin[];                               // Список плагинов
-  globalInstall?: boolean;                                  // Глобальная регистрация $t (true по умолчанию)
 }
 ```
 
@@ -200,7 +199,7 @@ interface InstallI18nOptions {
    * - `true` — выполняется стандартная регистрация (`app.config.globalProperties.$t = i18n.t`,
    *   `app.config.globalProperties.$i18n = i18n`);
    * - `false` — ничего не регистрируется.
-   * Если опция не передана — используется значение `i18n.globalInstall` (по умолчанию `true`).
+   * Если опция не передана — используется значение `true`.
    */
   globalInstall?: boolean | GlobalInstallFn
 }
@@ -210,7 +209,7 @@ declare function installI18n(app: App, i18n: FintI18n, options?: InstallI18nOpti
 
 **Поведение:**
 - Всегда вызывает `app.provide(FINT_I18N_KEY, i18n)`, поэтому `useFintI18n()` и `useI18nScope()` работают независимо от `globalInstall`.
-- Эффективное значение `globalInstall` вычисляется как `options.globalInstall ?? i18n.globalInstall`.
+- Эффективное значение `globalInstall` вычисляется как `options.globalInstall ?? true`.
 - Если передана функция, она полностью заменяет стандартную регистрацию — `$t` и `$i18n` автоматически выставлены не будут.
 
 #### Примеры
@@ -258,4 +257,4 @@ installI18n(app, i18n, { directive: false })  // не регистрироват
 - **`$i18n`**: Доступ к экземпляру i18n.
 
 > [!TIP]
-> Если передан `globalInstall: false` (или у инстанса `i18n.globalInstall === false`, а опция не передана), `$t`/`$i18n` не регистрируются. Используйте `useFintI18n()` / `useI18nScope()` или передайте функцию-регистратор, чтобы выставить свойства под собственными именами.
+> Если передан `globalInstall: false`, `$t`/`$i18n` не регистрируются. Используйте `useFintI18n()` / `useI18nScope()` или передайте функцию-регистратор, чтобы выставить свойства под собственными именами.

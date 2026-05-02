@@ -10,9 +10,8 @@ export interface InstallI18nOptions {
   /**
    * Управляет регистрацией глобальных свойств ($t, $i18n).
    * - функция: вызывается вместо стандартной регистрации;
-   * - `true`: выполняется стандартная регистрация (по умолчанию, если у инстанса `globalInstall === true`);
+   * - `true` (по умолчанию): выполняется стандартная регистрация;
    * - `false`: ничего не происходит.
-   * Если опция не передана — используется значение `i18n.globalInstall`.
    */
   globalInstall?: boolean | GlobalInstallFn
 }
@@ -25,7 +24,7 @@ function defaultGlobalInstall(app: App, i18n: FintI18n) {
 export function installI18n(app: App, i18n: FintI18n, options: InstallI18nOptions = {}) {
   app.provide(FINT_I18N_KEY, i18n)
 
-  const globalInstall = options.globalInstall ?? i18n.globalInstall
+  const globalInstall = options.globalInstall ?? true
 
   if (typeof globalInstall === 'function') {
     globalInstall(app, i18n)

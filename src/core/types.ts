@@ -21,7 +21,6 @@ export interface FintI18nOptions {
   fallbackLocale?: Locale
   loaders?: LocaleLoaderSource
   plugins?: FintI18nPlugin[]
-  globalInstall?: boolean
 }
 
 export type MessagePrimitive = string | number | boolean

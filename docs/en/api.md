@@ -24,7 +24,6 @@ interface FintI18nOptions {
   fallbackLocale?: Locale;                                  // Fallback language
   loaders?: LocaleLoaderSource;                             // One or more loader collections
   plugins?: FintI18nPlugin[];                               // List of plugins
-  globalInstall?: boolean;                                  // Global registration of $t (true by default)
 }
 ```
 
@@ -200,7 +199,7 @@ interface InstallI18nOptions {
    * - `true` — performs the default registration (`app.config.globalProperties.$t = i18n.t`,
    *   `app.config.globalProperties.$i18n = i18n`);
    * - `false` — nothing is registered.
-   * If the option is omitted, the value of `i18n.globalInstall` is used (default: `true`).
+   * If the option is omitted, defaults to `true`.
    */
   globalInstall?: boolean | GlobalInstallFn
 }
@@ -210,7 +209,7 @@ declare function installI18n(app: App, i18n: FintI18n, options?: InstallI18nOpti
 
 **Behavior:**
 - Always calls `app.provide(FINT_I18N_KEY, i18n)`, so `useFintI18n()` and `useI18nScope()` work regardless of `globalInstall`.
-- The effective value of `globalInstall` is computed as `options.globalInstall ?? i18n.globalInstall`.
+- The effective value of `globalInstall` is `options.globalInstall ?? true`.
 - If a function is passed, it fully replaces the default registration — neither `$t` nor `$i18n` will be set automatically.
 
 #### Examples
@@ -258,4 +257,4 @@ When registered via `installI18n(app, i18n)` from `@feugene/fint-i18n/vue` with 
 - **`$i18n`**: Access to the i18n instance.
 
 > [!TIP]
-> If `globalInstall: false` is passed (or `i18n.globalInstall === false` and the option is omitted), `$t`/`$i18n` are not registered. Use `useFintI18n()` / `useI18nScope()` or pass a custom registration function to expose properties under your own names.
+> If `globalInstall: false` is passed, `$t`/`$i18n` are not registered. Use `useFintI18n()` / `useI18nScope()` or pass a custom registration function to expose properties under your own names.

@@ -9,7 +9,6 @@ import type { FintI18nOptions, Locale, MessageValue, TranslateOptions } from './
 export class FintI18n {
   public locale: Ref<Locale>
   public fallbackLocale: Locale
-  public globalInstall: boolean
   public readonly messages: Record<Locale, any> = reactive({})
   private compiledMessages: Record<Locale, Record<string, MessageFunction>> = Object.create(null)
   private readonly loaderRegistry: LocaleLoaderRegistry
@@ -28,7 +27,6 @@ export class FintI18n {
     this.locale = ref(options.locale)
     this.fallbackLocale = options.fallbackLocale || ''
     this.loaderRegistry = new LocaleLoaderRegistry(options.loaders)
-    this.globalInstall = options.globalInstall !== false
 
     if (options.plugins) {
       options.plugins.forEach(p => p.install(this))
