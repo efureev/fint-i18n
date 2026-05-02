@@ -7,7 +7,11 @@ export default antfu(
       'dist/**',
       'node_modules/**',
       'playground/**',
+      'docs/**',
+      '**/*.md',
+      '**/*.md/**',
     ],
+    markdown: false,
     vue: {
       vueVersion: 3,
     },
