@@ -14,6 +14,7 @@ defineProps<{
   runtimeHooksLabel: string
   emptyHooksLabel: string
   clearLabel: string
+  probeLabel: string
   blocksLabel: string
   keysLabel: string
   messages: Record<string, MessageSchema>
@@ -22,6 +23,7 @@ defineProps<{
 
 const emit = defineEmits<{
   clear: []
+  probeTranslate: []
 }>()
 
 const getObjectKeys = (value: unknown): string[] => {
@@ -87,9 +89,14 @@ const stringifyPayload = (value: unknown): string => JSON.stringify(value, null,
             <div class="i-lucide-activity" />
             {{ runtimeHooksLabel }}
           </h3>
-          <button class="text-[10px] hover:text-white transition-colors" @click="emit('clear')">
-            {{ clearLabel }}
-          </button>
+          <div class="flex items-center gap-3">
+            <button class="text-[10px] text-indigo-300 hover:text-white transition-colors" @click="emit('probeTranslate')">
+              {{ probeLabel }}
+            </button>
+            <button class="text-[10px] hover:text-white transition-colors" @click="emit('clear')">
+              {{ clearLabel }}
+            </button>
+          </div>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -103,10 +110,13 @@ const stringifyPayload = (value: unknown): string => JSON.stringify(value, null,
           <div
             v-for="hook in hookEvents"
             :key="hook.id"
-            class="text-[11px] border-l-2 border-indigo-500 bg-indigo-500/5 p-2 rounded-r"
+            class="text-[11px] border-l-2 p-2 rounded-r"
+            :class="hook.name === 'onError'
+              ? 'border-red-500 bg-red-500/10'
+              : 'border-indigo-500 bg-indigo-500/5'"
           >
             <div class="flex justify-between items-start mb-1">
-              <span class="font-bold text-indigo-300 font-mono">{{ hook.name }}</span>
+              <span class="font-bold font-mono" :class="hook.name === 'onError' ? 'text-red-300' : 'text-indigo-300'">{{ hook.name }}</span>
               <span class="text-gray-600 text-[9px]">{{ hook.timestamp }}</span>
             </div>
             <div

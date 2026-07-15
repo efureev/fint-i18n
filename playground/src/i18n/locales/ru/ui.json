@@ -11,15 +11,20 @@
       "eyebrow": "1. Базовый перевод",
       "title": "Реактивное использование `t()`",
       "description": "Меняйте имя в поле ниже, чтобы проверить интерполяцию и мгновенное переключение локали.",
-      "inputLabel": "Имя посетителя"
+      "inputLabel": "Имя посетителя",
+      "escapedLabel": "Экранирование скобок `{{ }}`",
+      "escapedHint": "Двойные скобки выводятся как литеральные скобки; одинарные — подставляют параметр."
     },
     "directive": {
       "eyebrow": "2. Директивы",
-      "title": "`v-t` и `v-t.once`",
-      "description": "Сравните реактивное обновление текста и одноразовый вариант директивы.",
+      "title": "`v-t`, `v-t.once` и `v-t.preserve`",
+      "description": "Сравните реактивное обновление текста с одноразовым и preserve-вариантами директивы.",
       "normalLabel": "Реактивный `v-t`",
       "onceLabel": "Статичный `v-t.once`",
-      "onceHint": "Это значение специально не меняется после переключения локали."
+      "onceHint": "Это значение специально не меняется после переключения локали.",
+      "preserveLabel": "Fallback `v-t.preserve`",
+      "preserveHint": "Сохраняет текущий текст, пока `lab.motto` отсутствует, и реактивно обновляется после загрузки блока.",
+      "preserveButton": "Загрузить блок `lab`"
     },
     "lazy": {
       "eyebrow": "3. Ленивые блоки",
@@ -45,12 +50,55 @@
       "button": "Загрузить `widgets.*`",
       "buttonHint": "Паттерн разворачивается один раз и переиспользуется при смене локали",
       "loadedBadge": "Загружено блоков: {count}"
+    },
+    "fallback": {
+      "eyebrow": "6. Резервная локаль",
+      "title": "`fallbackLocale` и per-call `TranslateOptions`",
+      "description": "Отсутствующие ключи берутся из другой локали — глобально через `fallbackLocale` инстанса или на каждый вызов через `t(key, params, { fallbackLocale })`.",
+      "keyColumn": "Ключ",
+      "currentColumn": "Текущая локаль",
+      "fallbackColumn": "С fallback",
+      "instanceNote": "Инстансный `fallbackLocale: 'en'` разрешает EN-only ключи, когда активна локаль RU.",
+      "perCallNote": "Per-call `{ fallbackLocale: 'ru' }` разрешает RU-only ключи, когда активна локаль EN.",
+      "missing": "(отсутствует → вернулся ключ)"
+    },
+    "scopeSync": {
+      "eyebrow": "7. Синхронный scope",
+      "title": "`useI18nScopeSync` + `prefix`",
+      "description": "Загрузка блока без `<Suspense>`. `ready` становится true, когда блок пришёл; `prefix: true` позволяет вызывать ключи относительно блока.",
+      "readyBadge": "готово",
+      "loadingBadge": "загрузка…",
+      "prefixNote": "Ключи ниже вызываются как `t('title')` и разрешаются как `profile.title` благодаря `prefix: true`."
+    },
+    "memory": {
+      "eyebrow": "8. Память и использование",
+      "title": "Подсчёт ссылок и ручная выгрузка",
+      "description": "Зарегистрируйте использование, загрузите блоки через `loadUsedBlocks`, проверьте `isBlockLoaded` и освободите память через `unloadBlock`.",
+      "knownLocales": "Известные локали (`getKnownLocales()`)",
+      "register": "registerUsage('metrics')",
+      "loadUsed": "loadUsedBlocks(locale)",
+      "unload": "unloadBlock('metrics')",
+      "statusLoaded": "metrics: загружен",
+      "statusNotLoaded": "metrics: не загружен",
+      "previewLabel": "превью metrics",
+      "autoNote": "Укажите `unloadUnusedBlocks: true` при инициализации, чтобы выгрузка происходила автоматически при обнулении счётчика."
+    },
+    "dynamic": {
+      "eyebrow": "9. Динамические лоадеры и ошибки",
+      "title": "`addLoaders`, `mergeMessages`, `onError`",
+      "description": "Регистрируйте новые блоки в рантайме, внедряйте сообщения вручную и наблюдайте репортинг ошибок через хуки.",
+      "addButton": "addLoaders() + загрузить `announce`",
+      "injectButton": "mergeMessages() + markBlockLoaded()",
+      "errorButton": "Запустить падающий лоадер",
+      "injectResultLabel": "Внедрённый блок (`runtime.hello`)",
+      "errorHint": "Падающий лоадер репортится через хук `onError` (следите за debug-панелью) и не роняет приложение."
     }
   },
   "status": {
     "ready": "Готово",
     "loaded": "Загружено",
-    "pending": "Ожидает"
+    "pending": "Ожидает",
+    "notLoaded": "Не загружено"
   },
   "debug": {
     "title": "Runtime-отладка",
@@ -59,11 +107,14 @@
     "empty": "Хуки ещё не срабатывали",
     "clear": "Очистить",
     "blocks": "блоков",
-    "keys": "ключей"
+    "keys": "ключей",
+    "probe": "Проверить onTranslate"
   },
   "footer": {
     "lazy": "Lazy-блоки",
     "vue": "Интеграция с Vue",
-    "scope": "Scoped-загрузчики"
+    "scope": "Scoped-загрузчики",
+    "fallback": "Цепочка fallback",
+    "dynamic": "Динамические лоадеры"
   }
 }

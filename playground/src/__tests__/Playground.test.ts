@@ -78,7 +78,8 @@ describe('Playground', () => {
   it('loads lazy and nested blocks and records runtime hooks', async () => {
     const { wrapper } = await mountPlayground()
 
-    expect(wrapper.text()).toContain('No hooks emitted yet')
+    // The auth block loads lazily, so it is not present until requested.
+    expect(wrapper.text()).not.toContain('Auth Block')
 
     await wrapper.get('[data-test="load-auth"]').trigger('click')
     await settleUi(5)

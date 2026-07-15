@@ -3,5 +3,6 @@
   "changeLang": "Switch Language",
   "currentLang": "Current language: {lang}",
   "blocks": "Loaded blocks: {blocks}",
-  "namePlaceholder": "Enter your name..."
+  "namePlaceholder": "Enter your name...",
+  "escaped": "Escaping: {{braces}} stays literal, while {name} is interpolated"
 }

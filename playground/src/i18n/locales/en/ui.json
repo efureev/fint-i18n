@@ -11,15 +11,20 @@
       "eyebrow": "1. Basic translation",
       "title": "Reactive `t()` usage",
       "description": "Update the name field to verify interpolation and instant locale switching.",
-      "inputLabel": "Visitor name"
+      "inputLabel": "Visitor name",
+      "escapedLabel": "Brace escaping `{{ }}`",
+      "escapedHint": "Double braces render as literal braces; single braces interpolate the parameter."
     },
     "directive": {
       "eyebrow": "2. Directives",
-      "title": "`v-t` and `v-t.once`",
-      "description": "Compare reactive text updates with the one-time directive variant.",
+      "title": "`v-t`, `v-t.once` and `v-t.preserve`",
+      "description": "Compare reactive text updates with the one-time and preserve directive variants.",
       "normalLabel": "Reactive `v-t`",
       "onceLabel": "Static `v-t.once`",
-      "onceHint": "This value intentionally does not change after a locale switch."
+      "onceHint": "This value intentionally does not change after a locale switch.",
+      "preserveLabel": "Fallback `v-t.preserve`",
+      "preserveHint": "Keeps the current text while `lab.motto` is missing, then updates reactively once the block loads.",
+      "preserveButton": "Load `lab` block"
     },
     "lazy": {
       "eyebrow": "3. Lazy blocks",
@@ -45,12 +50,55 @@
       "button": "Load `widgets.*`",
       "buttonHint": "Pattern is expanded once, then reused on locale change",
       "loadedBadge": "Loaded {count} blocks"
+    },
+    "fallback": {
+      "eyebrow": "6. Fallback locale",
+      "title": "`fallbackLocale` and per-call `TranslateOptions`",
+      "description": "Missing keys fall back to another locale — globally via the instance `fallbackLocale`, or per call via `t(key, params, { fallbackLocale })`.",
+      "keyColumn": "Key",
+      "currentColumn": "Current locale",
+      "fallbackColumn": "With fallback",
+      "instanceNote": "Instance `fallbackLocale: 'en'` resolves EN-only keys when the active locale is RU.",
+      "perCallNote": "Per-call `{ fallbackLocale: 'ru' }` resolves RU-only keys when the active locale is EN.",
+      "missing": "(missing → key returned)"
+    },
+    "scopeSync": {
+      "eyebrow": "7. Synchronous scope",
+      "title": "`useI18nScopeSync` + `prefix`",
+      "description": "Load a block without `<Suspense>`. `ready` flips to true once the block arrives; `prefix: true` lets you call keys relative to the block.",
+      "readyBadge": "ready",
+      "loadingBadge": "loading…",
+      "prefixNote": "Keys below are called as `t('title')` and resolved as `profile.title` thanks to `prefix: true`."
+    },
+    "memory": {
+      "eyebrow": "8. Memory & usage",
+      "title": "Reference counting & manual unload",
+      "description": "Register usage, load registered blocks with `loadUsedBlocks`, check `isBlockLoaded`, then free memory with `unloadBlock`.",
+      "knownLocales": "Known locales (`getKnownLocales()`)",
+      "register": "registerUsage('metrics')",
+      "loadUsed": "loadUsedBlocks(locale)",
+      "unload": "unloadBlock('metrics')",
+      "statusLoaded": "metrics: loaded",
+      "statusNotLoaded": "metrics: not loaded",
+      "previewLabel": "metrics preview",
+      "autoNote": "Set `unloadUnusedBlocks: true` at init to unload automatically when the usage counter hits zero."
+    },
+    "dynamic": {
+      "eyebrow": "9. Dynamic loaders & errors",
+      "title": "`addLoaders`, `mergeMessages`, `onError`",
+      "description": "Register brand-new blocks at runtime, inject messages manually, and observe error reporting via hooks.",
+      "addButton": "addLoaders() + load `announce`",
+      "injectButton": "mergeMessages() + markBlockLoaded()",
+      "errorButton": "Trigger a failing loader",
+      "injectResultLabel": "Injected block (`runtime.hello`)",
+      "errorHint": "A failing loader is reported through the `onError` hook (watch the debug panel) without crashing the app."
     }
   },
   "status": {
     "ready": "Ready",
     "loaded": "Loaded",
-    "pending": "Pending"
+    "pending": "Pending",
+    "notLoaded": "Not loaded"
   },
   "debug": {
     "title": "Runtime debug",
@@ -59,11 +107,14 @@
     "empty": "No hooks emitted yet",
     "clear": "Clear",
     "blocks": "blocks",
-    "keys": "keys"
+    "keys": "keys",
+    "probe": "Probe onTranslate"
   },
   "footer": {
     "lazy": "Lazy blocks",
     "vue": "Vue integration",
-    "scope": "Scoped loaders"
+    "scope": "Scoped loaders",
+    "fallback": "Fallback chain",
+    "dynamic": "Dynamic loaders"
   }
 }

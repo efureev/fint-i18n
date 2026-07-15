@@ -1,0 +1,5 @@
+{
+  "title": "Профиль аккаунта",
+  "subtitle": "Загружено через useI18nScopeSync",
+  "hint": "<Suspense> не нужен — блок подгружается, а `ready` становится true."
+}

@@ -17,6 +17,12 @@ export const en: LocaleLoaderCollection = {
     'widgets.alpha': () => import('../locales/en/widgets/alpha.json'),
     'widgets.beta': () => import('../locales/en/widgets/beta.json'),
     'widgets.gamma': () => import('../locales/en/widgets/gamma.json'),
+    fallback: () => import('../locales/en/fallback.json'),
+    profile: () => import('../locales/en/profile.json'),
+    metrics: () => import('../locales/en/metrics.json'),
+    lab: () => import('../locales/en/lab.json'),
+    // NB: `announce` is intentionally NOT registered here — it is added at
+    // runtime via `addLoaders()` in the "Dynamic loaders" section.
   },
 }
 

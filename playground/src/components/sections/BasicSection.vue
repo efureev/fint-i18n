@@ -50,5 +50,18 @@ const loadedBlocksCount = computed(() => Object.keys(messages[locale.value] ?? {
         >
       </label>
     </div>
+
+    <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+      <p class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2 flex items-center gap-2">
+        <span class="i-lucide-braces text-fuchsia-500" />
+        {{ t('ui.sections.basic.escapedLabel') }}
+      </p>
+      <p class="font-mono text-sm text-slate-800 break-words">
+        {{ t('common.escaped', { name }) }}
+      </p>
+      <p class="mt-2 text-xs text-slate-500 leading-5">
+        {{ t('ui.sections.basic.escapedHint') }}
+      </p>
+    </div>
   </section>
 </template>

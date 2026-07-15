@@ -19,8 +19,16 @@ const { t } = useFintI18n()
         <span class="i-lucide-layers-3 text-violet-500" />
         {{ t('ui.footer.scope') }}
       </span>
+      <span class="flex items-center gap-1.5">
+        <span class="i-lucide-git-fork text-emerald-500" />
+        {{ t('ui.footer.fallback') }}
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="i-lucide-plug text-teal-500" />
+        {{ t('ui.footer.dynamic') }}
+      </span>
     </div>
 
-    <span>v0.1.0</span>
+    <span class="font-mono">v0.3.0</span>
   </footer>
 </template>

@@ -3,10 +3,14 @@ import { useFintI18n, useI18nScope } from '@feugene/fint-i18n/vue'
 import PlaygroundDebugPanel from './components/PlaygroundDebugPanel.vue'
 import BasicSection from './components/sections/BasicSection.vue'
 import DirectiveSection from './components/sections/DirectiveSection.vue'
+import DynamicLoadersSection from './components/sections/DynamicLoadersSection.vue'
+import FallbackSection from './components/sections/FallbackSection.vue'
 import LazyLoadSection from './components/sections/LazyLoadSection.vue'
+import MemorySection from './components/sections/MemorySection.vue'
 import PartialBlocksSection from './components/sections/PartialBlocksSection.vue'
 import PlaygroundFooter from './components/sections/PlaygroundFooter.vue'
 import PlaygroundHeader from './components/sections/PlaygroundHeader.vue'
+import ScopeSyncSection from './components/sections/ScopeSyncSection.vue'
 import WildcardSection from './components/sections/WildcardSection.vue'
 import { usePlaygroundHooksFeed } from './composables/usePlaygroundHooksFeed'
 
@@ -15,7 +19,7 @@ const { t, messages } = i18n
 
 await useI18nScope(['common', 'ui'])
 
-const { events: hookEvents, clear: clearHookEvents } = usePlaygroundHooksFeed(i18n)
+const { events: hookEvents, clear: clearHookEvents, probeTranslate } = usePlaygroundHooksFeed(i18n)
 </script>
 
 <template>
@@ -30,6 +34,10 @@ const { events: hookEvents, clear: clearHookEvents } = usePlaygroundHooksFeed(i1
           <LazyLoadSection />
           <PartialBlocksSection />
           <WildcardSection />
+          <FallbackSection />
+          <ScopeSyncSection />
+          <MemorySection />
+          <DynamicLoadersSection />
         </div>
 
         <PlaygroundFooter />
@@ -42,11 +50,13 @@ const { events: hookEvents, clear: clearHookEvents } = usePlaygroundHooksFeed(i1
       :runtime-hooks-label="t('ui.debug.runtimeHooks')"
       :empty-hooks-label="t('ui.debug.empty')"
       :clear-label="t('ui.debug.clear')"
+      :probe-label="t('ui.debug.probe')"
       :blocks-label="t('ui.debug.blocks')"
       :keys-label="t('ui.debug.keys')"
       :messages="messages"
       :hook-events="hookEvents"
       @clear="clearHookEvents"
+      @probe-translate="probeTranslate"
     />
   </div>
 </template>

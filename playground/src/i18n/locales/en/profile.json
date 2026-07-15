@@ -1,0 +1,5 @@
+{
+  "title": "Account profile",
+  "subtitle": "Loaded with useI18nScopeSync",
+  "hint": "No <Suspense> needed — the block streams in and `ready` flips to true."
+}

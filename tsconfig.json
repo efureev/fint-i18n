@@ -21,6 +21,7 @@
       "@/*": ["./src/*"],
       "@feugene/fint-i18n": ["./src/index.ts"],
       "@feugene/fint-i18n/core": ["./src/core/index.ts"],
+      "@feugene/fint-i18n/vue/global-types": ["./src/vue/global-types.ts"],
       "@feugene/fint-i18n/vue": ["./src/vue/index.ts"],
       "@feugene/fint-i18n/plugins": ["./src/plugins/index.ts"]
     },

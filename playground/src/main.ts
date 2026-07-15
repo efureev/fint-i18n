@@ -4,8 +4,13 @@ import 'virtual:uno.css'
 import '@unocss/reset/tailwind.css'
 
 import { createFintI18n } from '@feugene/fint-i18n/core'
-import { installI18n } from '@feugene/fint-i18n/vue'
+import { createFintI18nPlugin } from '@feugene/fint-i18n/vue'
 import { PersistencePlugin } from '@feugene/fint-i18n/plugins'
+
+// Opt-in global type augmentation: makes `$t`, `$i18n` and `v-t` type-check in
+// templates. Runtime registration is done by the plugin below; this import only
+// adds the TypeScript declarations (no runtime cost).
+import '@feugene/fint-i18n/vue/global-types'
 
 // ---------------------------------------------------------------------------
 // Вариант 1 (используется в playground): per-locale импорт.
@@ -44,9 +49,26 @@ import { en, ru } from './i18n/messages'
 // // а не массив), её можно добавить как есть — без spread:
 // //   const loaders = [...coreMessages, singlePackage, ...appMessages]
 
-const i18n = createFintI18n({
+// Optional typed message schema: passing it to `createFintI18n<Schema>()` gives
+// `t()` autocompletion and typo-checking for these literal keys, while still
+// accepting arbitrary strings for dynamically built keys (lazy blocks, etc.).
+type PlaygroundMessages = {
+  common: {
+    welcome: string
+    changeLang: string
+    currentLang: string
+    blocks: string
+    namePlaceholder: string
+    escaped: string
+  }
+}
+
+const i18n = createFintI18n<PlaygroundMessages>({
   locale: 'en',
   fallbackLocale: 'en',
+  // Preload the fallback locale alongside each block so the fallback chain
+  // (see the "Fallback locale" section) resolves even before a locale switch.
+  preloadFallback: true,
   // Per-locale imports keep the bundle tree-shakable: only the languages
   // listed here end up in the production build.
   loaders: [en, ru],
@@ -60,5 +82,7 @@ const i18n = createFintI18n({
 })
 
 const app = createApp(App)
-installI18n(app, i18n)
+// Conventional Vue plugin form (wraps installI18n): registers provide/inject,
+// the global `$t`/`$i18n` properties and the `v-t` directive.
+app.use(createFintI18nPlugin(i18n))
 app.mount('#app')

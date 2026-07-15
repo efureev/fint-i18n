@@ -1,7 +1,7 @@
 import { onScopeDispose, shallowRef } from 'vue'
 import type { FintI18n } from '@feugene/fint-i18n/core'
 
-type HookEventName = 'onLocaleChange' | 'beforeLoadBlock' | 'afterLoadBlock' | 'onMissingKey'
+type HookEventName = 'onLocaleChange' | 'beforeLoadBlock' | 'afterLoadBlock' | 'onMissingKey' | 'onError' | 'onTranslate'
 
 interface HookEventEntry {
   id: number
@@ -76,10 +76,29 @@ export function usePlaygroundHooksFeed(i18n: FintI18n, options: HookFeedOptions 
     i18n.hooks.on('beforeLoadBlock', data => appendEvent('beforeLoadBlock', data)),
     i18n.hooks.on('afterLoadBlock', data => appendEvent('afterLoadBlock', data)),
     i18n.hooks.on('onMissingKey', data => appendEvent('onMissingKey', data)),
+    i18n.hooks.on('onError', data => appendEvent('onError', {
+      message: data.error instanceof Error ? data.error.message : String(data.error),
+      block: data.block,
+      locale: data.locale,
+    })),
   ]
 
   const clear = () => {
     events.value = []
+  }
+
+  /**
+   * One-shot `onTranslate` probe. `onTranslate` fires on *every* `t()` call, so
+   * subscribing permanently and rendering the result would loop; instead we
+   * subscribe, run a single translation, capture its payload, and unsubscribe.
+   */
+  const probeTranslate = () => {
+    const off = i18n.hooks.on('onTranslate', (data) => {
+      off()
+      appendEvent('onTranslate', { key: data.key, result: data.result })
+      return data
+    })
+    i18n.t('common.welcome', { name: 'onTranslate probe' })
   }
 
   onScopeDispose(() => {
@@ -91,5 +110,6 @@ export function usePlaygroundHooksFeed(i18n: FintI18n, options: HookFeedOptions 
   return {
     events,
     clear,
+    probeTranslate,
   }
 }

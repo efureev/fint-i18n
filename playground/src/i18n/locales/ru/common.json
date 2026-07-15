@@ -3,5 +3,6 @@
   "changeLang": "Сменить язык",
   "currentLang": "Текущий язык: {lang}",
   "blocks": "Загруженные блоки: {blocks}",
-  "namePlaceholder": "Введите ваше имя..."
+  "namePlaceholder": "Введите ваше имя...",
+  "escaped": "Экранирование: {{braces}} остаётся как есть, а {name} подставляется"
 }
