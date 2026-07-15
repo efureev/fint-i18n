@@ -5,13 +5,15 @@ export type HookFn<T = any> = (arg: T) => void | T | Promise<void | T>
 type HookPayload<K extends keyof FintI18nHooks> = Parameters<FintI18nHooks[K]>[0]
 
 export interface FintI18nHooks {
-  'beforeInit': HookFn<any>
+  /** Эмитится синхронно в конце конструктора — подписаться успевают только плагины. */
   'afterInit': HookFn<void>
   'onLocaleChange': HookFn<{ locale: Locale, previous: Locale }>
   'beforeLoadBlock': HookFn<string>
   'afterLoadBlock': HookFn<{ block: string, locale: Locale, messages: any }>
   'onMissingKey': HookFn<{ key: string, locale: Locale }>
   'onTranslate': HookFn<{ key: string, params?: any, result: string | undefined }>
+  /** Ошибки асинхронной загрузки блоков. Без подписчиков — console.error. */
+  'onError': HookFn<{ error: unknown, block?: string, locale?: Locale }>
 }
 
 export class HookManager {
@@ -28,6 +30,11 @@ export class HookManager {
     }
 
     return () => this.off(name, fn)
+  }
+
+  has<K extends keyof FintI18nHooks>(name: K): boolean {
+    const hooks = this.hooks.get(name)
+    return !!hooks && hooks.length > 0
   }
 
   off<K extends keyof FintI18nHooks>(name: K, fn: FintI18nHooks[K]): void {

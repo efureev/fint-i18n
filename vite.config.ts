@@ -60,6 +60,7 @@ export default defineConfig(({mode}) => {
                     index: fileURLToPath(new URL('./src/index.ts', import.meta.url)),
                     core: fileURLToPath(new URL('./src/core/index.ts', import.meta.url)),
                     vue: fileURLToPath(new URL('./src/vue/index.ts', import.meta.url)),
+                    'vue-global-types': fileURLToPath(new URL('./src/vue/global-types.ts', import.meta.url)),
                     plugins: fileURLToPath(new URL('./src/plugins/index.ts', import.meta.url)),
                 },
                 formats: ['es'],

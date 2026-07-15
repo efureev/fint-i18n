@@ -1,4 +1,4 @@
-import type { FintI18n, FintI18nHooks, FintI18nPlugin } from '@/core'
+import type { FintI18n, FintI18nHooks, FintI18nPlugin } from '../core'
 
 type LoggerFn = (message?: any, ...optionalParams: any[]) => void
 type HookName = keyof FintI18nHooks
@@ -10,18 +10,19 @@ export interface HookLoggerPluginOptions {
 }
 
 const hookNames: HookName[] = [
-  'beforeInit',
   'afterInit',
   'onLocaleChange',
   'beforeLoadBlock',
   'afterLoadBlock',
   'onMissingKey',
-  'onTranslate'
+  'onTranslate',
+  'onError'
 ]
 
 export class HookLoggerPlugin implements FintI18nPlugin {
   public name = 'hook-logger'
   private options: Required<HookLoggerPluginOptions>
+  private hookUnsubscribers: (() => void)[] = []
 
   constructor(options: HookLoggerPluginOptions = {}) {
     this.options = {
@@ -35,10 +36,16 @@ export class HookLoggerPlugin implements FintI18nPlugin {
     hookNames.forEach(hookName => this.registerHook(i18n, hookName))
   }
 
+  uninstall() {
+    this.hookUnsubscribers.forEach(off => off())
+    this.hookUnsubscribers = []
+  }
+
   private registerHook<K extends HookName>(i18n: FintI18n, hookName: K) {
-    i18n.hooks.on(hookName, (payload: HookPayload<K>) => {
+    const logHook = (payload: HookPayload<K>) => {
       this.options.logger(`${this.options.prefix} "${hookName}" called`, payload)
       return payload
-    })
+    }
+    this.hookUnsubscribers.push(i18n.hooks.on(hookName, logHook as FintI18nHooks[K]))
   }
 }

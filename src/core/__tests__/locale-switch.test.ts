@@ -37,11 +37,14 @@ describe('FintI18n Locale Switching', () => {
     i18n.registerUsage('common')
     await i18n.loadBlock('common')
     
+    // Дожидаемся полного переключения: локаль применяется после загрузки блоков
+    const localeChanged = new Promise(resolve => i18n.hooks.on('onLocaleChange', resolve))
+
     i18n.locale.value = 'ru'
-    
-    // Дождемся загрузки блока
-    await new Promise(resolve => i18n.hooks.on('afterLoadBlock', resolve))
-    
+
+    await localeChanged
+
+    expect(i18n.locale.value).toBe('ru')
     expect(i18n.t('common.welcome')).toBe('Привет')
   })
 

@@ -24,15 +24,32 @@ export class LocaleLoaderRegistry {
   private readonly loaders: NormalizedLocaleLoaderCollection
   // Объединение всех имён блоков по всем локалям. Используется для O(N) развёртки
   // wildcard-паттернов без повторной итерации по каждой локали.
-  private readonly knownBlockNames: string[]
+  // Пересчитывается при регистрации новых лоадеров через add().
+  private knownBlockNames: string[]
 
   constructor(source?: LocaleLoaderSource) {
     this.loaders = this.normalize(source)
     this.knownBlockNames = this.collectKnownBlockNames(this.loaders)
   }
 
+  /**
+   * Зарегистрировать дополнительные лоадеры после создания реестра
+   * (микрофронтенды, динамически подключаемые модули).
+   */
+  public add(source: LocaleLoaderSource): void {
+    const collections = Array.isArray(source) ? source : [source]
+    for (const collection of collections) {
+      this.mergeCollection(this.loaders, collection)
+    }
+    this.knownBlockNames = this.collectKnownBlockNames(this.loaders)
+  }
+
   public getKnownBlockNames(): readonly string[] {
     return this.knownBlockNames
+  }
+
+  public getKnownLocales(): Locale[] {
+    return Object.keys(this.loaders)
   }
 
   /**

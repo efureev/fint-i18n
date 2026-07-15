@@ -1,4 +1,4 @@
-import type { FintI18n, FintI18nPlugin } from '@/core'
+import type { FintI18n, FintI18nPlugin } from '../core'
 
 export interface PersistenceOptions {
   key?: string
@@ -9,6 +9,8 @@ export interface PersistenceOptions {
 export class PersistencePlugin implements FintI18nPlugin {
   public name = 'persistence'
   private options: PersistenceOptions
+  private offLocaleChange?: () => void
+  private storageListener?: (event: StorageEvent) => void
 
   constructor(options: PersistenceOptions = {}) {
     this.options = {
@@ -24,25 +26,43 @@ export class PersistencePlugin implements FintI18nPlugin {
 
     if (!storage || typeof storage.getItem !== 'function') return
 
+    // Значение из storage могло устареть или быть подменено —
+    // принимаем только локали, известные из зарегистрированных лоадеров.
+    const isValidLocale = (value: string | null): value is string => {
+      if (!value) return false
+      const known = i18n.getKnownLocales()
+      return known.length === 0 || known.includes(value)
+    }
+
     // Load initial locale
     const saved = storage.getItem(storageKey)
-    if (saved) {
-      i18n.locale.value = saved
+    if (isValidLocale(saved) && saved !== i18n.locale.value) {
+      void i18n.setLocale(saved)
     }
 
     // Save on change
-    i18n.hooks.on('onLocaleChange', ({ locale }) => {
+    this.offLocaleChange = i18n.hooks.on('onLocaleChange', ({ locale }) => {
       storage.setItem(storageKey, locale)
     })
 
     // Sync tabs
     if (this.options.syncTabs && typeof window !== 'undefined') {
-      window.addEventListener('storage', (event) => {
-        if (event.key === storageKey && event.newValue && event.newValue !== i18n.locale.value) {
-          i18n.locale.value = event.newValue
+      this.storageListener = (event: StorageEvent) => {
+        if (event.key === storageKey && isValidLocale(event.newValue) && event.newValue !== i18n.locale.value) {
+          void i18n.setLocale(event.newValue)
         }
-      })
+      }
+      window.addEventListener('storage', this.storageListener)
+    }
+  }
+
+  uninstall() {
+    this.offLocaleChange?.()
+    this.offLocaleChange = undefined
+
+    if (this.storageListener && typeof window !== 'undefined') {
+      window.removeEventListener('storage', this.storageListener)
+      this.storageListener = undefined
     }
   }
 }
-

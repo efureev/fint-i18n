@@ -1,5 +1,5 @@
-import type { App } from 'vue'
-import type { FintI18n } from '@/core'
+import type { App, Plugin } from 'vue'
+import type { FintI18n } from '../core'
 import { createVTDirective } from './directive'
 import { FINT_I18N_KEY } from './inject'
 
@@ -37,5 +37,17 @@ export function installI18n(app: App, i18n: FintI18n, options: InstallI18nOption
 
   if (directiveName) {
     app.directive(directiveName, createVTDirective(i18n))
+  }
+}
+
+/**
+ * Стандартный Vue-плагин поверх `installI18n` — для конвенционального
+ * `app.use(createFintI18nPlugin(i18n))`.
+ */
+export function createFintI18nPlugin(i18n: FintI18n, options: InstallI18nOptions = {}): Plugin {
+  return {
+    install(app: App) {
+      installI18n(app, i18n, options)
+    },
   }
 }

@@ -1,79 +1,136 @@
-import { reactive, ref, type Ref, watch } from 'vue'
+import { computed, reactive, readonly, ref, type Ref, type WritableComputedRef } from 'vue'
 import { compileTemplate, type MessageFunction } from './compiler'
 import { HookManager } from './hooks'
 import { isBlockPattern, LocaleLoaderRegistry } from './loader-registry'
 import { deepMerge, getMessageValue, isMessageObject, mergeMessageValues } from './message-utils'
 import { normalizeTranslateParams } from './translate-params'
-import type { FintI18nOptions, Locale, MessageValue, TranslateOptions } from './types'
+import type { FintI18nOptions, FintI18nPlugin, Locale, LocaleLoaderSource, MessageKey, MessageSchema, MessageValue, TranslateOptions } from './types'
 
-export class FintI18n {
-  public locale: Ref<Locale>
+export class FintI18n<Schema extends MessageSchema = any> {
+  /**
+   * Текущая локаль. Чтение реактивно.
+   * Прямая запись в `.value` устарела: она делегирует в `setLocale()` —
+   * используйте `setLocale()` напрямую.
+   */
+  public readonly locale: WritableComputedRef<Locale>
   public fallbackLocale: Locale
-  public readonly messages: Record<Locale, any> = reactive({})
+  private readonly messagesStore: Record<Locale, any> = reactive({})
+  /** Read-only представление словарей. Изменение — только через `mergeMessages()`. */
+  public readonly messages: Readonly<Record<Locale, MessageSchema>> = readonly(this.messagesStore)
+  private readonly localeRef: Ref<Locale>
+  private readonly preloadFallback: boolean
+  private readonly unloadUnusedBlocks: boolean
   private compiledMessages: Record<Locale, Record<string, MessageFunction>> = Object.create(null)
   private readonly loaderRegistry: LocaleLoaderRegistry
   private loadingBlocks: Map<string, Promise<void>> = new Map()
   private loadedBlocks: Map<Locale, Set<string>> = new Map()
   private blockUsageCounters: Map<string, number> = new Map()
   // Кэш развёртки wildcard-паттернов: pattern → конкретные имена блоков.
-  // Кэшируется один раз (при первом обращении), т.к. набор лоадеров неизменен после конструктора.
+  // Сбрасывается при регистрации новых лоадеров через addLoaders().
   private patternExpansionCache: Map<string, string[]> = new Map()
   private pendingUsedBlockLoads: Map<Locale, Promise<void>> = new Map()
-  private skipNextUsedBlockLoadLocale: Locale | null = null
+  // Монотонный счётчик переключений локали: при конкурентных setLocale()
+  // применяется только последний запрошенный переход.
+  private localeEpoch = 0
+  private missingKeyReported: Set<string> = new Set()
+  private localeSetterWarned = false
+  private readonly installedPlugins: FintI18nPlugin[] = []
 
   public hooks = new HookManager()
 
   constructor(options: FintI18nOptions) {
-    this.locale = ref(options.locale)
+    this.localeRef = ref(options.locale)
+    this.locale = computed({
+      get: () => this.localeRef.value,
+      set: (value: Locale) => {
+        if (!this.localeSetterWarned) {
+          this.localeSetterWarned = true
+          console.warn('[fint-i18n] Direct assignment to `locale.value` is deprecated, use `setLocale()` instead')
+        }
+        void this.setLocale(value)
+      },
+    })
     this.fallbackLocale = options.fallbackLocale || ''
+    this.preloadFallback = options.preloadFallback ?? false
+    this.unloadUnusedBlocks = options.unloadUnusedBlocks ?? false
     this.loaderRegistry = new LocaleLoaderRegistry(options.loaders)
 
     if (options.plugins) {
-      options.plugins.forEach(p => p.install(this))
+      options.plugins.forEach((p) => {
+        p.install(this)
+        this.installedPlugins.push(p)
+      })
     }
-
-    // Следим за изменением локали для автоматической подгрузки блоков
-    watch(this.locale, (newLocale, oldLocale) => {
-      if (newLocale !== oldLocale) {
-        if (this.skipNextUsedBlockLoadLocale === newLocale) {
-          this.skipNextUsedBlockLoadLocale = null
-          return
-        }
-
-        void this.loadUsedBlocks(newLocale)
-      }
-    })
 
     this.hooks.emitSync('afterInit', undefined)
   }
 
+  /** Деинициализация: вызывает `uninstall` у установленных плагинов. */
+  public dispose = (): void => {
+    for (const plugin of this.installedPlugins) {
+      plugin.uninstall?.(this)
+    }
+    this.installedPlugins.length = 0
+  }
 
-  public t = (key: string, params?: Record<string, any>, options?: TranslateOptions): string => {
-    const locale = this.locale.value
+  /**
+   * Зарегистрировать дополнительные лоадеры после создания инстанса
+   * (микрофронтенды, динамически подключаемые модули).
+   */
+  public addLoaders = (source: LocaleLoaderSource): void => {
+    this.loaderRegistry.add(source)
+    this.patternExpansionCache.clear()
+  }
+
+  /** Локали, известные из зарегистрированных лоадеров. */
+  public getKnownLocales = (): readonly Locale[] => this.loaderRegistry.getKnownLocales()
+
+  public t = (key: MessageKey<Schema>, params?: Record<string, any>, options?: TranslateOptions): string => {
+    const locale = this.localeRef.value
     const cleanParams = normalizeTranslateParams(params)
+
+    let resolved = this.resolve(locale, key, cleanParams)
+
+    if (resolved === undefined) {
+      const fallbackLocale = options?.fallbackLocale || this.fallbackLocale
+      if (fallbackLocale && fallbackLocale !== locale) {
+        resolved = this.resolve(fallbackLocale, key, cleanParams)
+      }
+    }
 
     const data = this.hooks.emitSync('onTranslate', {
       key,
       params: cleanParams,
-      result: this.resolve(locale, key, cleanParams)
+      result: resolved,
     })
 
-    const result = data.result ?? key
+    if (data.result === undefined) {
+      this.reportMissingKey(key, locale)
+      return key
+    }
 
-    if (result === key) {
-      const fallbackLocale = options?.fallbackLocale || this.fallbackLocale
-      if (fallbackLocale && fallbackLocale !== locale) {
-        const fallbackResult = this.resolve(fallbackLocale, key, cleanParams)
-        if (fallbackResult !== undefined) {
-          return fallbackResult
-        }
-      }
+    return data.result
+  }
 
-      this.hooks.emit('onMissingKey', { key, locale }).catch(err => {
-        console.error('[fint-i18n] Error in onMissingKey hook:', err)
+  private reportMissingKey = (key: string, locale: Locale) => {
+    const dedupeKey = `${locale}:${key}`
+    if (this.missingKeyReported.has(dedupeKey)) return
+    this.missingKeyReported.add(dedupeKey)
+
+    this.hooks.emit('onMissingKey', { key, locale }).catch((err) => {
+      console.error('[fint-i18n] Error in onMissingKey hook:', err)
+    })
+  }
+
+  private reportError = (error: unknown, context: { block?: string, locale?: Locale } = {}) => {
+    if (this.hooks.has('onError')) {
+      this.hooks.emit('onError', { error, ...context }).catch((err) => {
+        console.error('[fint-i18n] Error in onError hook:', err)
       })
     }
-    return result
+    else {
+      console.error('[fint-i18n] Unhandled error:', error, context)
+    }
   }
 
   private resolve = (locale: Locale, key: string, params?: Record<string, any>): string | undefined => {
@@ -82,7 +139,7 @@ export class FintI18n {
       return compiled(params)
     }
 
-    const messages = this.messages[locale]
+    const messages = this.messagesStore[locale]
     if (!messages) return undefined
 
     const current = getMessageValue(messages, key)
@@ -112,8 +169,25 @@ export class FintI18n {
   }
 
   /**
+   * Инвалидировать кэш компиляции для поддерева блока: сам блок и все
+   * вложенные ключи. Вызывается перед каждым merge, чтобы перезаписанные
+   * сообщения не отдавались из устаревшего кэша.
+   */
+  private invalidateCompiled = (locale: Locale, blockName: string) => {
+    const compiled = this.compiledMessages[locale]
+    if (!compiled) return
+
+    const prefix = `${blockName}.`
+    for (const key in compiled) {
+      if (key === blockName || key.startsWith(prefix)) {
+        delete compiled[key]
+      }
+    }
+  }
+
+  /**
    * Развернуть wildcard-паттерн в список конкретных имён блоков.
-   * Результат кэшируется по строке паттерна (набор лоадеров неизменен).
+   * Результат кэшируется по строке паттерна; кэш сбрасывается в addLoaders().
    * Не-паттерны возвращают пустой массив.
    */
   private expandPattern = (pattern: string): string[] => {
@@ -126,7 +200,7 @@ export class FintI18n {
   }
 
   public loadBlock = async (blockName: string, locale?: Locale): Promise<void> => {
-    const targetLocale = locale || this.locale.value
+    const targetLocale = locale || this.localeRef.value
 
     // Wildcard-паттерн: разворачиваем и грузим конкретные блоки параллельно.
     if (isBlockPattern(blockName)) {
@@ -141,6 +215,14 @@ export class FintI18n {
       return
     }
 
+    const jobs = [this.loadConcreteBlock(blockName, targetLocale)]
+    if (this.preloadFallback && this.fallbackLocale && this.fallbackLocale !== targetLocale) {
+      jobs.push(this.loadConcreteBlock(blockName, this.fallbackLocale))
+    }
+    await Promise.all(jobs)
+  }
+
+  private loadConcreteBlock = async (blockName: string, targetLocale: Locale): Promise<void> => {
     const loadKey = `${targetLocale}:${blockName}`
 
     if (this.isBlockLoaded(blockName, targetLocale)) return
@@ -161,7 +243,11 @@ export class FintI18n {
 
         for (const loader of resolvedLoaders.loaders) {
           const module = await loader()
-          const messages = (module.default || module) as MessageValue
+          const messages = (
+            module && typeof module === 'object' && 'default' in module && module.default
+              ? module.default
+              : module
+          ) as MessageValue
 
           this.mergeMessages(targetLocale, resolvedLoaders.resolvedBlockName, messages)
           loadedMessages = loadedMessages === undefined
@@ -187,8 +273,10 @@ export class FintI18n {
   }
 
   public mergeMessages = (locale: Locale, blockName: string, messages: MessageValue) => {
-    if (!this.messages[locale]) {
-      this.messages[locale] = reactive({})
+    this.invalidateCompiled(locale, blockName)
+
+    if (!this.messagesStore[locale]) {
+      this.messagesStore[locale] = reactive({})
     }
 
     const path = blockName.split('.')
@@ -196,21 +284,21 @@ export class FintI18n {
 
     if (path.length === 1) {
       if (isMessageObject(messages)) {
-        if (!this.messages[locale][rootBlockName] || typeof this.messages[locale][rootBlockName] !== 'object') {
-          this.messages[locale][rootBlockName] = reactive({})
+        if (!this.messagesStore[locale][rootBlockName] || typeof this.messagesStore[locale][rootBlockName] !== 'object') {
+          this.messagesStore[locale][rootBlockName] = reactive({})
         }
-        deepMerge(this.messages[locale][rootBlockName], messages)
+        deepMerge(this.messagesStore[locale][rootBlockName], messages)
       }
       else {
-        this.messages[locale][rootBlockName] = messages
+        this.messagesStore[locale][rootBlockName] = messages
       }
     }
     else {
-      if (!this.messages[locale][rootBlockName] || typeof this.messages[locale][rootBlockName] !== 'object') {
-        this.messages[locale][rootBlockName] = reactive({})
+      if (!this.messagesStore[locale][rootBlockName] || typeof this.messagesStore[locale][rootBlockName] !== 'object') {
+        this.messagesStore[locale][rootBlockName] = reactive({})
       }
 
-      let target = this.messages[locale][rootBlockName]
+      let target = this.messagesStore[locale][rootBlockName]
       for (let i = 1; i < path.length; i++) {
         const subKey = path[i]
         if (!target[subKey] || typeof target[subKey] !== 'object') {
@@ -257,7 +345,7 @@ export class FintI18n {
   }
 
   public isBlockLoaded = (blockName: string, locale?: Locale): boolean => {
-    const targetLocale = locale || this.locale.value
+    const targetLocale = locale || this.localeRef.value
     const loadedSet = this.loadedBlocks.get(targetLocale)
     if (!loadedSet) return false
 
@@ -279,42 +367,82 @@ export class FintI18n {
       this.loadedBlocks.set(locale, new Set())
     }
     this.loadedBlocks.get(locale)!.add(blockName)
+    // Появились новые сообщения — ключи могли перестать быть missing.
+    this.missingKeyReported.clear()
   }
 
   public loadUsedBlocks = async (locale: Locale): Promise<void> => {
-    const pendingLoad = this.pendingUsedBlockLoads.get(locale)
-    if (pendingLoad) {
-      await pendingLoad
-      return
-    }
+    // Цикл до сходимости: блоки, зарегистрированные во время текущей
+    // загрузки, догружаются следующей итерацией, а не теряются.
+    let previousSnapshot = ''
 
-    const loadPromise = (async () => {
-      const promises: Promise<void>[] = []
+    for (;;) {
+      const pendingLoad = this.pendingUsedBlockLoads.get(locale)
+      if (pendingLoad) {
+        await pendingLoad
+        continue
+      }
+
+      const blocks: string[] = []
       for (const [blockName, count] of this.blockUsageCounters.entries()) {
-        if (count > 0) {
-          promises.push(this.loadBlock(blockName, locale))
+        if (count > 0 && !this.isBlockLoaded(blockName, locale)) {
+          blocks.push(blockName)
         }
       }
-      await Promise.all(promises)
-    })()
+      if (blocks.length === 0) return
 
-    this.pendingUsedBlockLoads.set(locale, loadPromise)
+      // Защита от вечного цикла: если после загрузки набор не изменился
+      // (например, блок стабильно падает и не помечается загруженным) — выходим.
+      const snapshot = blocks.join(',')
+      if (snapshot === previousSnapshot) return
+      previousSnapshot = snapshot
 
-    try {
-      await loadPromise
-    }
-    finally {
-      this.pendingUsedBlockLoads.delete(locale)
+      // Ошибка одного блока не должна отменять загрузку остальных:
+      // собираем все результаты и репортим отказы через onError.
+      const loadPromise = (async () => {
+        const results = await Promise.allSettled(blocks.map(blockName => this.loadBlock(blockName, locale)))
+        results.forEach((result, i) => {
+          if (result.status === 'rejected') {
+            this.reportError(result.reason, { block: blocks[i], locale })
+          }
+        })
+      })()
+
+      this.pendingUsedBlockLoads.set(locale, loadPromise)
+
+      try {
+        await loadPromise
+      }
+      finally {
+        this.pendingUsedBlockLoads.delete(locale)
+      }
     }
   }
 
+  private hasUnloadedUsedBlocks = (locale: Locale): boolean => {
+    if (this.pendingUsedBlockLoads.has(locale)) return true
+    for (const [blockName, count] of this.blockUsageCounters.entries()) {
+      if (count > 0 && !this.isBlockLoaded(blockName, locale)) return true
+    }
+    return false
+  }
+
   public setLocale = async (newLocale: Locale): Promise<void> => {
-    const previous = this.locale.value
+    const previous = this.localeRef.value
     if (previous === newLocale) return
 
-    await this.loadUsedBlocks(newLocale)
-    this.skipNextUsedBlockLoadLocale = newLocale
-    this.locale.value = newLocale
+    const epoch = ++this.localeEpoch
+
+    // Догружаем блоки ДО переключения, чтобы не показывать сырые ключи.
+    // Если догружать нечего — локаль применяется синхронно (до первого await).
+    if (this.hasUnloadedUsedBlocks(newLocale)) {
+      await this.loadUsedBlocks(newLocale)
+      // Пока грузились блоки, запросили другой переход — этот устарел.
+      if (epoch !== this.localeEpoch) return
+    }
+
+    this.localeRef.value = newLocale
+    this.missingKeyReported.clear()
     this.hooks.emitSync('onLocaleChange', { locale: newLocale, previous })
   }
 
@@ -373,14 +501,50 @@ export class FintI18n {
     const count = this.blockUsageCounters.get(blockName) || 0
     if (count <= 1) {
       this.blockUsageCounters.delete(blockName)
+      if (this.unloadUnusedBlocks) {
+        this.unloadBlockAllLocales(blockName)
+      }
     }
     else {
       this.blockUsageCounters.set(blockName, count - 1)
     }
   }
 
+  /**
+   * Выгрузить блок из памяти: удалить поддерево сообщений, инвалидировать
+   * кэш компиляции и сбросить отметку о загрузке (следующий `loadBlock`
+   * загрузит блок заново).
+   *
+   * Ограничение: если блок был загружен через родительский лоадер
+   * (например, `pages.articles` резолвится в `pages`), выгружать нужно
+   * по имени загруженного (родительского) блока.
+   */
+  public unloadBlock = (blockName: string, locale?: Locale): void => {
+    const targetLocale = locale || this.localeRef.value
+
+    const localeMessages = this.messagesStore[targetLocale]
+    if (localeMessages) {
+      const path = blockName.split('.')
+      let target: any = localeMessages
+      for (let i = 0; i < path.length - 1 && target; i++) {
+        target = typeof target === 'object' ? target[path[i]] : undefined
+      }
+      if (target && typeof target === 'object') {
+        delete target[path[path.length - 1]]
+      }
+    }
+
+    this.invalidateCompiled(targetLocale, blockName)
+    this.loadedBlocks.get(targetLocale)?.delete(blockName)
+  }
+
+  private unloadBlockAllLocales = (blockName: string): void => {
+    for (const locale of this.loadedBlocks.keys()) {
+      this.unloadBlock(blockName, locale)
+    }
+  }
 }
 
-export function createFintI18n(options: FintI18nOptions): FintI18n {
-  return new FintI18n(options)
+export function createFintI18n<Schema extends MessageSchema = any>(options: FintI18nOptions): FintI18n<Schema> {
+  return new FintI18n<Schema>(options)
 }

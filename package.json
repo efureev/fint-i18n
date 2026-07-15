@@ -1,8 +1,8 @@
 {
   "name": "@feugene/fint-i18n",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Lightweight Vue 3 i18n library with lazy-loading blocks and template caching",
-  "author": "feugene <feugene@example.com>",
+  "author": "Fureev Eugene<https://feugene.org>",
   "license": "MIT",
   "homepage": "https://github.com/efureev/fint-i18n#readme",
   "repository": {
@@ -36,6 +36,10 @@
     "./vue": {
       "types": "./dist/types/vue/index.d.ts",
       "import": "./dist/vue.js"
+    },
+    "./vue/global-types": {
+      "types": "./dist/types/vue/global-types.d.ts",
+      "import": "./dist/vue-global-types.js"
     },
     "./plugins": {
       "types": "./dist/types/plugins/index.d.ts",
