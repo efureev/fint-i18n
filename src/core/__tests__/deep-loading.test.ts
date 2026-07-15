@@ -47,7 +47,7 @@ describe('Deep JSON and Partial Loading', () => {
 
     // Проверяем структуру сообщений
     expect(i18nWithLoaders.messages.en.pages).toBeDefined()
-    expect(i18nWithLoaders.messages.en.pages.articles).toBeDefined()
+    expect((i18nWithLoaders.messages.en.pages as any).articles).toBeDefined()
     expect(i18nWithLoaders.messages.en['pages.articles']).toBeUndefined()
 
     expect(i18nWithLoaders.t('pages.articles.title')).toBe('Loaded Articles')

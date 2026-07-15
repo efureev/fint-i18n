@@ -7,11 +7,9 @@ on:
   pull_request:
     branches: [ main ]
 
+# Least privilege by default; jobs that need more raise it locally.
 permissions:
-  contents: write
-  packages: write
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: "pages"
@@ -34,6 +32,9 @@ jobs:
 
       - name: Lint
         run: yarn lint
+
+      - name: Type check
+        run: yarn type-check
 
       - name: Test
         run: yarn test:coverage:package
@@ -80,6 +81,21 @@ jobs:
 
       - name: Build package
         run: yarn build
+
+      # publint валидирует карту exports/files (в т.ч. добавленное условие `default`).
+      # --pack npm обязателен: dist в .gitignore, а `yarn pack` его отбрасывает.
+      - name: Check package publish surface (publint)
+        if: matrix.node == 24
+        run: npx --yes publint --pack npm
+
+      # Информационно: матрица резолва типов. ESM-only пакет ожидаемо «падает» под
+      # node10 и require() (CJS-потребителям нужен dynamic import) — это by design.
+      # Отдельно known-issue: баррели .d.ts используют extensionless-импорты и не
+      # резолвятся под node16-ESM (нужен bundling деклараций) — не гейтим сборку на этом.
+      - name: Check types resolution (arethetypeswrong)
+        if: matrix.node == 24
+        continue-on-error: true
+        run: npx --yes @arethetypeswrong/cli --pack
 
       - name: Build playground
         run: yarn playground:build
@@ -132,6 +148,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -145,11 +162,11 @@ jobs:
           name: dist
           path: dist
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
+      # Публикуем ровно тот артефакт, что собрал и протестировал build-and-test.
+      # --ignore-scripts отключает prepublishOnly, иначе npm пересобрал бы dist
+      # поверх скачанного (другой job, без кэша) — публиковался бы не тот байт.
       - name: Publish to NPM
-        run: npm publish --access public
+        run: npm publish --provenance --access public --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -162,9 +179,9 @@ jobs:
 
       - name: Publish to GitHub Packages
         run: |
-          # У GitHub Packages имя пакета (scope) должно совпадать с владельцем репозитория (efureev)
-          # Чтобы не менять основной package.json, временно меняем имя перед публикацией в GPR
-          sed -i 's/"name": "@feugene\/fint-i18n"/"name": "@efureev\/fint-i18n"/' package.json
+          # У GitHub Packages имя пакета (scope) должно совпадать с владельцем репозитория (efureev).
+          # Меняем имя структурным `npm pkg set` (без хрупкого sed по тексту JSON).
+          npm pkg set name=@efureev/fint-i18n
           npm publish --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

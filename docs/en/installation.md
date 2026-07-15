@@ -140,3 +140,25 @@ The package is written entirely in TypeScript and provides excellent DX out of t
 
 > [!TIP]
 > For maximum performance, the library uses JIT compilation. This means your string templates will be turned into optimized JS functions immediately after loading.
+
+### Migration: global type augmentation is now opt-in
+
+Runtime registration of `$t`, `$i18n`, and the `v-t` directive is done by
+`installI18n()` (with `globalInstall` enabled). However, the **TypeScript
+template typings** for these are no longer applied automatically — you must
+opt in by importing the augmentation module once (e.g. in your app entry or
+any `*.d.ts` picked up by your `tsconfig`):
+
+```typescript
+import '@feugene/fint-i18n/vue/global-types'
+```
+
+This declares `ComponentCustomProperties.$t` / `$i18n` and the `v-t` directive
+types so templates type-check under Volar / `vue-tsc`.
+
+> [!IMPORTANT]
+> Previously this augmentation was applied for you as a side effect of importing
+> the library. If you relied on template typings for `$t`/`$i18n`/`v-t`, add the
+> import above after upgrading — the runtime behavior is unchanged. This keeps
+> the global scope clean for consumers that use only composables or the
+> directive.

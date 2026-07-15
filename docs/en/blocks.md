@@ -230,4 +230,30 @@ Merge rules:
 `useI18nScope` implements a **Reference Counting** mechanism.
 - When the first component requests the `auth` block, it is loaded into memory.
 - When other components request `auth`, they use the already loaded data.
-- (Optional) When the last component using `auth` is unmounted, the data can be cleared to save memory (if configured).
+- When the last component using `auth` is unmounted, its usage counter drops to zero.
+
+By default, messages stay in memory after the counter reaches zero (they are
+cheap to keep and avoid a re-fetch if the block is needed again). To actively
+free memory, enable `unloadUnusedBlocks` at init:
+
+```typescript
+const i18n = createFintI18n({
+  locale: 'en',
+  unloadUnusedBlocks: true, // free a block when its usage counter hits 0
+  loaders: [/* ... */],
+})
+```
+
+With `unloadUnusedBlocks: true`, when the last consumer of a block unmounts,
+the library removes its message subtree and invalidates the compiled cache
+(across all locales). The next `loadBlock` / `useI18nScope` for that block
+reloads it from the loaders. You can also unload a specific block manually:
+
+```typescript
+i18n.unloadBlock('auth')          // current locale
+i18n.unloadBlock('auth', 'ru')    // specific locale
+```
+
+> [!NOTE]
+> If a block was loaded through a **parent** loader (e.g. `pages.articles`
+> resolved to `pages`), unload it by the loaded (parent) block name — `pages`.

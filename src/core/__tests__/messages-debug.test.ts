@@ -26,7 +26,7 @@ describe('FintI18n Messages Debug', () => {
     expect(Object.keys(i18n.messages.en.common)).toContain('user')
     
     // Check nested keys
-    const common = i18n.messages.en.common
+    const common = i18n.messages.en.common as any
     expect(common.user.profile).toBe('Profile')
 
     // Check keys in 'auth' block
@@ -52,7 +52,7 @@ describe('FintI18n Messages Debug', () => {
     expect(Object.keys(i18n.messages)).toContain('en')
     expect(Object.keys(i18n.messages)).toContain('ru')
 
-    expect((i18n.messages.en.common).hi).toBe('Hi')
-    expect((i18n.messages.ru.common).hi).toBe('Привет')
+    expect((i18n.messages.en.common as any).hi).toBe('Hi')
+    expect((i18n.messages.ru.common as any).hi).toBe('Привет')
   })
 })

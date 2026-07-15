@@ -28,7 +28,7 @@ const translateInstance = createFintI18n({
   },
 })
 
-translateInstance.messages.en = baseMessages
+translateInstance.mergeMessages('en', 'common', baseMessages.common)
 translateInstance.registerUsage('analytics')
 
 const localeSwitchInstance = createFintI18n({
@@ -44,8 +44,8 @@ const localeSwitchInstance = createFintI18n({
   },
 })
 
-localeSwitchInstance.messages.en = baseMessages
-localeSwitchInstance.messages.ru = baseMessages
+localeSwitchInstance.mergeMessages('en', 'common', baseMessages.common)
+localeSwitchInstance.mergeMessages('ru', 'common', baseMessages.common)
 localeSwitchInstance.registerUsage('analytics')
 
 await translateInstance.loadBlock('analytics', 'en')
