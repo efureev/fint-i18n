@@ -152,6 +152,88 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   /** Локали, известные из зарегистрированных лоадеров. */
   public getKnownLocales = (): readonly Locale[] => this.loaderRegistry.getKnownLocales()
 
+  /**
+   * Локали, на которые вообще можно переключиться: объединение
+   * зарегистрированных лоадеров и локалей, для которых сообщения уже
+   * смержены. Отличается от `getKnownLocales()` ровно этим вторым слагаемым —
+   * приложение, задающее словари через `mergeMessages()`, лоадеров не имеет.
+   *
+   * Чтение реактивно: вызов внутри `computed`/рендера пересчитается, когда
+   * появится новая локаль.
+   */
+  public getAvailableLocales = (): Locale[] => {
+    const locales = new Set<Locale>(this.loaderRegistry.getKnownLocales())
+
+    for (const locale in this.messagesStore) locales.add(locale)
+
+    return [...locales]
+  }
+
+  /**
+   * Есть ли перевод для ключа. Единственный честный способ это спросить:
+   * сравнение `t(key) !== key` врёт на сообщении, значение которого совпадает
+   * с его собственным ключом.
+   *
+   * Без явной локали проверяется то же, что разрешил бы `t()`: текущая локаль,
+   * затем `fallbackLocale`.
+   */
+  public te = (key: MessageKey<Schema>, locale?: Locale): boolean => {
+    if (locale !== undefined) return this.hasMessage(locale, key)
+
+    const current = this.localeRef.value
+    if (this.hasMessage(current, key)) return true
+
+    return Boolean(this.fallbackLocale)
+      && this.fallbackLocale !== current
+      && this.hasMessage(this.fallbackLocale, key)
+  }
+
+  /**
+   * Сырое поддерево сообщений — когда переводы нужны как данные: пункты меню,
+   * колонки таблицы, списки.
+   *
+   * Отдаётся `readonly`: мутация в обход `mergeMessages()` не инвалидировала бы
+   * кэш компиляции. Для листа возвращается `undefined` — лист читается через
+   * `t()`; набор плюральных форм тоже лист, хотя и объект.
+   */
+  public tm = (key: MessageKey<Schema>, locale?: Locale): Readonly<MessageSchema> | undefined => {
+    const subtree = locale !== undefined
+      ? this.subtree(locale, key)
+      : this.subtree(this.localeRef.value, key)
+        ?? (this.fallbackLocale && this.fallbackLocale !== this.localeRef.value
+          ? this.subtree(this.fallbackLocale, key)
+          : undefined)
+
+    return subtree && readonly(subtree)
+  }
+
+  private subtree = (locale: Locale, key: string): MessageSchema | undefined => {
+    const messages = this.messagesStore[locale]
+    if (!messages) return undefined
+
+    const value = getMessageValue(messages, key)
+
+    return isMessageObject(value) && !isPluralForms(value) ? value : undefined
+  }
+
+  /**
+   * Разрешим ли ключ в этой локали. Правила приёма значения обязаны совпадать
+   * с `resolve()`, иначе `te()` и `t()` разошлись бы в ответах.
+   */
+  private hasMessage = (locale: Locale, key: string): boolean => {
+    if (this.compiledMessages[locale]?.[key]) return true
+
+    const messages = this.messagesStore[locale]
+    if (!messages) return false
+
+    const value = getMessageValue(messages, key)
+
+    if (typeof value === 'string' || typeof value === 'function') return true
+    if (isPluralForms(value)) return true
+
+    return value !== undefined && value !== null && typeof value !== 'object'
+  }
+
   public t = (key: MessageKey<Schema>, params?: Record<string, any>, options?: TranslateOptions): string => {
     const locale = this.localeRef.value
     const cleanParams = normalizeTranslateParams(params)

@@ -6,7 +6,8 @@
     "2026-08-04 — plugins +150 B: PersistencePlugin validates the stored locale against a known set instead of accepting anything (audit F-18).",
     "2026-08-04 — chunks/format -75 B: expandPattern dropped its hand-rolled character loops for startsWith/includes (audit F-23); budget tightened so the saving cannot be given back silently.",
     "2026-08-04 — chunks/core +370 B: SSR snapshot/hydration (ANALYSIS #3). Note that this budget measures the shipped chunk, not what a consumer bundles: getSSRState/hydrate are free functions and tree-shake away entirely — a core+t() consumer grew by 52 B (the getLoadedBlocks enumerator on the class), and an SSR consumer by 287 B.",
-    "2026-08-05 — chunks/core +264 B: retry/timeout загрузки блоков (роадмап #7). Оценка в роадмапе была +150 B — занижена почти вдвое, основная часть сверх неё это withTimeout. Код в классе, поэтому не тришейкается: платят все, включая тех, кто опцию не задаёт."
+    "2026-08-05 — chunks/core +264 B: retry/timeout загрузки блоков (роадмап #7). Оценка в роадмапе была +150 B — занижена почти вдвое, основная часть сверх неё это withTimeout. Код в классе, поэтому не тришейкается: платят все, включая тех, кто опцию не задаёт.",
+    "2026-08-05 — chunks/core +217 B: te()/tm()/getAvailableLocales() (роадмап #4). Оценка в роадмапе была +80 B и относилась только к te/tm; getAvailableLocales добавился сверх неё, а readonly-обёртка в tm оказалась дороже ожидаемого. Методы класса, не тришейкаются."
   ],
   "entries": {
     "core.js": 370,
@@ -14,7 +15,7 @@
     "vue.js": 1455,
     "plugins.js": 1265,
     "vue-global-types.js": 60,
-    "chunks/core-": 5170,
+    "chunks/core-": 5395,
     "chunks/format-": 1415
   }
 }

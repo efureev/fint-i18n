@@ -13,5 +13,11 @@
     "other": "{n} файла"
   },
   "columns": "Имя | Почта",
-  "literalPipe": "Сочетание: Ctrl || Shift"
+  "literalPipe": "Сочетание: Ctrl || Shift",
+  "selfNamed": "common.selfNamed",
+  "menu": {
+    "home": "Главная",
+    "settings": "Настройки",
+    "profile": "Профиль"
+  }
 }

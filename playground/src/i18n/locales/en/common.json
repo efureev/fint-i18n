@@ -11,5 +11,11 @@
     "other": "{n} files"
   },
   "columns": "Name | Email",
-  "literalPipe": "Shortcut: Ctrl || Shift"
+  "literalPipe": "Shortcut: Ctrl || Shift",
+  "selfNamed": "common.selfNamed",
+  "menu": {
+    "home": "Home",
+    "settings": "Settings",
+    "profile": "Profile"
+  }
 }

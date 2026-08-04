@@ -9,6 +9,18 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **`te(key, locale?)`** — whether a translation exists. The only honest way to
+  ask: comparing `t(key)` with the key lies on a message whose value equals its
+  own key, which happens in technical dictionaries of codes and identifiers.
+  Resolution mirrors `t()`, including the fallback locale.
+- **`tm(key, locale?)`** — the raw message subtree, `readonly`, for translations
+  used as data: menus, table columns, lists. A leaf returns `undefined`; so does
+  a set of plural forms, which is a leaf even though it is an object.
+- **`getAvailableLocales()`** — every locale that can be switched to: the
+  loaders' locales plus the ones whose messages are already merged. Distinct from
+  `getKnownLocales()`, which only answers about loaders and returns `[]` for an
+  application built on `mergeMessages()`. Reading it is reactive.
+  `PersistencePlugin` now uses it instead of hand-rolling the same union.
 - **Retrying a failed block load.** `createFintI18n({ retry: { attempts, backoff,
   timeout } })` repeats a loader that threw. Off by default — without the option
   behaviour is unchanged, a single attempt.

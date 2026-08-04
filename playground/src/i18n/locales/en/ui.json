@@ -114,6 +114,38 @@
       "dateLabel": "Date",
       "dateTimeLabel": "Date and time",
       "cacheHint": "Formatter instances are cached by locale plus options — building them is the expensive part."
+    },
+    "introspection": {
+      "eyebrow": "12. Introspection",
+      "title": "`te()` and available locales",
+      "description": "Ask whether a translation exists, and list the locales you can switch to.",
+      "existsLabel": "te(key)",
+      "keyLabel": "Key",
+      "tLabel": "t(key)",
+      "compareLabel": "t(key) !== key",
+      "liesHint": "The last row is a message whose value equals its own key. `te()` answers correctly; comparing `t()` with the key does not.",
+      "localesLabel": "Locales",
+      "knownLabel": "getKnownLocales() — from loaders",
+      "availableLabel": "getAvailableLocales() — loaders plus merged messages",
+      "mergeButton": "mergeMessages() for a new locale",
+      "localesHint": "Merge a locale at runtime and watch only the second list grow: the first one answers a different question."
+    },
+    "subtree": {
+      "eyebrow": "13. Translations as data",
+      "title": "`tm()` — a subtree instead of a single message",
+      "description": "`t()` returns one message and needs its key. `tm()` returns a whole namespace, so a list can be driven by the dictionary — the component never names the items.",
+      "dictLabel": "In the dictionary",
+      "codeLabel": "In the component",
+      "resultLabel": "Rendered",
+      "pointHint": "Nothing in the code below mentions `home`, `settings` or `profile`. Add an entry to the dictionary and the list grows on its own — press the button and watch.",
+      "addButton": "mergeMessages() — add a menu entry",
+      "addedNote": "`common.menu.help` was merged at runtime. The component was not touched.",
+      "boundaryLabel": "What `tm()` returns",
+      "namespaceNote": "namespace → the subtree",
+      "leafNote": "leaf → undefined, read it with t()",
+      "pluralNote": "plural forms → undefined, a leaf too",
+      "missingNote": "missing key → undefined",
+      "readonlyHint": "The subtree is readonly: writing to it would bypass `mergeMessages()` and leave the compilation cache stale."
     }
   },
   "status": {

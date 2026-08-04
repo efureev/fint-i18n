@@ -285,6 +285,59 @@ Returns the locales known from the registered loaders.
 declare function getKnownLocales(): readonly Locale[];
 ```
 
+### `getAvailableLocales()`
+
+Returns every locale that can be switched to: the loaders' locales **plus** the
+ones whose messages are already merged. An application that builds dictionaries
+with `mergeMessages()` has no loaders at all, so `getKnownLocales()` would answer
+`[]` for it — this is the method a language switcher wants.
+
+```typescript
+declare function getAvailableLocales(): Locale[];
+```
+
+Reading is reactive: called inside a `computed` or a template, it recomputes when
+a new locale appears.
+
+### `te(key, locale?)`
+
+Whether a translation exists.
+
+```typescript
+declare function te(key: MessageKey<Schema>, locale?: Locale): boolean;
+```
+
+This is the only honest way to ask the question. Comparing `t(key)` with the key
+lies on a message whose value happens to equal its own key — a real case in
+technical dictionaries of codes and identifiers.
+
+Without an explicit `locale` the same resolution as `t()` applies: the current
+locale, then `fallbackLocale`. With one, only that locale is checked.
+
+The acceptance rules match `t()` exactly: strings, numbers, booleans, message
+functions and sets of plural forms all count as existing; a namespace does not.
+
+### `tm(key, locale?)`
+
+The raw message subtree, for cases where translations are data rather than text:
+menu items, table columns, lists.
+
+```typescript
+declare function tm(key: MessageKey<Schema>, locale?: Locale): Readonly<MessageSchema> | undefined;
+```
+
+```typescript
+for (const [name, label] of Object.entries(i18n.tm('common.menu') ?? {})) {
+  // …
+}
+```
+
+Returns `undefined` for a leaf — a leaf is read with `t()`. A set of plural forms
+is a leaf too, even though it is an object.
+
+The subtree is `readonly`: mutating it would bypass `mergeMessages()` and leave
+the compilation cache stale. Locale resolution follows the same rule as `te()`.
+
 ### `mergeMessages(locale, blockName, messages)`
 
 Manually adds messages to the store (used internally by `loadBlock`; useful for SSR hydration or tests).

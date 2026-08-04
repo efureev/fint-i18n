@@ -37,11 +37,9 @@ export class PersistencePlugin implements FintI18nPlugin {
   private knownLocales(i18n: FintI18n): readonly Locale[] | null {
     if (this.options.allowedLocales) return this.options.allowedLocales
 
-    const fromLoaders = i18n.getKnownLocales()
-    if (fromLoaders.length > 0) return fromLoaders
+    const available = i18n.getAvailableLocales()
 
-    const fromMessages = Object.keys(i18n.messages)
-    return fromMessages.length > 0 ? fromMessages : null
+    return available.length > 0 ? available : null
   }
 
   install(i18n: FintI18n) {
