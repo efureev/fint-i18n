@@ -100,8 +100,8 @@
       "counterLabel": "Count",
       "categoryLabel": "Selected CLDR category",
       "orderLabel": "Category order of this locale",
-      "notPluralLabel": "A pipe that is not a plural",
-      "notPluralHint": "Without a `count` an unlabelled message is returned whole; `||` renders a literal pipe."
+      "notPluralLabel": "Strings that merely contain a pipe",
+      "notPluralHint": "Plurals are the shape of the value, so no character in a string is special — both lines below are rendered whole."
     },
     "format": {
       "eyebrow": "11. Numbers and dates",

@@ -89,15 +89,15 @@ export const useUserStore = defineStore('user', () => {
 
 ## Plural Forms
 
-Plural forms live in the message itself and are selected by the `count` (or `n`) parameter —
-`t()` needs no separate method.
+Plural forms are an object whose keys are CLDR categories; the form is selected by the
+`count` (or `n`) parameter. `t()` needs no separate method.
 
 ```vue
 <script setup>
 import { useFintI18n } from '@feugene/fint-i18n/vue'
 
 const { t } = useFintI18n()
-// "one:{n} файл | few:{n} файла | many:{n} файлов"
+// files.count = { one: '{n} файл', few: '{n} файла', many: '{n} файлов', other: '{n} файла' }
 </script>
 
 <template>

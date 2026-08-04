@@ -515,57 +515,86 @@ i18n.t('literal')                    // "Use {{name}} as a placeholder" → "Use
 
 ## Pluralization
 
-Plural forms are part of the message, so `t()` handles them — there is no separate method. Forms are separated by `|`; the form is selected by `Intl.PluralRules` from the `count` parameter (or `n`).
+Plural forms are the **shape of the value**: an object whose keys are all form
+keys. `t()` picks the form by the `count` parameter (or `n`) through
+`Intl.PluralRules` — there is no separate method and no special syntax inside
+the string.
 
 ```typescript
 i18n.mergeMessages('ru', 'cart', {
-  items: 'one:{count} товар | few:{count} товара | many:{count} товаров',
+  items: {
+    '=0':    'корзина пуста',
+    'one':   '{count} товар',
+    'few':   '{count} товара',
+    'many':  '{count} товаров',
+    'other': '{count} товара',
+  },
 })
 
+i18n.t('cart.items', { count: 0 })  // "корзина пуста"
 i18n.t('cart.items', { count: 1 })  // "1 товар"
 i18n.t('cart.items', { count: 3 })  // "3 товара"
 i18n.t('cart.items', { count: 11 }) // "11 товаров"
 ```
 
-### Labelled Forms
+### Form Keys
 
-A label is a CLDR category — `zero`, `one`, `two`, `few`, `many`, `other` — or an exact value `=N`, which is checked before categories.
+A key is either a CLDR category — `zero`, `one`, `two`, `few`, `many`, `other` —
+or an exact value `=N`, which is checked before categories and accepts negative
+and fractional numbers (`=0`, `=-1`, `=1.5`).
 
-```
-=0:no files | one:{n} file | other:{n} files
-```
-
-If the locale selects a category with no branch, `other` is used; without an `other` branch, the last one is.
-
-### Positional Forms
-
-Without labels the forms map onto the CLDR categories **of that locale**, in canonical order:
-
-| Locale | Category order |
-| --- | --- |
-| `en` | `one`, `other` |
-| `ru` | `one`, `few`, `many`, `other` |
+`other` is required: it is the form every locale and every count can fall back
+to. A set without it still works but warns at compile time.
 
 ```typescript
-compileTemplate('{n} file | {n} files', 'en')                       // 2 forms — enough for en
-compileTemplate('{n} файл | {n} файла | {n} файлов | {n} файла', 'ru') // 4 forms for ru
+type PluralCategory = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
+type PluralFormKey = PluralCategory | `=${number}`;
+
+type PluralForms =
+  & { other: string }
+  & Partial<Record<Exclude<PluralCategory, 'other'>, string>>
+  & Partial<Record<`=${number}`, string>>;
 ```
 
-If there are fewer forms than categories, the remaining categories share the last form. For locales with more than two categories, prefer labels.
+Which forms a locale actually needs: `en` uses `one` and `other`; `ru` uses
+`one`, `few`, `many` and `other`; `ja` uses only `other`. Ask the runtime with
+`getPluralCategories(locale)`.
 
-### Pipes That Are Not Plurals
+### What Is and Is Not a Set of Forms
 
-- `||` renders a literal `|`.
-- Without a `count`/`n` parameter, an **unlabelled** message is returned whole: `t('columns')` on `"Name | Email"` yields `"Name | Email"`. Labelled messages are unambiguous, so they always pluralize and fall back to `other`.
-- A count that is not a number is ignored; a numeric string (`'3'`) is coerced.
+An object is a set of forms only when **every** key is a form key. An ordinary
+namespace is therefore never mistaken for one, and no character in a message
+string has special meaning:
+
+```typescript
+{ one: '{n} file', other: '{n} files' }   // forms → t('files', { n: 2 })
+{ save: 'Save', cancel: 'Cancel' }        // namespace → t('actions.save')
+'Name | Email'                            // plain text, always rendered whole
+```
+
+A set of forms is a leaf for the key type as well: `t('files')` is offered by
+autocompletion, `t('files.one')` is not — though it still resolves at runtime as
+an ordinary nested key.
+
+### Counts
+
+- The count is read from `params.count`, falling back to `params.n`.
+- Numeric strings (`'3'`) and `bigint` (`3n`) are coerced.
+- Any other type — and an absent count — selects `other`.
 
 ### Which Locale's Rules Apply
 
-The rules are those of **the locale the message came from**, not of the current one. A message resolved through `fallbackLocale` keeps the rules of the fallback — the text and its grammar stay together.
+The rules are those of **the locale the message came from**, not of the current
+one. A message resolved through `fallbackLocale` keeps the rules of the fallback
+— the text and its grammar stay together.
 
-Rules are resolved once at compile time, so at call time only `select()` and the branch call remain. Helpers are exported from `@feugene/fint-i18n/core`:
+Rules and the branch map are resolved once, when the message is first used; the
+chosen branch is then memoised per count, so a repeated call costs a lookup and
+a call. Helpers are exported from `@feugene/fint-i18n/core`:
 
 ```typescript
+function isPluralForms(value: unknown): value is Record<string, string>;
+function compilePluralForms(forms: Record<string, string>, locale?: Locale): MessageFunction;
 function getPluralRules(locale?: Locale): Intl.PluralRules;
 function getPluralCategories(locale?: Locale): PluralCategory[];
 function selectPluralCategory(locale: Locale | undefined, count: number): PluralCategory;
@@ -601,11 +630,12 @@ In components use [`useI18nFormat()`](#usei18nformat) — the same pair, resolve
 
 ### Caching
 
-Building an `Intl` formatter is the expensive part — roughly 25× more expensive than a format call. Instances are cached by locale plus options; `getNumberFormat`/`getDateTimeFormat` expose the cached instance for `formatToParts` and similar.
+Building an `Intl` formatter is the expensive part — roughly 11× more expensive than a format call. Instances are cached by locale plus options; `getNumberFormat`/`getDateTimeFormat` expose the cached instance for `formatToParts` and similar.
 
 The cache is bounded (64 entries per kind) and dropped wholesale when exceeded, so generated options cannot grow it without bound.
 
 ### Edge Cases
 
-- `d()` accepts a `Date`, a timestamp or a string parsed by `new Date()`. An invalid value is returned as-is with a warning — formatting must not break a render.
+- `d()` accepts a `Date`, a timestamp or a string parsed by `new Date()`. `null` and `undefined` render as an empty string (an optional field is not an error); any other invalid value is returned as-is with a warning. `d()` never throws — formatting must not break a render.
+- Invalid `Intl` options (a `currency` style without a `currency` code, for instance) are reported and dropped: the value is formatted without them rather than crashing the render.
 - A locale that is not a valid BCP 47 tag falls back to `en` with a warning. `Locale` in this library is an arbitrary key, and a bad tag must not break translation.

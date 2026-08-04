@@ -30,21 +30,32 @@ When calling `t()`, these parameters will be replaced by their corresponding val
 
 ### Plural Forms
 
-Forms are separated by `|` and selected by `Intl.PluralRules` from the `count` (or `n`) parameter.
-Labels are CLDR categories (`zero`, `one`, `two`, `few`, `many`, `other`) or an exact value (`=0`).
+Plural forms are an object whose keys are all form keys — CLDR categories
+(`zero`, `one`, `two`, `few`, `many`, `other`) or exact values (`=0`, `=-1`).
+`other` is required.
 
 ```json
 {
-  "files": "one:{n} file | other:{n} files",
-  "filesRu": "=0:no files | one:{n} файл | few:{n} файла | many:{n} файлов"
+  "files": {
+    "=0": "no files",
+    "one": "{n} file",
+    "other": "{n} files"
+  },
+  "filesRu": {
+    "one": "{n} файл",
+    "few": "{n} файла",
+    "many": "{n} файлов",
+    "other": "{n} файла"
+  }
 }
 ```
 
-Without labels the forms are positional, in the CLDR category order **of that locale**
-(`en` — `one`, `other`; `ru` — `one`, `few`, `many`, `other`).
+The form is chosen by the `count` (or `n`) parameter: `t('files', { n: 5 })`.
 
-A `|` inside plain text keeps working: without a `count` parameter an unlabelled
-message is returned whole. Use `||` for a literal pipe. Full reference: [api.md](./api.md#pluralization).
+Because plurals are the shape of the value, no character inside a message string
+is special: `"Name | Email"` is plain text and is always rendered whole. An
+object is only treated as forms when **every** key is a form key, so an ordinary
+namespace is never mistaken for one. Full reference: [api.md](./api.md#pluralization).
 
 ## Methods for Defining Translations
 
@@ -138,7 +149,9 @@ mergeMessages('custom', {
 ```
 
 > [!NOTE]
-> `mergeMessages` automatically precompiles all passed strings into optimized functions.
+> `mergeMessages` only merges. A message is compiled into a function the first time
+> it is actually requested, and the result is cached — a large block does not pay
+> for strings nobody renders.
 
 ## Deep Structures and Partial Loading
 
@@ -166,10 +179,10 @@ If you call `loadBlock('pages.articles')`, only the specified JSON will be loade
 
 ## Compilation Features
 
-When loading a block (whether via a loader or `mergeMessages`), all template strings recursively pass through a **JIT compiler**.
-This transforms the string `"Hello, {name}!"` into a function:
-`params => "Hello, " + params.name + "!"`.
+A message is passed through a **JIT compiler** the first time it is requested, which
+turns the string `"Hello, {name}!"` into a function:
+`params => "Hello, " + params.name + "!"`. The function is cached per locale and key.
 
 This ensures:
-- **Instant Resolution**: No time is spent parsing strings or RegExps when calling `t()`.
-- **Minimal Overhead**: Caching of compiled functions happens automatically.
+- **Instant Resolution**: No time is spent parsing strings or RegExps on subsequent `t()` calls.
+- **Nothing wasted**: Loading a block costs a merge, not a compilation of every string in it.

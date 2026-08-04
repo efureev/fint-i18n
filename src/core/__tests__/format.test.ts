@@ -98,6 +98,59 @@ describe('formatDate', () => {
 
     warn.mockRestore()
   })
+
+  it('renders an absent date as an empty string without warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    expect(formatDate('en', null)).toBe('')
+    expect(formatDate('en', undefined)).toBe('')
+    expect(warn).not.toHaveBeenCalled()
+
+    warn.mockRestore()
+  })
+
+  it('never throws on values that are not dates', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    for (const value of [{}, [], { getTime: () => 0 }, Number.NaN, '']) {
+      expect(() => formatDate('en', value as any, { dateStyle: 'short' })).not.toThrow()
+    }
+
+    warn.mockRestore()
+  })
+})
+
+describe('invalid formatter options', () => {
+  beforeEach(() => {
+    clearFormatterCache()
+  })
+
+  it('does not throw when the currency code is missing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    expect(() => formatNumber('en', 42, { style: 'currency' })).not.toThrow()
+    expect(formatNumber('en', 42, { style: 'currency' })).toBe('42')
+    expect(warn.mock.calls[0][0]).toContain('Invalid Intl.NumberFormat options')
+
+    warn.mockRestore()
+  })
+
+  it('blames the locale only when the locale is at fault', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    formatNumber('not a locale', 1234)
+
+    expect(warn.mock.calls[0][0]).toContain('Invalid locale tag')
+    warn.mockRestore()
+  })
+
+  it('survives both a bad locale and bad options at once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    expect(() => formatNumber('not a locale', 42, { style: 'currency' })).not.toThrow()
+
+    warn.mockRestore()
+  })
 })
 
 describe('createFormatters', () => {

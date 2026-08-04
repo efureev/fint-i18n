@@ -82,6 +82,18 @@ jobs:
       - name: Build package
         run: yarn build
 
+      # Размер публикуемых артефактов — заявленное свойство пакета,
+      # поэтому его регрессия должна красить PR, а не всплывать у потребителя.
+      - name: Check bundle size budget
+        run: node scripts/check-size.mjs
+
+      # Информационно: числа бенчей на общих раннерах слишком шумные,
+      # чтобы гейтить сборку, но регрессию в разы видно и по ним.
+      - name: Benchmarks
+        if: matrix.node == 24
+        continue-on-error: true
+        run: yarn bench
+
       # publint валидирует карту exports/files (в т.ч. добавленное условие `default`).
       # --pack npm обязателен: dist в .gitignore, а `yarn pack` его отбрасывает.
       - name: Check package publish surface (publint)

@@ -29,6 +29,14 @@ export default defineConfig({
       reportsDirectory: 'coverage/package',
       include: ['src/**/*.ts'],
       exclude: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/index.ts'],
+      // Пороги стоят чуть ниже фактического покрытия: они запрещают падение,
+      // а не требуют роста. Поднимать вместе с реальным улучшением.
+      thresholds: {
+        statements: 85,
+        branches: 80,
+        functions: 78,
+        lines: 86,
+      },
     },
   },
 })

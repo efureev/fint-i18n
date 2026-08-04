@@ -2,6 +2,7 @@ import { bench, describe } from 'vitest'
 import { compileTemplate } from '@/core/compiler'
 import { createFormatters } from '@/core/format'
 import { createFintI18n } from '@/core/instance'
+import { compilePluralForms } from '@/core/plural'
 import type { MessageSchema } from '@/core/types'
 
 const baseMessages = {
@@ -63,7 +64,12 @@ const pluralInstance = createFintI18n({
 })
 
 pluralInstance.mergeMessages('ru', 'cart', {
-  items: 'one:{count} товар | few:{count} товара | many:{count} товаров',
+  items: {
+    one: '{count} товар',
+    few: '{count} товара',
+    many: '{count} товаров',
+    other: '{count} товара',
+  },
 })
 
 pluralInstance.t('cart.items', { count: 3 })
@@ -110,9 +116,12 @@ describe('fint-i18n core benchmarks', () => {
   )
 
   bench(
-    'compileTemplate() cold compile, plural',
+    'compilePluralForms() cold compile',
     () => {
-      const fn = compileTemplate('one:{n} файл | few:{n} файла | many:{n} файлов', 'ru')
+      const fn = compilePluralForms(
+        { one: '{n} файл', few: '{n} файла', many: '{n} файлов', other: '{n} файла' },
+        'ru',
+      )
       fn({ n: 3 })
     },
     defaultBenchOptions,

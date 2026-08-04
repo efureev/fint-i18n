@@ -93,7 +93,8 @@ export const useUserStore = defineStore('user', () => {
 
 ## Формы множественного числа
 
-Формы живут в самом сообщении и выбираются по параметру `count` (или `n`) — отдельный метод для `t()` не нужен.
+Формы задаются объектом, ключи которого — категории CLDR; нужная выбирается по параметру
+`count` (или `n`). Отдельный метод для `t()` не нужен.
 
 ```vue
 
@@ -101,7 +102,7 @@ export const useUserStore = defineStore('user', () => {
   import {useFintI18n} from '@feugene/fint-i18n/vue'
 
   const {t} = useFintI18n()
-  // "one:{n} файл | few:{n} файла | many:{n} файлов"
+  // files.count = { one: '{n} файл', few: '{n} файла', many: '{n} файлов', other: '{n} файла' }
 </script>
 
 <template>

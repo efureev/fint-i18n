@@ -96,6 +96,8 @@
     "test:coverage:package": "vitest run --coverage",
     "test:coverage:playground": "vitest run --config playground/vitest.config.ts --coverage",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "size": "yarn build && node scripts/check-size.mjs",
+    "size:check": "node scripts/check-size.mjs"
   }
 }

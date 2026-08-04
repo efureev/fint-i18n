@@ -3,6 +3,7 @@ import { compileTemplate, type MessageFunction } from './compiler'
 import { HookManager } from './hooks'
 import { isBlockPattern, LocaleLoaderRegistry } from './loader-registry'
 import { deepMerge, getMessageValue, isMessageObject, mergeMessageValues } from './message-utils'
+import { compilePluralForms, isPluralForms } from './plural'
 import { normalizeTranslateParams } from './translate-params'
 import type { FintI18nOptions, FintI18nPlugin, Locale, LocaleLoaderSource, MessageKey, MessageSchema, MessageValue, TranslateOptions } from './types'
 
@@ -145,15 +146,21 @@ export class FintI18n<Schema extends MessageSchema = any> {
     const current = getMessageValue(messages, key)
 
     if (typeof current === 'string') {
-      // скомпилированная функция привязана к правилам своей локали,
-      // как и кэш `compiledMessages`.
-      const fn = compileTemplate(current, locale)
+      const fn = compileTemplate(current)
       this.setCompiled(locale, key, fn)
       return fn(params)
     }
 
     if (typeof current === 'function') {
       const fn = current as MessageFunction
+      this.setCompiled(locale, key, fn)
+      return fn(params)
+    }
+
+    // Набор форм компилируется под правила той локали, из которой пришёл, —
+    // сообщение и его грамматика едут вместе.
+    if (isPluralForms(current)) {
+      const fn = compilePluralForms(current, locale)
       this.setCompiled(locale, key, fn)
       return fn(params)
     }
@@ -224,16 +231,20 @@ export class FintI18n<Schema extends MessageSchema = any> {
     await Promise.all(jobs)
   }
 
-  private loadConcreteBlock = async (blockName: string, targetLocale: Locale): Promise<void> => {
+  // Не `async`: промис обязан попасть в `loadingBlocks` до первого `await`,
+  // иначе конкурентные вызовы успевают пройти проверку и грузят блок повторно.
+  private loadConcreteBlock = (blockName: string, targetLocale: Locale): Promise<void> => {
     const loadKey = `${targetLocale}:${blockName}`
 
-    if (this.isBlockLoaded(blockName, targetLocale)) return
-    if (this.loadingBlocks.has(loadKey)) return this.loadingBlocks.get(loadKey)
+    if (this.isBlockLoaded(blockName, targetLocale)) return Promise.resolve()
 
-    await this.hooks.emit('beforeLoadBlock', blockName)
+    const pending = this.loadingBlocks.get(loadKey)
+    if (pending) return pending
 
     const promise = (async () => {
       try {
+        await this.hooks.emit('beforeLoadBlock', blockName)
+
         const resolvedLoaders = this.loaderRegistry.resolve(targetLocale, blockName)
 
         if (!resolvedLoaders) {
@@ -310,39 +321,6 @@ export class FintI18n<Schema extends MessageSchema = any> {
       }
 
       deepMerge(target, messages)
-    }
-
-    this.precompileBlock(locale, blockName, messages)
-  }
-
-  private precompileBlock = (locale: Locale, fullKey: string, messages: MessageValue) => {
-    if (typeof messages === 'string') {
-      const fn = compileTemplate(messages, locale)
-      this.setCompiled(locale, fullKey, fn)
-      return
-    }
-
-    if (typeof messages === 'function') {
-      this.setCompiled(locale, fullKey, messages)
-      return
-    }
-
-    if (!isMessageObject(messages)) return
-
-    for (const key in messages) {
-      const value = messages[key]
-      const nestedKey = `${fullKey}.${key}`
-
-      if (typeof value === 'string') {
-        const fn = compileTemplate(value, locale)
-        this.setCompiled(locale, nestedKey, fn)
-      }
-      else if (typeof value === 'function') {
-        this.setCompiled(locale, nestedKey, value)
-      }
-      else if (isMessageObject(value)) {
-        this.precompileBlock(locale, nestedKey, value)
-      }
     }
   }
 

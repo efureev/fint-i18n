@@ -1,7 +1,7 @@
 import type { Locale } from './types'
 
 export type NumberValue = number | bigint
-export type DateValue = Date | number | string
+export type DateValue = Date | number | string | null | undefined
 
 const DEFAULT_FORMAT_LOCALE = 'en'
 
@@ -37,6 +37,39 @@ function guardCacheSize(cache: Map<string, unknown>): void {
   if (cache.size >= MAX_CACHED_FORMATTERS) cache.clear()
 }
 
+/**
+ * Конструктор `Intl` падает и на невалидной локали, и на невалидных опциях.
+ * Различаем причину повторной попыткой: если с заведомо валидной локалью те же
+ * опции проходят — виновата локаль, иначе опции. Форматирование не должно
+ * ронять рендер ни в одном из случаев.
+ */
+function createFormat<F, O>(
+  create: (locale: Locale, options?: O) => F,
+  kind: string,
+  locale: Locale,
+  options?: O,
+): F {
+  try {
+    return create(locale, options)
+  }
+  catch (error) {
+    try {
+      const withDefaultLocale = create(DEFAULT_FORMAT_LOCALE, options)
+      console.warn(`[fint-i18n] Invalid locale tag "${locale}", ${kind} falls back to "${DEFAULT_FORMAT_LOCALE}"`)
+      return withDefaultLocale
+    }
+    catch {
+      console.warn(`[fint-i18n] Invalid ${kind} options, formatting without them:`, options, error)
+      try {
+        return create(locale)
+      }
+      catch {
+        return create(DEFAULT_FORMAT_LOCALE)
+      }
+    }
+  }
+}
+
 /** Создание форматтера — самая дорогая часть работы, кэш по «локаль + опции». */
 export function getNumberFormat(locale: Locale, options?: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = formatterKey(locale, options)
@@ -44,13 +77,7 @@ export function getNumberFormat(locale: Locale, options?: Intl.NumberFormatOptio
   let format = numberFormats.get(key)
   if (format) return format
 
-  try {
-    format = new Intl.NumberFormat(locale, options)
-  }
-  catch {
-    console.warn(`[fint-i18n] Cannot create Intl.NumberFormat for locale "${locale}", falling back to "${DEFAULT_FORMAT_LOCALE}"`)
-    format = new Intl.NumberFormat(DEFAULT_FORMAT_LOCALE, options)
-  }
+  format = createFormat((l, o) => new Intl.NumberFormat(l, o), 'Intl.NumberFormat', locale, options)
 
   guardCacheSize(numberFormats)
   numberFormats.set(key, format)
@@ -65,13 +92,7 @@ export function getDateTimeFormat(locale: Locale, options?: Intl.DateTimeFormatO
   let format = dateTimeFormats.get(key)
   if (format) return format
 
-  try {
-    format = new Intl.DateTimeFormat(locale, options)
-  }
-  catch {
-    console.warn(`[fint-i18n] Cannot create Intl.DateTimeFormat for locale "${locale}", falling back to "${DEFAULT_FORMAT_LOCALE}"`)
-    format = new Intl.DateTimeFormat(DEFAULT_FORMAT_LOCALE, options)
-  }
+  format = createFormat((l, o) => new Intl.DateTimeFormat(l, o), 'Intl.DateTimeFormat', locale, options)
 
   guardCacheSize(dateTimeFormats)
   dateTimeFormats.set(key, format)
@@ -85,11 +106,14 @@ export function formatNumber(locale: Locale, value: NumberValue, options?: Intl.
 
 /**
  * Принимает `Date`, timestamp или строку, разбираемую `new Date()`.
- * Невалидное значение возвращается как есть — форматирование не должно
- * ронять рендер из-за плохих данных.
+ * `null`/`undefined` дают пустую строку (необязательное поле — не ошибка),
+ * прочее невалидное возвращается как есть: форматирование не должно ронять
+ * рендер из-за плохих данных.
  */
 export function formatDate(locale: Locale, value: DateValue, options?: Intl.DateTimeFormatOptions): string {
-  const date = typeof value === 'object' ? value : new Date(value)
+  if (value == null) return ''
+
+  const date = value instanceof Date ? value : new Date(value)
 
   if (Number.isNaN(date.getTime())) {
     console.warn('[fint-i18n] Invalid date passed to d():', value)

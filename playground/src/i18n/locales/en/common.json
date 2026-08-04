@@ -5,7 +5,11 @@
   "blocks": "Loaded blocks: {blocks}",
   "namePlaceholder": "Enter your name...",
   "escaped": "Escaping: {{braces}} stays literal, while {name} is interpolated",
-  "files": "=0:no files | one:{n} file | other:{n} files",
+  "files": {
+    "=0": "no files",
+    "one": "{n} file",
+    "other": "{n} files"
+  },
   "columns": "Name | Email",
   "literalPipe": "Shortcut: Ctrl || Shift"
 }
