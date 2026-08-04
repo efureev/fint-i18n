@@ -91,11 +91,57 @@ describe('Playground', () => {
 
     await wrapper.get('[data-test="load-articles"]').trigger('click')
     await settleUi()
-    await wrapper.get('[data-test="load-page"]').trigger('click')
+    await wrapper.get('[data-test="load-terms"]').trigger('click')
     await settleUi()
 
     expect(wrapper.text()).toContain('Articles')
-    expect(wrapper.text()).toContain('Full page data')
     expect(wrapper.text()).toContain('Terms')
+  })
+
+  it('marks an own-loader block under its own name and a parentless one under the parent', async () => {
+    const { wrapper } = await mountPlayground()
+
+    await wrapper.get('[data-test="load-articles"]').trigger('click')
+    await settleUi()
+    await wrapper.get('[data-test="load-terms"]').trigger('click')
+    await settleUi()
+
+    // Ровно та асимметрия, о которой пишет подпись секции: запрошен
+    // `page.terms`, а помеченным оказывается `page`.
+    expect(wrapper.get('[data-test="loaded-page-blocks"]').text()).toBe('page, page.articles')
+  })
+
+  it('shows the package version instead of a hand-written one', async () => {
+    const { wrapper } = await mountPlayground()
+
+    expect(wrapper.get('[data-test="package-version"]').text()).toBe(`v${__FINT_I18N_VERSION__}`)
+  })
+
+  it('retries a failing loader and reports one final error when attempts run out', async () => {
+    const { wrapper } = await mountPlayground()
+
+    // Паузы между попытками настоящие (200 мс, 400 мс) — без подменённых
+    // таймеров тест ждал бы их реальным временем.
+    vi.useFakeTimers()
+
+    try {
+      await wrapper.get('[data-test="retry-recovers"]').trigger('click')
+      await vi.advanceTimersByTimeAsync(1000)
+      await settleUi()
+
+      // Два отказа и успех: повтор виден по числу попыток, а не по тексту.
+      expect(wrapper.get('[data-test="retry-log"]').findAll('li')).toHaveLength(3)
+      expect(wrapper.find('[data-test="retry-result"]').exists()).toBe(true)
+
+      await wrapper.get('[data-test="retry-exhausts"]').trigger('click')
+      await vi.advanceTimersByTimeAsync(1000)
+      await settleUi()
+
+      expect(wrapper.get('[data-test="retry-log"]').findAll('li')).toHaveLength(3)
+      expect(wrapper.find('[data-test="retry-failed"]').exists()).toBe(true)
+    }
+    finally {
+      vi.useRealTimers()
+    }
   })
 })

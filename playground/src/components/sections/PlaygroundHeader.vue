@@ -13,31 +13,50 @@ const toggleLocale = async () => {
 </script>
 
 <template>
-  <header class="bg-slate-950 text-white px-6 py-6 md:px-8">
-    <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+  <header class="relative overflow-hidden border-b border-slate-200 bg-white px-6 py-7 md:px-8 md:py-9">
+    <!--
+      Подложка и блик заданы обычным CSS: `presetMini` не отдаёт ни градиентов
+      (`bg-gradient-to-*`, `from-*`), ни `blur-*` — они живут в `presetWind`,
+      а менять пресет витрины ради шапки значило бы пересобрать всю её утилитную базу.
+    -->
+    <div
+      class="pointer-events-none absolute inset-0"
+      style="background: radial-gradient(120% 130% at 0% 0%, #eef2ff 0%, #f6f8fc 45%, #ffffff 80%)"
+    />
+    <div
+      class="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full"
+      style="background: radial-gradient(circle, rgba(129, 140, 248, 0.22) 0%, rgba(129, 140, 248, 0) 70%)"
+    />
+
+    <div class="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
       <div class="max-w-2xl">
-        <p class="text-xs uppercase tracking-[0.32em] text-slate-400 mb-3">
+        <p class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-600 ring-1 ring-indigo-100 shadow-sm shadow-slate-900/5">
+          <span class="i-lucide-sparkles" />
           {{ t('ui.header.eyebrow') }}
         </p>
-        <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
-          <span class="i-lucide-languages text-indigo-300" />
+
+        <h1 class="mt-4 flex items-center gap-3.5 text-2xl font-bold text-slate-900 md:text-3xl">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/25">
+            <span class="i-lucide-languages text-xl" />
+          </span>
           {{ t('ui.header.title') }}
         </h1>
-        <p class="text-sm md:text-base text-slate-300 mt-3 leading-6">
+
+        <p class="mt-3.5 text-sm leading-6 text-slate-600 md:text-base md:leading-7">
           {{ t('ui.header.description') }}
         </p>
       </div>
 
       <div class="flex flex-col gap-3 md:items-end">
-        <div class="inline-flex items-center gap-2 rounded-full bg-white/8 border border-white/10 px-3 py-1.5 text-xs text-slate-300">
-          <span class="i-lucide-badge-info text-indigo-300" />
+        <div class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs text-slate-500 ring-1 ring-slate-200 shadow-sm shadow-slate-900/5">
+          <span class="i-lucide-badge-info text-indigo-500" />
           {{ t('ui.header.localeBadge') }}
-          <span class="rounded-full bg-indigo-500/20 px-2 py-0.5 text-indigo-200 font-semibold">{{ localeBadge }}</span>
+          <span class="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700">{{ localeBadge }}</span>
         </div>
 
         <button
           data-test="toggle-locale"
-          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 transition font-medium border border-indigo-300/20 shadow-lg shadow-indigo-950/25"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 font-medium text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-500 active:bg-indigo-700"
           type="button"
           @click="toggleLocale"
         >
@@ -45,7 +64,7 @@ const toggleLocale = async () => {
           {{ t('common.changeLang') }}
         </button>
 
-        <p class="text-xs text-slate-400 max-w-xs md:text-right">
+        <p class="max-w-xs text-xs leading-5 text-slate-500 md:text-right">
           {{ t('ui.header.toggleHint') }}
         </p>
       </div>

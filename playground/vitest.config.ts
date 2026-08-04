@@ -1,6 +1,9 @@
+import { createRequire } from 'node:module'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+
+const { version } = createRequire(import.meta.url)('../package.json')
 
 /**
  * Конфиг обеих витрин: статической (`playground/`) и SSR (`playground-ssr/`).
@@ -8,6 +11,9 @@ import vue from '@vitejs/plugin-vue'
  */
 export default defineConfig({
   plugins: [vue()],
+  define: {
+    __FINT_I18N_VERSION__: JSON.stringify(version),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

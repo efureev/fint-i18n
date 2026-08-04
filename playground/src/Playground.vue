@@ -13,6 +13,7 @@ import PartialBlocksSection from './components/sections/PartialBlocksSection.vue
 import PlaygroundFooter from './components/sections/PlaygroundFooter.vue'
 import PlaygroundHeader from './components/sections/PlaygroundHeader.vue'
 import PluralSection from './components/sections/PluralSection.vue'
+import RetrySection from './components/sections/RetrySection.vue'
 import ScopeSyncSection from './components/sections/ScopeSyncSection.vue'
 import SubtreeSection from './components/sections/SubtreeSection.vue'
 import WildcardSection from './components/sections/WildcardSection.vue'
@@ -46,6 +47,7 @@ const { events: hookEvents, clear: clearHookEvents, probeTranslate } = usePlaygr
           <FormatSection />
           <IntrospectionSection />
           <SubtreeSection />
+          <RetrySection />
         </div>
 
         <PlaygroundFooter />

@@ -1,7 +1,7 @@
 {
   "header": {
-    "eyebrow": "Feature playground",
-    "title": "@feugene/fint-i18n Playground",
+    "eyebrow": "playground",
+    "title": "@feugene/fint-i18n",
     "description": "A focused sandbox for validating runtime behavior, lazy blocks, Vue integration and developer ergonomics.",
     "localeBadge": "Locale",
     "toggleHint": "Switch the active locale and observe reactive updates across the page."
@@ -36,20 +36,23 @@
     "partial": {
       "eyebrow": "4. Partial loading",
       "title": "Deep JSON block loading",
-      "description": "Load a nested block directly or request the full page bundle and compare the resulting data.",
+      "description": "A nested block can have its own loader — or fall back to the parent one. Load both and compare what ends up marked as loaded.",
       "loadArticles": "Load `page.articles`",
-      "loadArticlesHint": "Direct nested block",
-      "loadPage": "Load full `page` block",
-      "loadPageHint": "Parent block fallback",
-      "fullPageLabel": "Full page data"
+      "loadArticlesHint": "Has its own loader",
+      "loadTerms": "Load `page.terms`",
+      "loadTermsHint": "No own loader → resolves up to `page`",
+      "loadedLabel": "getLoadedBlocks() for this locale",
+      "unloadHint": "Note the asymmetry: `page.articles` is marked under its own name, while `page.terms` is covered by `page`. Unloading takes the name that was actually loaded — `unloadBlock(\"page.terms\")` would be a no-op."
     },
     "wildcard": {
       "eyebrow": "5. Wildcard registration",
       "title": "Load siblings via `widgets.*`",
-      "description": "A single registration `widgets.*` expands into every direct child block (`widgets.alpha`, `widgets.beta`, `widgets.gamma`) and loads them in parallel.",
+      "description": "One call to `loadBlock(\"widgets.*\")` expands the pattern into every registered direct child (`widgets.alpha`, `widgets.beta`, `widgets.gamma`) and loads them in parallel. The loaders are registered per child, as usual — only the request is a pattern. `*` covers exactly one segment; `**` covers any depth.",
       "button": "Load `widgets.*`",
       "buttonHint": "Pattern is expanded once, then reused on locale change",
-      "loadedBadge": "Loaded {count} blocks"
+      "loadedBadge": "Loaded {count} blocks",
+      "expandedLabel": "What the pattern expanded into",
+      "expandedHint": "This list comes from `getLoadedBlocks()`, not from a list in the component — the pattern decides the composition."
     },
     "fallback": {
       "eyebrow": "6. Fallback locale",
@@ -91,7 +94,8 @@
       "injectButton": "mergeMessages() + markBlockLoaded()",
       "errorButton": "Trigger a failing loader",
       "injectResultLabel": "Injected block (`runtime.hello`)",
-      "errorHint": "A failing loader is reported through the `onError` hook (watch the debug panel) without crashing the app."
+      "errorHint": "A failing loader is reported through the `onError` hook (watch the debug panel) without crashing the app.",
+      "injectedValue": "Injected directly via mergeMessages()"
     },
     "plural": {
       "eyebrow": "10. Pluralization",
@@ -146,6 +150,23 @@
       "pluralNote": "plural forms → undefined, a leaf too",
       "missingNote": "missing key → undefined",
       "readonlyHint": "The subtree is readonly: writing to it would bypass `mergeMessages()` and leave the compilation cache stale."
+    },
+    "retry": {
+      "eyebrow": "14. Retrying a failed load",
+      "title": "`retry` — attempts, backoff, and the single final error",
+      "description": "A loader that throws is retried instead of leaving the block empty. Off by default; the demo runs on its own instance so the option is visible in code.",
+      "recoverButton": "Fails twice, then succeeds",
+      "exhaustButton": "Fails every attempt",
+      "optionLabel": "Instance option",
+      "optionHint": "Retries live inside the block promise, so concurrent `loadBlock()` calls keep sharing it and deduplication still holds.",
+      "logLabel": "Loader attempts",
+      "logEmpty": "Press a button to run the loader.",
+      "attemptLine": "attempt {attempt} at +{at}ms —",
+      "attemptOk": "resolved",
+      "attemptFailed": "threw",
+      "payload": "Loaded on a retry",
+      "failedNote": "Every attempt failed. Only the last error surfaces — one per block, not one per attempt.",
+      "disposeHint": "The demo instance is released with `dispose()` on unmount: it drops messages, caches and plugin subscriptions, and stops a retry loop that is still running."
     }
   },
   "status": {
@@ -163,10 +184,21 @@
     "probe": "Probe onTranslate"
   },
   "footer": {
-    "lazy": "Lazy blocks",
-    "vue": "Vue integration",
-    "scope": "Scoped loaders",
-    "fallback": "Fallback chain",
-    "dynamic": "Dynamic loaders"
+    "capabilities": {
+      "lazy": "Lazy blocks",
+      "vue": "Vue integration",
+      "scope": "Scoped loaders",
+      "fallback": "Fallback chain",
+      "dynamic": "Dynamic loaders",
+      "plural": "CLDR plurals",
+      "format": "Intl formatting",
+      "introspection": "Introspection",
+      "retry": "Load retries"
+    },
+    "links": {
+      "docs": "Documentation",
+      "ssr": "SSR playground",
+      "tooling": "Dictionary tooling"
+    }
   }
 }

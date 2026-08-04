@@ -1,7 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import 'virtual:uno.css'
+// Порядок обязателен: сброс идёт до утилит. В нём есть
+// `[type='button'] { background-color: transparent }` — специфичность та же,
+// что у класса, поэтому сброс после утилит забирал фон у каждой кнопки.
 import '@unocss/reset/tailwind.css'
+import 'virtual:uno.css'
 
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { createFintI18nPlugin } from '@feugene/fint-i18n/vue'

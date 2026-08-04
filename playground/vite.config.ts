@@ -1,9 +1,17 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import UnoCSS from 'unocss/vite'
+import { createRequire } from 'node:module'
 import { fileURLToPath, URL } from 'node:url'
 
+// Версия берётся из package.json, а не пишется в шаблоне: зашитая руками
+// строка уже отставала от пакета на два минора.
+const { version } = createRequire(import.meta.url)('../package.json')
+
 export default defineConfig({
+  define: {
+    __FINT_I18N_VERSION__: JSON.stringify(version),
+  },
   root: fileURLToPath(new URL('./', import.meta.url)),
   base: '/fint-i18n/',
   plugins: [

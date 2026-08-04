@@ -1,6 +1,6 @@
 {
   "name": "@feugene/fint-i18n",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Lightweight Vue 3 i18n library with lazy-loading blocks and template caching",
   "author": "Fureev Eugene<https://feugene.org>",
   "license": "MIT",
@@ -106,7 +106,7 @@
     "playground:ssr": "node playground-ssr/server.mjs",
     "playground:ssr:build": "vite build --config playground-ssr/vite.config.ts --outDir dist/client --ssrManifest && vite build --config playground-ssr/vite.config.ts --outDir dist/server --ssr src/entry-server.ts",
     "playground:ssr:prod": "node playground-ssr/server.mjs --prod",
-    "check:messages": "node scripts/check-messages.mjs playground/src/i18n/locales --source playground/src --allow fallback.enOnly --allow fallback.ruOnly --allow common.menu --allow runtime.hello"
+    "check:messages": "node scripts/check-messages.mjs playground/src/i18n/locales --source playground/src --allow fallback.enOnly --allow fallback.ruOnly --allow common.menu --allow runtime.hello --allow flaky.message"
   },
   "bin": {
     "fint-i18n-check-messages": "./scripts/check-messages.mjs",

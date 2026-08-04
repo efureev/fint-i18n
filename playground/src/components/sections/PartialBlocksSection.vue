@@ -3,19 +3,32 @@ import { ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
 
 const i18n = useFintI18n()
-const { t } = i18n
+const { t, locale } = i18n
 
 const isArticlesLoaded = ref(false)
-const isPageLoaded = ref(false)
+const isTermsLoaded = ref(false)
+const loadedPageBlocks = ref<string[]>([])
 
+const refreshLoaded = () => {
+  loadedPageBlocks.value = (i18n.getLoadedBlocks()[locale.value] ?? [])
+    .filter(block => block === 'page' || block.startsWith('page.'))
+    .sort()
+}
+
+// У `page.articles` есть собственный лоадер — грузится он сам и помечается
+// загруженным под своим именем.
 const loadArticles = async () => {
   await i18n.loadBlock('page.articles')
   isArticlesLoaded.value = true
+  refreshLoaded()
 }
 
-const loadFullPage = async () => {
-  await i18n.loadBlock('page')
-  isPageLoaded.value = true
+// У `page.terms` собственного лоадера нет. Реестр поднимается вверх до `page`,
+// грузит его — и помечает загруженным именно `page`, а не запрошенное имя.
+const loadTerms = async () => {
+  await i18n.loadBlock('page.terms')
+  isTermsLoaded.value = true
+  refreshLoaded()
 }
 </script>
 
@@ -50,35 +63,53 @@ const loadFullPage = async () => {
       </button>
 
       <button
-        data-test="load-page"
+        data-test="load-terms"
         class="p-4 rounded-2xl border border-violet-100 bg-violet-50 hover:bg-violet-100/80 transition flex flex-col items-start text-left"
         type="button"
-        @click="loadFullPage"
+        @click="loadTerms"
       >
-        <span class="i-lucide-layers text-violet-600 mb-3 text-lg" />
-        <span class="text-sm font-bold text-violet-900">{{ t('ui.sections.partial.loadPage') }}</span>
-        <span class="text-xs text-violet-700/80 mt-1">{{ t('ui.sections.partial.loadPageHint') }}</span>
+        <span class="i-lucide-corner-left-up text-violet-600 mb-3 text-lg" />
+        <span class="text-sm font-bold text-violet-900">{{ t('ui.sections.partial.loadTerms') }}</span>
+        <span class="text-xs text-violet-700/80 mt-1">{{ t('ui.sections.partial.loadTermsHint') }}</span>
         <span class="mt-4 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-violet-700">
           <span class="i-lucide-check-circle-2" />
-          {{ isPageLoaded ? t('ui.status.loaded') : t('ui.status.ready') }}
+          {{ isTermsLoaded ? t('ui.status.loaded') : t('ui.status.ready') }}
         </span>
       </button>
     </div>
 
-    <div v-if="isArticlesLoaded || isPageLoaded" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 flex flex-col gap-4">
+    <div v-if="isArticlesLoaded || isTermsLoaded" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 flex flex-col gap-4">
       <div v-if="isArticlesLoaded">
-        <h3 class="text-lg font-semibold text-slate-900">{{ t('page.articles.title') }}</h3>
-        <p class="text-sm text-slate-600 mt-1">{{ t('page.articles.description') }}</p>
+        <h3 class="text-lg font-semibold text-slate-900">
+          {{ t('page.articles.title') }}
+        </h3>
+        <p class="text-sm text-slate-600 mt-1">
+          {{ t('page.articles.description') }}
+        </p>
       </div>
 
-      <div v-if="isPageLoaded" class="border-t border-slate-200 pt-4">
-        <h4 class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500 mb-3">
-          {{ t('ui.sections.partial.fullPageLabel') }}
-        </h4>
+      <div v-if="isTermsLoaded" class="border-t border-slate-200 pt-4">
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p class="text-sm text-indigo-700 font-semibold">{{ t('page.terms.title') }}</p>
-          <p class="text-sm text-slate-600 mt-1">{{ t('page.terms.content') }}</p>
+          <p class="text-sm text-indigo-700 font-semibold">
+            {{ t('page.terms.title') }}
+          </p>
+          <p class="text-sm text-slate-600 mt-1">
+            {{ t('page.terms.content') }}
+          </p>
         </div>
+      </div>
+
+      <div class="border-t border-slate-200 pt-4">
+        <p class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2 flex items-center gap-2">
+          <span class="i-lucide-list-tree text-indigo-500" />
+          {{ t('ui.sections.partial.loadedLabel') }}
+        </p>
+        <p class="font-mono text-xs text-slate-800" data-test="loaded-page-blocks">
+          {{ loadedPageBlocks.join(', ') }}
+        </p>
+        <p class="mt-2 text-xs text-slate-500 leading-5">
+          {{ t('ui.sections.partial.unloadHint') }}
+        </p>
       </div>
     </div>
   </section>

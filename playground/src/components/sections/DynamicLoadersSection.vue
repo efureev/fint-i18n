@@ -23,7 +23,7 @@ const addAnnounce = async () => {
 // mergeMessages() + markBlockLoaded(): inject messages by hand (no loader) and
 // mark the block as loaded — handy for SSR hydration or tests.
 const injectRuntime = () => {
-  i18n.mergeMessages(locale.value, 'runtime', { hello: 'Injected directly via mergeMessages()' })
+  i18n.mergeMessages(locale.value, 'runtime', { hello: t('ui.sections.dynamic.injectedValue') })
   i18n.markBlockLoaded('runtime', locale.value)
   injected.value = true
 }
