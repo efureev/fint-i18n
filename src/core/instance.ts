@@ -390,6 +390,20 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     }
   }
 
+  /**
+   * Фактически загруженные блоки по локалям — то, что нужно перенести
+   * с сервера на клиент, чтобы тот не грузил их заново.
+   */
+  public getLoadedBlocks = (): Record<Locale, string[]> => {
+    const result: Record<Locale, string[]> = {}
+
+    for (const [locale, blocks] of this.loadedBlocks) {
+      if (blocks.size > 0) result[locale] = [...blocks]
+    }
+
+    return result
+  }
+
   public isBlockLoaded = (blockName: string, locale?: Locale): boolean => {
     const targetLocale = locale || this.localeRef.value
     const loadedSet = this.loadedBlocks.get(targetLocale)

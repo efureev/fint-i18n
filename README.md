@@ -32,6 +32,7 @@ You can find detailed information about the library in the relevant sections:
 - 📘 **[API Reference](./docs/en/api.md)**: Detailed description of all functions, methods, and composables.
 - 🔌 **[Plugins](./docs/en/plugins.md)**: Extending functionality via the hook system and built-in plugins.
 - 🧱 **[Translation Blocks](./docs/en/blocks.md)**: Deep dive into the concept of blocks and memory management.
+- 🖥️ **[Server-Side Rendering](./docs/en/ssr.md)**: Carrying the server-loaded state over to the client.
 - ⚡ **[Benchmarks and Bundle Analysis](./docs/en/bundle-analysis.md)**: How to measure the hot path and analyze the `dist` composition.
 
 ---

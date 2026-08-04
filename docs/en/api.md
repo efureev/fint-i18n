@@ -159,12 +159,16 @@ function useI18nScopeSync(
 ): I18nScopeSync;
 
 interface I18nScopeSync extends I18nScope {
-  /** Becomes `true` once all scope blocks have finished loading. */
+  /** Becomes `true` once loading has settled — in every outcome. */
   ready: Ref<boolean>;
+  /** The reason a block failed to load, otherwise `null`. */
+  error: Ref<unknown>;
 }
 ```
 
-Before `ready` turns `true`, `t()` returns keys that resolve as blocks arrive (the directive/`t()` are reactive, so the UI updates automatically). Load failures are reported to `console.error`.
+Before `ready` turns `true`, `t()` returns keys that resolve as blocks arrive (the directive/`t()` are reactive, so the UI updates automatically).
+
+A failing block does not leave the scope loading forever: `ready` becomes `true` either way and `error` carries the reason (it is also reported to `console.error`). Gate a spinner on `ready`, and a fallback on `error`.
 
 ### `useI18nFormat()`
 
@@ -650,3 +654,31 @@ The cache is bounded (64 entries per kind) and dropped wholesale when exceeded, 
 - `d()` accepts a `Date`, a timestamp or a string parsed by `new Date()`. `null` and `undefined` render as an empty string (an optional field is not an error); any other invalid value is returned as-is with a warning. `d()` never throws — formatting must not break a render.
 - Invalid `Intl` options (a `currency` style without a `currency` code, for instance) are reported and dropped: the value is formatted without them rather than crashing the render.
 - A locale that is not a valid BCP 47 tag falls back to `en` with a warning. `Locale` in this library is an arbitrary key, and a bad tag must not break translation.
+
+---
+
+## SSR Snapshot and Hydration
+
+Free functions imported from `@feugene/fint-i18n/core`. An application that never
+renders on the server does not bundle them.
+
+```typescript
+interface FintI18nSSRState {
+  messages: Record<Locale, MessageSchema>;
+  blocks: Record<Locale, string[]>;
+}
+
+function getSSRState(i18n: FintI18n, options?: { locales?: Locale[] }): FintI18nSSRState;
+function hydrate(i18n: FintI18n, state: FintI18nSSRState): void;
+```
+
+- `getSSRState()` captures what the server loaded: the messages and the names of
+  the blocks already fetched. Pass `locales` to narrow the payload to the locale
+  that was actually rendered.
+- `hydrate()` replays that snapshot into a client instance **before** mounting,
+  marking the blocks as loaded so nothing is fetched twice.
+- `getLoadedBlocks(): Record<Locale, string[]>` on the instance backs the snapshot
+  and can be used on its own.
+
+The full recipe, including the contract and its limits, is in
+[Server-Side Rendering](./ssr.md).

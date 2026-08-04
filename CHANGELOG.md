@@ -52,6 +52,12 @@ Pluralization is reworked from the ground up. **Every message that contains a
   plugin may restore from storage.
 - `HookManager.clear()` — drops every subscription at once.
 - `useI18nScopeSync()` exposes `error: Ref<unknown>`.
+- **SSR snapshot and hydration.** `getSSRState(i18n, options?)` captures what the
+  server loaded, `hydrate(i18n, state)` replays it on the client so the browser
+  does not fetch the same blocks again. Both are free functions in
+  `@feugene/fint-i18n/core` and tree-shake away in applications that never render
+  on the server. `FintI18n.getLoadedBlocks()` backs the snapshot.
+  See [Server-Side Rendering](./docs/en/ssr.md).
 - `scripts/codemod-plural-forms.mjs` (`yarn codemod:plurals`) — migrates
   dictionaries from the 0.4.0 `|` syntax. Labelled messages are converted
   automatically; anything ambiguous is reported for a human decision instead of
