@@ -91,7 +91,7 @@
     "build:analyze": "ANALYZE=true vite build && vue-tsc -p tsconfig.build.json",
     "build": "vite build && vue-tsc -p tsconfig.build.json",
     "prepublishOnly": "yarn build",
-    "bench": "mkdir -p dist/analysis && vitest bench --run --config vitest.config.ts --environment node --outputJson dist/analysis/bench-results.json bench/core.bench.ts",
+    "bench": "mkdir -p dist/analysis && vitest bench --run --config vitest.config.ts --environment node --outputJson dist/analysis/bench-results.json bench/",
     "type-check": "vue-tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
@@ -106,7 +106,8 @@
     "playground:ssr": "node playground-ssr/server.mjs",
     "playground:ssr:build": "vite build --config playground-ssr/vite.config.ts --outDir dist/client --ssrManifest && vite build --config playground-ssr/vite.config.ts --outDir dist/server --ssr src/entry-server.ts",
     "playground:ssr:prod": "node playground-ssr/server.mjs --prod",
-    "check:messages": "node scripts/check-messages.mjs playground/src/i18n/locales --source playground/src --allow fallback.enOnly --allow fallback.ruOnly --allow common.menu --allow runtime.hello --allow flaky.message"
+    "check:messages": "node scripts/check-messages.mjs playground/src/i18n/locales --source playground/src --allow fallback.enOnly --allow fallback.ruOnly --allow common.menu --allow runtime.hello --allow flaky.message",
+    "size:consumer": "node scripts/consumer-size.mjs"
   },
   "bin": {
     "fint-i18n-check-messages": "./scripts/check-messages.mjs",

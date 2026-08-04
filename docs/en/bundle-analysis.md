@@ -19,12 +19,19 @@ What the command does:
 - Saves machine-readable results to `dist/analysis/bench-results.json`.
 - Prints `ops/sec` for each scenario to the console.
 
-Current scenarios in `bench/core.bench.ts`:
+Current scenarios in `bench/core.bench.ts` — the cost of a single call:
 
-- Cold compile for `compileTemplate()`.
-- Steady-state translation via `i18n.t()` after cache warmup.
+- Cold compile for `compileTemplate()` and `compilePluralForms()`.
+- Steady-state translation via `i18n.t()` after cache warmup, plain and plural.
 - Nested lookup for an already compiled key.
+- `n()` / `d()` with a cached formatter, against constructing `Intl.NumberFormat`.
 - `setLocale()` with already registered used blocks.
+
+`bench/dictionary.bench.ts` answers a different question — throughput on a dictionary
+the size of a real application: 5 000 keys across 50 blocks, accessed out of order so
+the run does not flatter the CPU cache. It reports three things: a warm pass over every
+key, a cold first pass (instance + merge + compiling each message), and `mergeMessages()`
+on its own, which is what the other two are measured against.
 
 What the console output means:
 
@@ -39,6 +46,26 @@ Important:
 
 - Results should only be compared between runs on the same machine under similar conditions.
 - This is not a microbenchmark of the entire Node runtime, but applied scenarios for `fint-i18n` itself.
+
+## What the Package Costs a Consumer
+
+```bash
+yarn --cwd fint-i18n build && yarn --cwd fint-i18n size:consumer
+```
+
+`scripts/check-size.mjs` and `scripts/consumer-size.mjs` measure two different things, and
+the difference matters:
+
+- **`size:check`** — the size of the shipped `dist` chunks, gated by `size-budget.json`.
+  This is the artifact, not the price: a consumer who imports half the API bundles less
+  than the chunk weighs.
+- **`size:consumer`** — what actually lands in an application. Each scenario is built as a
+  separate bundle over `dist` with `vue` external, then gzipped. The scenarios *use* what
+  they import; a re-export (`export * from`) would retain the whole module surface and
+  measure the chunk again.
+
+The numbers in the README come from the second one. Both are only comparable between runs
+on the same machine.
 
 ## Bundle Composition Analysis
 
