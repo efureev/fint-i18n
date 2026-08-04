@@ -8,8 +8,6 @@ const DEFAULT_FORMAT_LOCALE = 'en'
 /**
  * Потолок кэша форматтеров. `Intl`-инстансы тяжёлые, а ключ зависит от опций —
  * приложение с генерируемыми опциями иначе растило бы кэш бесконечно.
- * При переполнении кэш сбрасывается целиком: это дешевле LRU и достаточно,
- * потому что реальные приложения используют единицы наборов опций.
  */
 const MAX_CACHED_FORMATTERS = 64
 
@@ -33,8 +31,24 @@ function formatterKey(locale: Locale, options?: object): string {
   return key
 }
 
+/**
+ * Вытесняется случайная запись, а не самая старая и не весь кэш.
+ * И полный сброс, и FIFO вырождаются в ноль попаданий, когда приложение
+ * циклически обходит набор опций чуть больше потолка: FIFO при таком обходе
+ * удаляет ровно то, что понадобится следующим. Случайная жертва оставляет
+ * долю попаданий примерно `потолок / размер набора`.
+ */
 function guardCacheSize(cache: Map<string, unknown>): void {
-  if (cache.size >= MAX_CACHED_FORMATTERS) cache.clear()
+  if (cache.size < MAX_CACHED_FORMATTERS) return
+
+  let victim = Math.floor(Math.random() * cache.size)
+
+  for (const key of cache.keys()) {
+    if (victim-- === 0) {
+      cache.delete(key)
+      return
+    }
+  }
 }
 
 /**

@@ -24,7 +24,8 @@
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=20"
@@ -98,6 +99,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "size": "yarn build && node scripts/check-size.mjs",
-    "size:check": "node scripts/check-size.mjs"
+    "size:check": "node scripts/check-size.mjs",
+    "codemod:plurals": "node scripts/codemod-plural-forms.mjs"
   }
 }

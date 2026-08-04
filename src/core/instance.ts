@@ -7,6 +7,11 @@ import { compilePluralForms, isPluralForms } from './plural'
 import { normalizeTranslateParams } from './translate-params'
 import type { FintI18nOptions, FintI18nPlugin, Locale, LocaleLoaderSource, MessageKey, MessageSchema, MessageSchemaConstraint, MessageValue, TranslateOptions } from './types'
 
+function rootSegment(key: string): string {
+  const dot = key.indexOf('.')
+  return dot === -1 ? key : key.slice(0, dot)
+}
+
 export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   /**
    * Текущая локаль. Чтение реактивно.
@@ -22,6 +27,9 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   private readonly preloadFallback: boolean
   private readonly unloadUnusedBlocks: boolean
   private compiledMessages: Record<Locale, Record<string, MessageFunction>> = Object.create(null)
+  // Индекс «локаль → корневой блок → его скомпилированные ключи».
+  // Существует только ради адресной инвалидации, на чтение перевода не влияет.
+  private compiledKeysByRoot: Map<Locale, Map<string, Set<string>>> = new Map()
   private readonly loaderRegistry: LocaleLoaderRegistry
   private loadingBlocks: Map<string, Promise<void>> = new Map()
   private loadedBlocks: Map<Locale, Set<string>> = new Map()
@@ -175,21 +183,44 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   private setCompiled = (locale: Locale, key: string, fn: MessageFunction) => {
     if (!this.compiledMessages[locale]) this.compiledMessages[locale] = Object.create(null)
     this.compiledMessages[locale][key] = fn
+
+    let roots = this.compiledKeysByRoot.get(locale)
+    if (!roots) {
+      roots = new Map()
+      this.compiledKeysByRoot.set(locale, roots)
+    }
+
+    const root = rootSegment(key)
+    let keys = roots.get(root)
+    if (!keys) {
+      keys = new Set()
+      roots.set(root, keys)
+    }
+
+    keys.add(key)
   }
 
   /**
    * Инвалидировать кэш компиляции для поддерева блока: сам блок и все
    * вложенные ключи. Вызывается перед каждым merge, чтобы перезаписанные
    * сообщения не отдавались из устаревшего кэша.
+   *
+   * Обходится не весь словарь локали, а только ключи одного корневого блока:
+   * иначе каждая загрузка блока стоила бы прохода по всем скомпилированным
+   * ключам приложения.
    */
   private invalidateCompiled = (locale: Locale, blockName: string) => {
     const compiled = this.compiledMessages[locale]
     if (!compiled) return
 
+    const keys = this.compiledKeysByRoot.get(locale)?.get(rootSegment(blockName))
+    if (!keys) return
+
     const prefix = `${blockName}.`
-    for (const key in compiled) {
+    for (const key of keys) {
       if (key === blockName || key.startsWith(prefix)) {
         delete compiled[key]
+        keys.delete(key)
       }
     }
   }

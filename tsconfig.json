@@ -35,6 +35,7 @@
     "vitest.config.ts",
     "vite-env.d.ts",
     "bench/**/*.ts",
+    "scripts/**/*.ts",
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.vue",

@@ -18,8 +18,14 @@ export interface I18nScope {
 }
 
 export interface I18nScopeSync extends I18nScope {
-  /** Становится `true`, когда все блоки скоупа загружены. */
+  /**
+   * Становится `true`, когда загрузка блоков завершилась — **в любом исходе**.
+   * Отказ хотя бы одного блока не оставляет скоуп в вечной загрузке, признак
+   * отказа смотрите в `error`.
+   */
   ready: Ref<boolean>
+  /** Причина отказа загрузки, иначе `null`. */
+  error: Ref<unknown>
 }
 
 function setupScope(blocks: string | string[], options: UseI18nScopeOptions) {
@@ -71,14 +77,19 @@ export async function useI18nScope(blocks: string | string[], options: UseI18nSc
 export function useI18nScopeSync(blocks: string | string[], options: UseI18nScopeOptions = {}): I18nScopeSync {
   const { loads, scope } = setupScope(blocks, options)
   const ready = ref(false)
+  const error = ref<unknown>(null)
 
-  Promise.all(loads)
-    .then(() => {
-      ready.value = true
-    })
-    .catch((err) => {
-      console.error('[fint-i18n] Failed to load scope blocks:', err)
-    })
+  // `allSettled` не отклоняется, поэтому обработчик отказов не нужен.
+  void Promise.allSettled(loads).then((results) => {
+    const failed = results.find(result => result.status === 'rejected')
 
-  return { ...scope, ready }
+    if (failed) {
+      error.value = failed.reason
+      console.error('[fint-i18n] Failed to load scope blocks:', failed.reason)
+    }
+
+    ready.value = true
+  })
+
+  return { ...scope, ready, error }
 }
