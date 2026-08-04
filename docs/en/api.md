@@ -333,7 +333,9 @@ declare function markBlockLoaded(blockName: string, locale: Locale): void;
 
 ### `dispose()`
 
-Tears the instance down: calls `uninstall()` on every installed plugin and clears the plugin list. Call when a per-request/SSR instance is no longer needed.
+Releases the instance: uninstalls plugins, drops **all** hook subscriptions, and clears the dictionaries, the compilation cache and the block bookkeeping. Call when a per-request/SSR instance is no longer needed.
+
+After `dispose()` the instance is empty rather than broken: `t()` returns keys, and a load that was still in flight is discarded instead of repopulating the store. Calling it twice is safe.
 
 ```typescript
 declare function dispose(): void;

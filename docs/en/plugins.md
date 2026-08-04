@@ -31,15 +31,24 @@ const i18n = createFintI18n({
 
 ```typescript
 interface PersistenceOptions {
-  key?: string;      // Key for storing the locale (default: 'fint-i18n-locale')
-  storage?: Storage; // Storage object (default: localStorage)
-  syncTabs?: boolean; // Synchronize between browser tabs (default: true)
+  key?: string;             // Key for storing the locale (default: 'fint-i18n-locale')
+  storage?: Storage;        // Storage object (default: localStorage)
+  syncTabs?: boolean;       // Synchronize between browser tabs (default: true)
+  allowedLocales?: Locale[]; // Locales the plugin may restore
 }
 ```
 
 #### Features
 - **Automatic Loading**: Upon initialization, the plugin checks for a saved value in `storage`.
 - **Tab Synchronization**: Uses the `storage` event to instantly update the locale in all open tabs when it changes in one of them.
+- **Validation**: A stored value is applied only when the locale is known to exist — from `allowedLocales`, from the registered loaders, or from messages already merged. A stale or tampered key therefore cannot leave the application with no translations at all.
+
+> [!IMPORTANT]
+> If dictionaries come from `mergeMessages()` rather than loaders, the library has no way to know which locales exist and will ignore the stored value with a warning. Pass `allowedLocales` in that setup.
+
+```typescript
+new PersistencePlugin({ allowedLocales: ['en', 'ru'] })
+```
 
 ---
 

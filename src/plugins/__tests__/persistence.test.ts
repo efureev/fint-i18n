@@ -15,7 +15,7 @@ describe('PersistencePlugin', () => {
     
     const i18n = createFintI18n({
       locale: 'en',
-      plugins: [new PersistencePlugin({ storage })]
+      plugins: [new PersistencePlugin({ storage, allowedLocales: ['en', 'ru'] })]
     })
     
     expect(i18n.locale.value).toBe('ru')
@@ -33,7 +33,7 @@ describe('PersistencePlugin', () => {
 
     const i18n = createFintI18n({
       locale: 'en',
-      plugins: [new PersistencePlugin({ storage, key: 'custom-locale-key' })]
+      plugins: [new PersistencePlugin({ storage, key: 'custom-locale-key', allowedLocales: ['en', 'fr', 'de'] })]
     })
 
     expect(storage.getItem).toHaveBeenCalledWith('custom-locale-key')
@@ -100,7 +100,7 @@ describe('PersistencePlugin', () => {
     try {
       const i18n = createFintI18n({
         locale: 'en',
-        plugins: [new PersistencePlugin({ storage, syncTabs: true })]
+        plugins: [new PersistencePlugin({ storage, syncTabs: true, allowedLocales: ['en', 'pl'] })]
       })
 
       const storageHandler = addEventListener.mock.calls[0]?.[1] as ((event: StorageEvent) => void) | undefined

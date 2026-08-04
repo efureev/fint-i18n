@@ -37,6 +37,11 @@ export class HookManager {
     return !!hooks && hooks.length > 0
   }
 
+  /** Снять все подписки разом. Используется в `FintI18n.dispose()`. */
+  clear(): void {
+    this.hooks.clear()
+  }
+
   off<K extends keyof FintI18nHooks>(name: K, fn: FintI18nHooks[K]): void {
     const hooks = this.hooks.get(name)
     if (hooks) {

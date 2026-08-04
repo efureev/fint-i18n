@@ -30,12 +30,25 @@ Pluralization is reworked from the ground up. **Every message that contains a
   precompiles a block, so a large block costs a merge rather than a compilation
   of every string in it.
 - `d(null)` and `d(undefined)` return an empty string instead of throwing.
+- **`dispose()` now releases everything**, not only plugins: all hook
+  subscriptions, dictionaries, compilation caches and block bookkeeping. After
+  it, `t()` returns keys. A load still in flight is discarded rather than
+  repopulating the store.
+- **`PersistencePlugin` no longer applies a stored locale it cannot vouch for.**
+  The value must appear in `allowedLocales`, in the registered loaders, or in
+  messages already merged. Applications that build dictionaries with
+  `mergeMessages()` instead of loaders must now pass `allowedLocales`, otherwise
+  the stored value is ignored with a warning.
 
 ### Added
 
 - `compilePluralForms(forms, locale?)` and `isPluralForms(value)` in
   `@feugene/fint-i18n/core`.
 - Types `PluralCategory`, `PluralFormKey`, `PluralForms`, `MessageSchemaConstraint`.
+- `PersistenceOptions.allowedLocales` — an explicit allowlist for the locales the
+  plugin may restore from storage.
+- `HookManager.clear()` — drops every subscription at once.
+- `useI18nScopeSync()` exposes `error: Ref<unknown>`.
 - `scripts/codemod-plural-forms.mjs` (`yarn codemod:plurals`) — migrates
   dictionaries from the 0.4.0 `|` syntax. Labelled messages are converted
   automatically; anything ambiguous is reported for a human decision instead of
@@ -67,13 +80,23 @@ Pluralization is reworked from the ground up. **Every message that contains a
 - Documentation examples that did not work: `mergeMessages` was shown with a
   missing first argument, and typed keys were advertised as typo-checked when
   arbitrary strings are accepted by design. Doc examples are now executed by a test.
+- **`useI18nScopeSync` stayed `ready: false` forever when a block failed to
+  load.** Loading now settles in every outcome and the reason is exposed as
+  `error`.
+- **The formatter cache degenerated to zero hits** once the working set of
+  locale/options pairs exceeded its ceiling: the whole cache was dropped on every
+  insert. A random entry is evicted instead — neither a full reset nor FIFO helps
+  here, both keep evicting exactly what is needed next.
 
 ### Performance
 
 - Plural `t()`: **193 ns → 62 ns**. The chosen branch is memoised per count, so
   `Intl.PluralRules.select()` — 82% of the old cost — runs once per value rather
   than per render.
-- `mergeMessages` of a 5000-key block: **5.35 ms → 3.36 ms** (lazy compilation).
+- `mergeMessages` no longer scales with dictionary size. Invalidating the
+  compilation cache used to walk every compiled key of the locale; it now walks
+  one root block. At 10 000 keys: **658 µs → 18 µs**.
+- `mergeMessages` of a 5000-key block: **5.35 ms → 3.75 ms** (lazy compilation).
 - Core bundle for `core` + `t()`: **4760 B → 4593 B** gzip.
 - Non-plural `t()` is unchanged.
 

@@ -43,6 +43,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   private localeEpoch = 0
   private missingKeyReported: Set<string> = new Set()
   private localeSetterWarned = false
+  private disposed = false
   private readonly installedPlugins: FintI18nPlugin[] = []
 
   public hooks = new HookManager()
@@ -74,12 +75,39 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     this.hooks.emitSync('afterInit', undefined)
   }
 
-  /** Деинициализация: вызывает `uninstall` у установленных плагинов. */
+  /**
+   * Освободить инстанс: снять плагины и все подписки, очистить словари,
+   * кэши компиляции и учёт блоков.
+   *
+   * После вызова `t()` возвращает ключи — сообщений больше нет. Загрузки,
+   * запущенные до вызова, домержиться уже не смогут: инстанс помечен
+   * освобождённым, и их результат отбрасывается.
+   */
   public dispose = (): void => {
+    this.disposed = true
+
+    // Плагины снимаются до `hooks.clear()`, чтобы их `uninstall` отработал
+    // штатно, а не по уже пустому реестру подписок.
     for (const plugin of this.installedPlugins) {
       plugin.uninstall?.(this)
     }
     this.installedPlugins.length = 0
+    this.hooks.clear()
+
+    // `messagesStore` реактивен и наружу отдан как `readonly`, поэтому
+    // очищается по ключам, а не переприсваиванием.
+    for (const locale in this.messagesStore) {
+      delete this.messagesStore[locale]
+    }
+
+    this.compiledMessages = Object.create(null)
+    this.compiledKeysByRoot.clear()
+    this.loadedBlocks.clear()
+    this.loadingBlocks.clear()
+    this.pendingUsedBlockLoads.clear()
+    this.blockUsageCounters.clear()
+    this.patternExpansionCache.clear()
+    this.missingKeyReported.clear()
   }
 
   /**
@@ -240,6 +268,8 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   }
 
   public loadBlock = async (blockName: string, locale?: Locale): Promise<void> => {
+    if (this.disposed) return
+
     const targetLocale = locale || this.localeRef.value
 
     // Wildcard-паттерн: разворачиваем и грузим конкретные блоки параллельно.
@@ -287,6 +317,11 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
 
         for (const loader of resolvedLoaders.loaders) {
           const module = await loader()
+
+          // Инстанс освободили, пока лоадер отрабатывал: домерживать некуда,
+          // иначе `dispose()` оставлял бы после себя воскресший словарь.
+          if (this.disposed) return
+
           const messages = (
             module && typeof module === 'object' && 'default' in module && module.default
               ? module.default
