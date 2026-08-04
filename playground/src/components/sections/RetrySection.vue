@@ -3,6 +3,7 @@ import { onUnmounted, ref } from 'vue'
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import type { FintI18n } from '@feugene/fint-i18n/core'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const { t, locale } = useFintI18n()
 
@@ -76,19 +77,11 @@ onUnmounted(disposeDemo)
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.retry.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.retry.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.retry.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.retry.eyebrow')"
+    :title="t('ui.sections.retry.title')"
+    :description="t('ui.sections.retry.description')"
+  >
     <div class="mt-6 flex flex-wrap gap-3">
       <button
         data-test="retry-recovers"
@@ -159,5 +152,5 @@ onUnmounted(disposeDemo)
     <p class="mt-4 text-xs text-slate-500 leading-5">
       {{ t('ui.sections.retry.disposeHint') }}
     </p>
-  </section>
+  </PlaygroundSection>
 </template>

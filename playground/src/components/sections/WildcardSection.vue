@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const i18n = useFintI18n()
 const { t, locale } = i18n
@@ -21,19 +22,11 @@ const loadWidgets = async () => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.wildcard.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.wildcard.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.wildcard.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.wildcard.eyebrow')"
+    :title="t('ui.sections.wildcard.title')"
+    :description="t('ui.sections.wildcard.description')"
+  >
     <div class="mt-6 flex flex-col gap-4">
       <button
         data-test="load-widgets"
@@ -75,7 +68,7 @@ const loadWidgets = async () => {
             :key="block"
             class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
           >
-            <p class="text-xs font-bold uppercase tracking-[0.24em] text-sky-600 mb-2">
+            <p class="text-xs font-bold uppercase tracking-wider text-sky-600 mb-2">
               {{ block }}
             </p>
             <h3 class="text-sm font-semibold text-slate-900">
@@ -88,5 +81,5 @@ const loadWidgets = async () => {
         </div>
       </template>
     </div>
-  </section>
+  </PlaygroundSection>
 </template>

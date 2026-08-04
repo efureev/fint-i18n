@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const i18n = useFintI18n()
 const { t, tm, locale } = i18n
@@ -38,19 +39,12 @@ function addMenuEntry() {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.subtree.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.subtree.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.subtree.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    tone="tinted"
+    :eyebrow="t('ui.sections.subtree.eyebrow')"
+    :title="t('ui.sections.subtree.title')"
+    :description="t('ui.sections.subtree.description')"
+  >
     <div class="mt-6 grid gap-4 lg:grid-cols-3">
       <div class="rounded-2xl border border-slate-200 bg-white p-4">
         <p class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2 flex items-center gap-2">
@@ -123,5 +117,5 @@ function addMenuEntry() {
         {{ t('ui.sections.subtree.readonlyHint') }}
       </p>
     </div>
-  </section>
+  </PlaygroundSection>
 </template>

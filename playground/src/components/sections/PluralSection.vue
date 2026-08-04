@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { getPluralCategories, selectPluralCategory } from '@feugene/fint-i18n/core'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const { t, locale } = useFintI18n()
 
@@ -13,19 +14,12 @@ const samples = [0, 1, 2, 5, 11, 21, 101]
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.plural.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.plural.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.plural.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    tone="tinted"
+    :eyebrow="t('ui.sections.plural.eyebrow')"
+    :title="t('ui.sections.plural.title')"
+    :description="t('ui.sections.plural.description')"
+  >
     <div class="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
       <div class="rounded-2xl border border-slate-200 bg-white p-4">
         <p class="text-3xl font-semibold text-slate-900">
@@ -89,5 +83,5 @@ const samples = [0, 1, 2, 5, 11, 21, 101]
         {{ t('ui.sections.plural.notPluralHint') }}
       </p>
     </div>
-  </section>
+  </PlaygroundSection>
 </template>

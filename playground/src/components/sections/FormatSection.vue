@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useFintI18n, useI18nFormat } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const { t } = useFintI18n()
 const { n, d } = useI18nFormat()
@@ -10,19 +11,12 @@ const moment = new Date(Date.UTC(2026, 7, 4, 9, 30))
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.format.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.format.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.format.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    tone="tinted"
+    :eyebrow="t('ui.sections.format.eyebrow')"
+    :title="t('ui.sections.format.title')"
+    :description="t('ui.sections.format.description')"
+  >
     <label class="mt-6 flex flex-col gap-2 text-sm font-medium text-slate-700 max-w-xs">
       {{ t('ui.sections.format.numberLabel') }}
       <input
@@ -84,5 +78,5 @@ const moment = new Date(Date.UTC(2026, 7, 4, 9, 30))
       <span class="i-lucide-zap text-amber-500 w-4 h-4" />
       {{ t('ui.sections.format.cacheHint') }}
     </p>
-  </section>
+  </PlaygroundSection>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const i18n = useFintI18n()
 const { t, te, locale } = i18n
@@ -26,19 +27,12 @@ function mergeRuntimeLocale() {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.introspection.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.introspection.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.introspection.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    tone="tinted"
+    :eyebrow="t('ui.sections.introspection.eyebrow')"
+    :title="t('ui.sections.introspection.title')"
+    :description="t('ui.sections.introspection.description')"
+  >
     <div class="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
       <table class="w-full text-left text-sm">
         <thead class="text-xs uppercase tracking-wide text-slate-500">
@@ -122,5 +116,5 @@ function mergeRuntimeLocale() {
     <p class="mt-4 text-xs text-slate-500">
       <span class="font-mono">locale = {{ locale }}</span>
     </p>
-  </section>
+  </PlaygroundSection>
 </template>

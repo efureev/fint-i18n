@@ -30,7 +30,7 @@ const toggleLocale = async () => {
 
     <div class="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
       <div class="max-w-2xl">
-        <p class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-600 ring-1 ring-indigo-100 shadow-sm shadow-slate-900/5">
+        <p class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-indigo-600 ring-1 ring-indigo-100 shadow-sm shadow-slate-900/5">
           <span class="i-lucide-sparkles" />
           {{ t('ui.header.eyebrow') }}
         </p>

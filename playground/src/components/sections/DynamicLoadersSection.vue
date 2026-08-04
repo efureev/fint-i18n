@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const i18n = useFintI18n()
 const { t, locale } = i18n
@@ -46,19 +47,11 @@ const triggerError = async () => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.dynamic.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.dynamic.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.dynamic.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.dynamic.eyebrow')"
+    :title="t('ui.sections.dynamic.title')"
+    :description="t('ui.sections.dynamic.description')"
+  >
     <div class="mt-6 grid gap-3 md:grid-cols-3">
       <button
         class="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm font-medium text-teal-800 hover:bg-teal-100/80 transition"
@@ -107,5 +100,5 @@ const triggerError = async () => {
       <span class="i-lucide-shield-alert mt-0.5 text-rose-400" />
       {{ t('ui.sections.dynamic.errorHint') }}
     </p>
-  </section>
+  </PlaygroundSection>
 </template>

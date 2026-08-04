@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent, ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const { t } = useFintI18n()
 
@@ -19,19 +20,11 @@ const showAuthPanel = () => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.lazy.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.lazy.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.lazy.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.lazy.eyebrow')"
+    :title="t('ui.sections.lazy.title')"
+    :description="t('ui.sections.lazy.description')"
+  >
     <div class="mt-6 flex flex-col gap-4">
       <button
         v-if="!showAuth"
@@ -57,5 +50,5 @@ const showAuthPanel = () => {
         </template>
       </Suspense>
     </div>
-  </section>
+  </PlaygroundSection>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useFintI18n, useI18nScopeSync } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const { t } = useFintI18n()
 
@@ -10,20 +11,12 @@ const scope = useI18nScopeSync(['profile'], { prefix: true })
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-      <div class="max-w-2xl flex flex-col gap-2">
-        <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-          {{ t('ui.sections.scopeSync.eyebrow') }}
-        </p>
-        <h2 class="text-xl font-semibold text-slate-900">
-          {{ t('ui.sections.scopeSync.title') }}
-        </h2>
-        <p class="text-sm leading-6 text-slate-600">
-          {{ t('ui.sections.scopeSync.description') }}
-        </p>
-      </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.scopeSync.eyebrow')"
+    :title="t('ui.sections.scopeSync.title')"
+    :description="t('ui.sections.scopeSync.description')"
+  >
+    <template #aside>
       <div
         class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
         :class="scope.ready.value
@@ -33,7 +26,7 @@ const scope = useI18nScopeSync(['profile'], { prefix: true })
         <span :class="scope.ready.value ? 'i-lucide-check-circle-2' : 'i-lucide-loader-2 animate-spin'" />
         {{ scope.ready.value ? t('ui.sections.scopeSync.readyBadge') : t('ui.sections.scopeSync.loadingBadge') }}
       </div>
-    </div>
+    </template>
 
     <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <h3 class="text-lg font-semibold text-slate-900">
@@ -51,5 +44,5 @@ const scope = useI18nScopeSync(['profile'], { prefix: true })
       <span class="i-lucide-info mt-0.5 text-indigo-400" />
       {{ t('ui.sections.scopeSync.prefixNote') }}
     </p>
-  </section>
+  </PlaygroundSection>
 </template>

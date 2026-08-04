@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const i18n = useFintI18n()
 const { t, locale } = i18n
@@ -34,19 +35,11 @@ const unload = () => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.memory.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.memory.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.memory.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.memory.eyebrow')"
+    :title="t('ui.sections.memory.title')"
+    :description="t('ui.sections.memory.description')"
+  >
     <div class="mt-5 flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-slate-500">{{ t('ui.sections.memory.knownLocales') }}:</span>
       <span
@@ -110,5 +103,5 @@ const unload = () => {
       <span class="i-lucide-lightbulb mt-0.5 text-amber-400" />
       {{ t('ui.sections.memory.autoNote') }}
     </p>
-  </section>
+  </PlaygroundSection>
 </template>

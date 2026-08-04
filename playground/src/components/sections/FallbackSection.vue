@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const i18n = useFintI18n()
 const { t, locale } = i18n
@@ -19,19 +20,11 @@ const isMissing = (key: string) => raw(key) === key
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.fallback.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.fallback.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.fallback.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.fallback.eyebrow')"
+    :title="t('ui.sections.fallback.title')"
+    :description="t('ui.sections.fallback.description')"
+  >
     <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
       <div class="grid grid-cols-3 bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-500">
         <div class="px-3 py-2">
@@ -82,5 +75,5 @@ const isMissing = (key: string) => raw(key) === key
         {{ t('ui.sections.fallback.perCallNote') }}
       </p>
     </div>
-  </section>
+  </PlaygroundSection>
 </template>

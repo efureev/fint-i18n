@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import PlaygroundSection from '../PlaygroundSection.vue'
 
 const i18n = useFintI18n()
 const { t, locale } = i18n
@@ -33,19 +34,11 @@ const loadTerms = async () => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-    <div class="max-w-2xl flex flex-col gap-2">
-      <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-        {{ t('ui.sections.partial.eyebrow') }}
-      </p>
-      <h2 class="text-xl font-semibold text-slate-900">
-        {{ t('ui.sections.partial.title') }}
-      </h2>
-      <p class="text-sm leading-6 text-slate-600">
-        {{ t('ui.sections.partial.description') }}
-      </p>
-    </div>
-
+  <PlaygroundSection
+    :eyebrow="t('ui.sections.partial.eyebrow')"
+    :title="t('ui.sections.partial.title')"
+    :description="t('ui.sections.partial.description')"
+  >
     <div class="mt-6 grid gap-4 md:grid-cols-2">
       <button
         data-test="load-articles"
@@ -112,5 +105,5 @@ const loadTerms = async () => {
         </p>
       </div>
     </div>
-  </section>
+  </PlaygroundSection>
 </template>
