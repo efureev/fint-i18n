@@ -1,9 +1,9 @@
 import { inject, type InjectionKey } from 'vue'
-import type { FintI18n, MessageSchema } from '../core'
+import type { FintI18n, MessageSchemaConstraint } from '../core'
 
 export const FINT_I18N_KEY: InjectionKey<FintI18n> = Symbol.for('FintI18n')
 
-export function useFintI18n<Schema extends MessageSchema = any>(): FintI18n<Schema> {
+export function useFintI18n<Schema extends MessageSchemaConstraint = any>(): FintI18n<Schema> {
   const i18n = inject(FINT_I18N_KEY)
   if (!i18n) {
     throw new Error('[fint-i18n] Instance not found. Did you call installI18n(app, i18n)?')

@@ -5,9 +5,9 @@ import { isBlockPattern, LocaleLoaderRegistry } from './loader-registry'
 import { deepMerge, getMessageValue, isMessageObject, mergeMessageValues } from './message-utils'
 import { compilePluralForms, isPluralForms } from './plural'
 import { normalizeTranslateParams } from './translate-params'
-import type { FintI18nOptions, FintI18nPlugin, Locale, LocaleLoaderSource, MessageKey, MessageSchema, MessageValue, TranslateOptions } from './types'
+import type { FintI18nOptions, FintI18nPlugin, Locale, LocaleLoaderSource, MessageKey, MessageSchema, MessageSchemaConstraint, MessageValue, TranslateOptions } from './types'
 
-export class FintI18n<Schema extends MessageSchema = any> {
+export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   /**
    * Текущая локаль. Чтение реактивно.
    * Прямая запись в `.value` устарела: она делегирует в `setLocale()` —
@@ -331,6 +331,12 @@ export class FintI18n<Schema extends MessageSchema = any> {
 
     if (loadedSet.has(blockName)) return true
 
+    // Блок с собственным лоадером не считается покрытым загруженным предком:
+    // сам лоадер ещё не отрабатывал. Без этой проверки лоадер, зарегистрированный
+    // через `addLoaders()` после загрузки родителя, не вызвался бы никогда.
+    const resolved = this.loaderRegistry.resolve(targetLocale, blockName)
+    if (resolved?.resolvedBlockName === blockName) return false
+
     // Check parent blocks (e.g. if 'pages' is loaded, 'pages.articles' is also loaded)
     const path = blockName.split('.')
     let parent = ''
@@ -525,6 +531,6 @@ export class FintI18n<Schema extends MessageSchema = any> {
   }
 }
 
-export function createFintI18n<Schema extends MessageSchema = any>(options: FintI18nOptions): FintI18n<Schema> {
+export function createFintI18n<Schema extends MessageSchemaConstraint = any>(options: FintI18nOptions): FintI18n<Schema> {
   return new FintI18n<Schema>(options)
 }

@@ -143,11 +143,17 @@ export const en: LocaleLoaderCollection = {
 метод `mergeMessages`.
 
 ```typescript
-const {mergeMessages} = useFintI18n()
+const {mergeMessages, locale} = useFintI18n()
 
-// Добавляем новые сообщения в блок 'custom' для текущей локали
-mergeMessages('custom', {
+// mergeMessages(locale, blockName, messages) — локаль передаётся явно,
+// понятия «текущая» у метода нет.
+mergeMessages(locale.value, 'custom', {
     dynamic_key: 'Динамическое значение'
+})
+
+// Формы множественного числа мерджатся так же — это просто форма значения.
+mergeMessages(locale.value, 'cart', {
+    items: {one: '{n} товар', few: '{n} товара', many: '{n} товаров', other: '{n} товара'}
 })
 ```
 

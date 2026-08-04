@@ -11,7 +11,7 @@ This section provides a detailed technical description of all functions, methods
 The main function for initializing the library. Imported from `@feugene/fint-i18n/core`.
 
 ```typescript
-function createFintI18n<Schema extends MessageSchema = any>(
+function createFintI18n<Schema extends MessageSchemaConstraint = any>(
   options: FintI18nOptions,
 ): FintI18n<Schema>;
 
@@ -49,14 +49,20 @@ interface FintI18nOptions {
 ```typescript
 interface AppSchema {
   common: { welcome: string; user: { profile: string } };
+  files: { one: string; other: string };
 }
 
 const i18n = createFintI18n<AppSchema>({ locale: 'en' });
 
-i18n.t('common.welcome')        // ✅ autocompleted / typo-checked
+i18n.t('common.welcome')        // ✅ autocompleted
 i18n.t('common.user.profile')   // ✅
+i18n.t('files')                 // ✅ a set of plural forms is a leaf
 i18n.t(`common.${dynamic}`)     // ✅ still allowed (falls back to `string`)
 ```
+
+Both `interface` and `type` work as a schema. Autocompletion offers the literal
+keys; arbitrary strings stay assignable, so a typo is **not** a compile error —
+`t()` accepts any string by design, for dynamically built keys.
 
 Related exported types:
 
@@ -66,6 +72,9 @@ type MessageFunction = (params?: Record<string, any>) => string;
 
 interface MessageSchema { [key: string]: MessagePrimitive | MessageFunction | MessageSchema }
 type MessageValue = MessagePrimitive | MessageFunction | MessageSchema;
+
+// The schema generic constraint: any object type, so `interface` works too
+type MessageSchemaConstraint = Record<string, any>;
 
 // All leaf keys of a schema in dot-notation: { common: { welcome: string } } → 'common.welcome'
 type MessageKeys<S>;
@@ -101,7 +110,7 @@ type LocaleLoaderCollection = {
 Provides access to the current i18n instance inside Vue components. Imported from `@feugene/fint-i18n/vue`.
 
 ```typescript
-function useFintI18n<Schema extends MessageSchema = any>(): FintI18n<Schema>;
+function useFintI18n<Schema extends MessageSchemaConstraint = any>(): FintI18n<Schema>;
 ```
 
 **Returns:** A `FintI18n` instance, providing access to the reactive locale and translation methods. Throws if `installI18n()` was not called for the app.

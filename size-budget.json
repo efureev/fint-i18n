@@ -1,0 +1,13 @@
+{
+  "unit": "bytes, gzip -9",
+  "note": "Budgets are ~5% above the measured size at the time of the last deliberate change. Moving a budget is a decision, not a formality: justify it in the commit that moves it.",
+  "entries": {
+    "core.js": 360,
+    "index.js": 570,
+    "vue.js": 1410,
+    "plugins.js": 1120,
+    "vue-global-types.js": 60,
+    "chunks/core-": 4320,
+    "chunks/format-": 1465
+  }
+}

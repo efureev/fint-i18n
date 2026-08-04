@@ -67,6 +67,13 @@ export type MessageValue = MessagePrimitive | MessageFunction | MessageSchema
 
 type IsAny<T> = 0 extends 1 & T ? true : false
 
+/**
+ * Ограничение дженерика схемы. Намеренно шире `MessageSchema`: у `interface`
+ * нет неявной индексной сигнатуры, поэтому под `MessageSchema` он не подходит,
+ * а описывать схему интерфейсом — первое, что делает потребитель.
+ */
+export type MessageSchemaConstraint = Record<string, any>
+
 /** Объект, все ключи которого — ключи форм, адресуется целиком, а не по частям. */
 type IsPluralForms<T> = [keyof T] extends [PluralFormKey] ? true : false
 
@@ -76,17 +83,21 @@ type IsPluralForms<T> = [keyof T] extends [PluralFormKey] ? true : false
  * Набор плюральных форм — лист: у `{ files: { one, other } }` ключ `'files'`,
  * а не `'files.one'`.
  */
-export type MessageKeys<S> = S extends MessageSchema
-  ? { [K in keyof S & string]: S[K] extends MessageSchema
-      ? (IsPluralForms<S[K]> extends true ? K : `${K}.${MessageKeys<S[K]>}`)
-      : K
+export type MessageKeys<S> = S extends object
+  ? { [K in keyof S & string]:
+      S[K] extends (...args: any[]) => any
+        ? K
+        : S[K] extends object
+          ? (IsPluralForms<S[K]> extends true ? K : `${K}.${MessageKeys<S[K]>}`)
+          : K
   }[keyof S & string]
   : never
 
 /**
- * Тип ключа для `t()`: литеральные ключи схемы (автодополнение и проверка
- * опечаток) плюс произвольная строка — для динамически конструируемых ключей
- * и обратной совместимости (`string & {}` не сворачивает union в `string`).
+ * Тип ключа для `t()`: литеральные ключи схемы (автодополнение) плюс
+ * произвольная строка — для динамически конструируемых ключей и обратной
+ * совместимости (`string & {}` не сворачивает union в `string`).
+ * Опечатка при этом ошибкой компиляции не является: любая строка допустима.
  */
 export type MessageKey<S> = IsAny<S> extends true
   ? string

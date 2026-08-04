@@ -12,7 +12,7 @@
 Основная функция для инициализации библиотеки. Импортируется из `@feugene/fint-i18n/core`.
 
 ```typescript
-function createFintI18n<Schema extends MessageSchema = any>(
+function createFintI18n<Schema extends MessageSchemaConstraint = any>(
     options: FintI18nOptions,
 ): FintI18n<Schema>;
 
@@ -53,20 +53,27 @@ interface FintI18nOptions {
 #### Типизированные ключи сообщений (`Schema`)
 
 `createFintI18n<Schema>()` (и `useFintI18n<Schema>()`) принимают опциональный дженерик схемы сообщений. Если он задан,
-`t()` автодополняет и проверяет литеральные ключи, при этом по-прежнему принимая произвольные строки для динамически
+`t()` автодополняет литеральные ключи, при этом по-прежнему принимая произвольные строки для динамически
 конструируемых ключей:
 
 ```typescript
 interface AppSchema {
     common: { welcome: string; user: { profile: string } };
+    files: { one: string; other: string };
 }
 
 const i18n = createFintI18n<AppSchema>({locale: 'en'});
 
-i18n.t('common.welcome')        // ✅ автодополнение / проверка опечаток
+i18n.t('common.welcome')        // ✅ автодополнение
 i18n.t('common.user.profile')   // ✅
+i18n.t('files')                 // ✅ набор плюральных форм — лист
 i18n.t(`common.${dynamic}`)     // ✅ по-прежнему допустимо (сводится к `string`)
 ```
+
+Схема работает и как `interface`, и как `type`. Автодополнение предлагает
+литеральные ключи, но произвольная строка остаётся допустимой, поэтому опечатка
+**не** является ошибкой компиляции — `t()` принимает любую строку намеренно,
+ради динамически конструируемых ключей.
 
 Связанные экспортируемые типы:
 
@@ -79,6 +86,9 @@ interface MessageSchema {
 }
 
 type MessageValue = MessagePrimitive | MessageFunction | MessageSchema;
+
+// Ограничение дженерика схемы: любой объектный тип, поэтому `interface` тоже подходит
+type MessageSchemaConstraint = Record<string, any>;
 
 // Все листовые ключи схемы в dot-нотации: { common: { welcome: string } } → 'common.welcome'
 type MessageKeys<S>;
@@ -117,7 +127,7 @@ type LocaleLoaderCollection = {
 Обеспечивает доступ к текущему экземпляру i18n внутри компонентов Vue. Импортируется из `@feugene/fint-i18n/vue`.
 
 ```typescript
-function useFintI18n<Schema extends MessageSchema = any>(): FintI18n<Schema>;
+function useFintI18n<Schema extends MessageSchemaConstraint = any>(): FintI18n<Schema>;
 ```
 
 **Возвращает:** Экземпляр `FintI18n`, предоставляющий доступ к реактивной локали и методам перевода. Бросает исключение,

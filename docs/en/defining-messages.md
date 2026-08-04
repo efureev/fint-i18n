@@ -140,11 +140,17 @@ This is useful when a single block needs to be assembled from multiple sources w
 If you need to add translations dynamically (e.g., received via an API or from a third-party plugin), use the `mergeMessages` method.
 
 ```typescript
-const { mergeMessages } = useFintI18n()
+const { mergeMessages, locale } = useFintI18n()
 
-// Adding new messages to the 'custom' block for the current locale
-mergeMessages('custom', {
+// mergeMessages(locale, blockName, messages) — the locale is explicit,
+// the method has no notion of a "current" one.
+mergeMessages(locale.value, 'custom', {
   dynamic_key: 'Dynamic value'
+})
+
+// Plural forms merge the same way — they are just a value shape.
+mergeMessages(locale.value, 'cart', {
+  items: { one: '{n} item', other: '{n} items' }
 })
 ```
 
