@@ -34,6 +34,9 @@ Pluralization is reworked from the ground up. **Every message that contains a
   subscriptions, dictionaries, compilation caches and block bookkeeping. After
   it, `t()` returns keys. A load still in flight is discarded rather than
   repopulating the store.
+- **`engines.node` raised from `>=20` to `>=22`.** Node 20 reached end of life in
+  April 2026 and was never covered by CI, which tests 22 and 24. The declared
+  range now matches what is actually verified.
 - **`PersistencePlugin` no longer applies a stored locale it cannot vouch for.**
   The value must appear in `allowedLocales`, in the registered loaders, or in
   messages already merged. Applications that build dictionaries with

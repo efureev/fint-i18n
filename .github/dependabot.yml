@@ -1,0 +1,20 @@
+version: 2
+
+updates:
+  # Версии actions разъезжались вручную: upload-artifact и download-artifact
+  # оказались на трёх разных мажорных версиях в одном workflow. Обновление
+  # группой не даёт им расходиться снова.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      artifacts:
+        patterns:
+          - actions/upload-artifact
+          - actions/download-artifact
+          - actions/upload-pages-artifact
+          - actions/deploy-pages
+      actions:
+        patterns:
+          - '*'
