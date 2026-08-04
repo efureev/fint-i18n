@@ -1,6 +1,7 @@
 # Определение сообщений и способы задания переводов
 
-Библиотека `@feugene/fint-i18n` предлагает гибкие способы задания сообщений: от статических JSON-файлов до динамического мерджа объектов в рантайме.
+Библиотека `@feugene/fint-i18n` предлагает гибкие способы задания сообщений: от статических JSON-файлов до динамического
+мерджа объектов в рантайме.
 
 ## Формат сообщений
 
@@ -19,8 +20,8 @@
 
 ### Параметры (плейсхолдеры)
 
-Вы можете использовать именованные параметры в фигурных скобках `{param}`.
-При вызове `t()` эти параметры будут заменены соответствующими значениями.
+Вы можете использовать именованные параметры в фигурных скобках `{param}`. При вызове `t()` эти параметры будут заменены
+соответствующими значениями.
 
 ```json
 {
@@ -28,21 +29,40 @@
 }
 ```
 
+### Формы множественного числа
+
+Формы разделяются `|` и выбираются через `Intl.PluralRules` по параметру `count` (или `n`). Метки — категории CLDR
+(`zero`, `one`, `two`, `few`, `many`, `other`) либо точное значение (`=0`).
+
+```json
+{
+  "files": "one:{n} file | other:{n} files",
+  "filesRu": "=0:нет файлов | one:{n} файл | few:{n} файла | many:{n} файлов"
+}
+```
+
+Без меток формы позиционны — в порядке категорий CLDR **этой локали**
+(`en` — `one`, `other`; `ru` — `one`, `few`, `many`, `other`).
+
+Символ `|` в обычном тексте продолжает работать: без параметра `count` сообщение без меток возвращается целиком. Для
+литерального символа используйте `||`. Полный справочник: [api.md](./api.md#плюрализация).
+
 ## Способы задания переводов
 
 ### 1. Статические лоадеры (Lazy Loading)
 
-Это рекомендуемый способ для большинства приложений. Переводы загружаются по требованию, разделяя ваше приложение на чанки.
+Это рекомендуемый способ для большинства приложений. Переводы загружаются по требованию, разделяя ваше приложение на
+чанки.
 
 ```typescript
 // messages/en.ts
-import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
+import type {LocaleLoaderCollection} from '@feugene/fint-i18n/core'
 
 export const en: LocaleLoaderCollection = {
-  en: {
-    common: () => import('../locales/en/common.json'),
-    admin: () => import('../locales/en/admin.json'),
-  },
+    en: {
+        common: () => import('../locales/en/common.json'),
+        admin: () => import('../locales/en/admin.json'),
+    },
 }
 
 export default en
@@ -50,13 +70,13 @@ export default en
 
 ```typescript
 // messages/ru.ts
-import type { LocaleLoaderCollection } from '@feugene/fint-i18n/core'
+import type {LocaleLoaderCollection} from '@feugene/fint-i18n/core'
 
 export const ru: LocaleLoaderCollection = {
-  ru: {
-    common: () => import('../locales/ru/common.json'),
-    admin: () => import('../locales/ru/admin.json'),
-  },
+    ru: {
+        common: () => import('../locales/ru/common.json'),
+        admin: () => import('../locales/ru/admin.json'),
+    },
 }
 
 export default ru
@@ -64,43 +84,42 @@ export default ru
 
 ```typescript
 // messages/index.ts
-export { en } from './en'
-export { ru } from './ru'
+export {en} from './en'
+export {ru} from './ru'
 ```
 
-Каждая локаль живёт в отдельном модуле и экспортируется именованно — это
-позволяет приложению импортировать только нужные языки, а сборщику — выбросить
-остальные при tree-shaking. Подробнее см. [Authoring localization
-packages](./authoring-localization-packages.md).
+Каждая локаль живёт в отдельном модуле и экспортируется именованно — это позволяет приложению импортировать только
+нужные языки, а сборщику — выбросить остальные при tree-shaking. Подробнее
+см. [Authoring localization packages](./authoring-localization-packages.md).
 
 ### 2. Композиция loaders из нескольких пакетов
 
 ```typescript
-import { createFintI18n } from '@feugene/fint-i18n/core'
-import { en as appEn, ru as appRu } from './messages'
-import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
+import {createFintI18n} from '@feugene/fint-i18n/core'
+import {en as appEn, ru as appRu} from './messages'
+import {en as granularityEn, ru as granularityRu} from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
-  locale: 'en',
-  fallbackLocale: 'en',
-  // Указываем только те локали, что реально нужны приложению.
-  loaders: [appEn, appRu, granularityEn, granularityRu],
+    locale: 'en',
+    fallbackLocale: 'en',
+    // Указываем только те локали, что реально нужны приложению.
+    loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 ```
 
-Если несколько коллекций объявляют один и тот же block, их loaders будут выполнены
-последовательно в порядке массива `loaders: [...]`.
+Если несколько коллекций объявляют один и тот же block, их loaders будут выполнены последовательно в порядке массива
+`loaders: [...]`.
 
 ### 3. Несколько loaders для одного блока
 
 ```typescript
 export const en: LocaleLoaderCollection = {
-  en: {
-    common: [
-      () => import('../locales/en/common.base.json'),
-      () => import('../locales/en/common.override.json'),
-    ],
-  },
+    en: {
+        common: [
+            () => import('../locales/en/common.base.json'),
+            () => import('../locales/en/common.override.json'),
+        ],
+    },
 }
 ```
 
@@ -108,14 +127,15 @@ export const en: LocaleLoaderCollection = {
 
 ### 4. Динамический мердж (mergeMessages)
 
-Если вам нужно добавить переводы динамически (например, полученные через API или из стороннего плагина), используйте метод `mergeMessages`.
+Если вам нужно добавить переводы динамически (например, полученные через API или из стороннего плагина), используйте
+метод `mergeMessages`.
 
 ```typescript
-const { mergeMessages } = useFintI18n()
+const {mergeMessages} = useFintI18n()
 
 // Добавляем новые сообщения в блок 'custom' для текущей локали
 mergeMessages('custom', {
-  dynamic_key: 'Динамическое значение'
+    dynamic_key: 'Динамическое значение'
 })
 ```
 
@@ -127,31 +147,35 @@ mergeMessages('custom', {
 Библиотека поддерживает иерархическую структуру блоков. Вы можете загружать как весь блок целиком, так и его части.
 
 Пример структуры лоадеров:
+
 ```typescript
 const loaders = {
-  en: {
-    pages: () => import('./locales/en/pages.json'),
-    'pages.articles': () => import('./locales/en/pages/articles.json'),
-  }
+    en: {
+        pages: () => import('./locales/en/pages.json'),
+        'pages.articles': () => import('./locales/en/pages/articles.json'),
+    }
 }
 ```
 
-Если вы вызовете `loadBlock('pages.articles')`, загрузится только указанный JSON. При этом, если в `pages.json` уже были какие-то данные, они будут объединены.
+Если вы вызовете `loadBlock('pages.articles')`, загрузится только указанный JSON. При этом, если в `pages.json` уже были
+какие-то данные, они будут объединены.
 
 ### Правила merge и правила resolve
 
 - Сначала ищется точный `blockName`.
-- Если точный block не найден, библиотека ищет ближайший parent block (`pages.articles.comments` → `pages.articles` → `pages`).
+- Если точный block не найден, библиотека ищет ближайший parent block (`pages.articles.comments` → `pages.articles` →
+  `pages`).
 - Все найденные loaders для блока выполняются последовательно.
 - При merge сообщений последнее значение по ключу побеждает.
 - Для top-level `loaders: [packageA, packageB, packageC]` порядок override соответствует порядку массива.
 
 ## Особенности компиляции
 
-При загрузке блока (будь то через лоадер или `mergeMessages`), все строки-шаблоны рекурсивно проходят через **JIT-компилятор**. 
-Это превращает строку `"Hello, {name}!"` в функцию: 
+При загрузке блока (будь то через лоадер или `mergeMessages`), все строки-шаблоны рекурсивно проходят через
+**JIT-компилятор**. Это превращает строку `"Hello, {name}!"` в функцию:
 `params => "Hello, " + params.name + "!"`.
 
 Это обеспечивает:
+
 - **Мгновенный резолв**: При вызове `t()` не тратится время на парсинг строки или RegExp.
 - **Минимальный оверхед**: Кэширование скомпилированных функций происходит автоматически.

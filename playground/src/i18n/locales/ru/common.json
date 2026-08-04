@@ -4,5 +4,8 @@
   "currentLang": "Текущий язык: {lang}",
   "blocks": "Загруженные блоки: {blocks}",
   "namePlaceholder": "Введите ваше имя...",
-  "escaped": "Экранирование: {{braces}} остаётся как есть, а {name} подставляется"
+  "escaped": "Экранирование: {{braces}} остаётся как есть, а {name} подставляется",
+  "files": "=0:нет файлов | one:{n} файл | few:{n} файла | many:{n} файлов",
+  "columns": "Имя | Почта",
+  "literalPipe": "Сочетание: Ctrl || Shift"
 }

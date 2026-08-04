@@ -87,6 +87,56 @@ export const useUserStore = defineStore('user', () => {
 })
 ```
 
+## Plural Forms
+
+Plural forms live in the message itself and are selected by the `count` (or `n`) parameter —
+`t()` needs no separate method.
+
+```vue
+<script setup>
+import { useFintI18n } from '@feugene/fint-i18n/vue'
+
+const { t } = useFintI18n()
+// "one:{n} файл | few:{n} файла | many:{n} файлов"
+</script>
+
+<template>
+  <p>{{ t('files.count', { n: 5 }) }}</p> <!-- 5 файлов -->
+</template>
+```
+
+Selection uses `Intl.PluralRules` **of the message locale**: a message that came from
+`fallbackLocale` keeps its own rules. Syntax: [defining-messages.md](./defining-messages.md#plural-forms).
+
+## Number and Date Formatting
+
+`useI18nFormat()` returns `n()` and `d()` bound to the current locale. The locale is read
+at call time, so values re-render after `setLocale()`.
+
+```vue
+<script setup>
+import { useI18nFormat } from '@feugene/fint-i18n/vue'
+
+const { n, d } = useI18nFormat()
+</script>
+
+<template>
+  <span>{{ n(1234.5, { style: 'currency', currency: 'EUR' }) }}</span>
+  <time>{{ d(Date.now(), { dateStyle: 'long' }) }}</time>
+</template>
+```
+
+Options are passed straight to `Intl.NumberFormat` / `Intl.DateTimeFormat`. Formatter
+instances are cached by locale and options — building them is the expensive part.
+
+Outside components, build the same pair from any locale source:
+
+```typescript
+import { createFormatters } from '@feugene/fint-i18n/core'
+
+const { n, d } = createFormatters(() => i18n.locale.value)
+```
+
 ## Plugins
 
 The library provides an extensible plugin system. For a detailed description and usage examples of built-in and custom plugins, read the [Plugins](./plugins.md) section.

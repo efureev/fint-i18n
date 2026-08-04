@@ -5,11 +5,13 @@ import BasicSection from './components/sections/BasicSection.vue'
 import DirectiveSection from './components/sections/DirectiveSection.vue'
 import DynamicLoadersSection from './components/sections/DynamicLoadersSection.vue'
 import FallbackSection from './components/sections/FallbackSection.vue'
+import FormatSection from './components/sections/FormatSection.vue'
 import LazyLoadSection from './components/sections/LazyLoadSection.vue'
 import MemorySection from './components/sections/MemorySection.vue'
 import PartialBlocksSection from './components/sections/PartialBlocksSection.vue'
 import PlaygroundFooter from './components/sections/PlaygroundFooter.vue'
 import PlaygroundHeader from './components/sections/PlaygroundHeader.vue'
+import PluralSection from './components/sections/PluralSection.vue'
 import ScopeSyncSection from './components/sections/ScopeSyncSection.vue'
 import WildcardSection from './components/sections/WildcardSection.vue'
 import { usePlaygroundHooksFeed } from './composables/usePlaygroundHooksFeed'
@@ -38,6 +40,8 @@ const { events: hookEvents, clear: clearHookEvents, probeTranslate } = usePlaygr
           <ScopeSyncSection />
           <MemorySection />
           <DynamicLoadersSection />
+          <PluralSection />
+          <FormatSection />
         </div>
 
         <PlaygroundFooter />

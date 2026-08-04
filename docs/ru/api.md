@@ -1,6 +1,7 @@
 # Справочник API
 
-В данном разделе представлено подробное техническое описание всех функций, методов и интерфейсов библиотеки `@feugene/fint-i18n`.
+В данном разделе представлено подробное техническое описание всех функций, методов и интерфейсов библиотеки
+`@feugene/fint-i18n`.
 
 ---
 
@@ -12,7 +13,7 @@
 
 ```typescript
 function createFintI18n<Schema extends MessageSchema = any>(
-  options: FintI18nOptions,
+    options: FintI18nOptions,
 ): FintI18n<Schema>;
 
 type Locale = string;
@@ -22,36 +23,45 @@ type LocaleLoaderCollection = Record<Locale, Record<string, LocaleBlockLoaders>>
 type LocaleLoaderSource = LocaleLoaderCollection | LocaleLoaderCollection[];
 
 interface FintI18nOptions {
-  locale: Locale;                    // Начальный язык
-  fallbackLocale?: Locale;           // Резервный язык (значение по умолчанию — ниже)
-  loaders?: LocaleLoaderSource;      // Одна или несколько коллекций loaders
-  plugins?: FintI18nPlugin[];        // Список плагинов
-  preloadFallback?: boolean;         // Грузить блоки также для fallbackLocale (по умолчанию: false)
-  unloadUnusedBlocks?: boolean;      // Выгружать блок, когда счётчик использований дошёл до 0 (по умолчанию: false)
+    locale: Locale;                    // Начальный язык
+    fallbackLocale?: Locale;           // Резервный язык (значение по умолчанию — ниже)
+    loaders?: LocaleLoaderSource;      // Одна или несколько коллекций loaders
+    plugins?: FintI18nPlugin[];        // Список плагинов
+    preloadFallback?: boolean;         // Грузить блоки также для fallbackLocale (по умолчанию: false)
+    unloadUnusedBlocks?: boolean;      // Выгружать блок, когда счётчик использований дошёл до 0 (по умолчанию: false)
 }
 ```
 
 **Параметры:**
+
 - `options` (объект):
-  - `locale` (`Locale`): Начальный язык приложения.
-  - `fallbackLocale` (`Locale`, optional): Резервный язык. **По умолчанию `''` (пустая строка), то есть fallback выключен.** Если задан — `t()` повторяет поиск отсутствующего ключа в этой локали перед тем, как считать его missing.
-  - `loaders` (`LocaleLoaderSource`, optional): Одна package-level коллекция loaders или массив таких коллекций.
-  - `plugins` (`FintI18nPlugin[]`, optional): Массив плагинов для расширения функционала.
-  - `preloadFallback` (`boolean`, optional, по умолчанию `false`): Если `true`, каждый `loadBlock()` дополнительно грузит тот же блок для `fallbackLocale`. Без этого fallback срабатывает только по уже загруженным сообщениям.
-  - `unloadUnusedBlocks` (`boolean`, optional, по умолчанию `false`): Если `true`, блок выгружается из памяти (сообщения + кэш компиляции), когда счётчик его использований опускается до нуля (размонтирован последний компонент, запросивший блок через `useI18nScope`). См. [Блоки → Жизненный цикл и память](./blocks.md#жизненный-цикл-и-память).
+    - `locale` (`Locale`): Начальный язык приложения.
+    - `fallbackLocale` (`Locale`, optional): Резервный язык. **По умолчанию `''` (пустая строка), то есть fallback
+      выключен.** Если задан — `t()` повторяет поиск отсутствующего ключа в этой локали перед тем, как считать его
+      missing.
+    - `loaders` (`LocaleLoaderSource`, optional): Одна package-level коллекция loaders или массив таких коллекций.
+    - `plugins` (`FintI18nPlugin[]`, optional): Массив плагинов для расширения функционала.
+    - `preloadFallback` (`boolean`, optional, по умолчанию `false`): Если `true`, каждый `loadBlock()` дополнительно
+      грузит тот же блок для `fallbackLocale`. Без этого fallback срабатывает только по уже загруженным сообщениям.
+    - `unloadUnusedBlocks` (`boolean`, optional, по умолчанию `false`): Если `true`, блок выгружается из памяти
+      (сообщения + кэш компиляции), когда счётчик его использований опускается до нуля (размонтирован последний
+      компонент, запросивший блок через `useI18nScope`).
+      См. [Блоки → Жизненный цикл и память](./blocks.md#жизненный-цикл-и-память).
 
 **Возвращает:** Экземпляр `FintI18n<Schema>`.
 
 #### Типизированные ключи сообщений (`Schema`)
 
-`createFintI18n<Schema>()` (и `useFintI18n<Schema>()`) принимают опциональный дженерик схемы сообщений. Если он задан, `t()` автодополняет и проверяет литеральные ключи, при этом по-прежнему принимая произвольные строки для динамически конструируемых ключей:
+`createFintI18n<Schema>()` (и `useFintI18n<Schema>()`) принимают опциональный дженерик схемы сообщений. Если он задан,
+`t()` автодополняет и проверяет литеральные ключи, при этом по-прежнему принимая произвольные строки для динамически
+конструируемых ключей:
 
 ```typescript
 interface AppSchema {
-  common: { welcome: string; user: { profile: string } };
+    common: { welcome: string; user: { profile: string } };
 }
 
-const i18n = createFintI18n<AppSchema>({ locale: 'en' });
+const i18n = createFintI18n<AppSchema>({locale: 'en'});
 
 i18n.t('common.welcome')        // ✅ автодополнение / проверка опечаток
 i18n.t('common.user.profile')   // ✅
@@ -64,7 +74,10 @@ i18n.t(`common.${dynamic}`)     // ✅ по-прежнему допустимо 
 type MessagePrimitive = string | number | boolean;
 type MessageFunction = (params?: Record<string, any>) => string;
 
-interface MessageSchema { [key: string]: MessagePrimitive | MessageFunction | MessageSchema }
+interface MessageSchema {
+    [key: string]: MessagePrimitive | MessageFunction | MessageSchema
+}
+
 type MessageValue = MessagePrimitive | MessageFunction | MessageSchema;
 
 // Все листовые ключи схемы в dot-нотации: { common: { welcome: string } } → 'common.welcome'
@@ -80,17 +93,20 @@ type LocaleBlockLoader = () => Promise<{ default: MessageValue } | MessageValue>
 type LocaleBlockLoaders = LocaleBlockLoader | LocaleBlockLoader[];
 
 type LocaleLoaderCollection = {
-  [locale: Locale]: {
-    [blockName: string]: LocaleBlockLoaders;
-  };
+    [locale: Locale]: {
+        [blockName: string]: LocaleBlockLoaders;
+    };
 };
 ```
 
 - `LocaleLoaderCollection` удобно экспортировать из пакета как готовый i18n-артефакт.
 - `LocaleLoaderSource` позволяет передать в `createFintI18n()` как одну collection, так и массив collections.
-- Loader может вернуть либо сами сообщения, либо namespace-модуль с экспортом `default` (например, `() => import('./en.json')`) — `default` разворачивается автоматически.
-- Если у одного `blockName` несколько loaders, они выполняются последовательно и их результаты merge-ятся в порядке объявления.
-- Если один и тот же `blockName` приходит из нескольких package collections, итоговый порядок loaders сохраняет порядок массива `loaders: [...]`.
+- Loader может вернуть либо сами сообщения, либо namespace-модуль с экспортом `default` (например,
+  `() => import('./en.json')`) — `default` разворачивается автоматически.
+- Если у одного `blockName` несколько loaders, они выполняются последовательно и их результаты merge-ятся в порядке
+  объявления.
+- Если один и тот же `blockName` приходит из нескольких package collections, итоговый порядок loaders сохраняет порядок
+  массива `loaders: [...]`.
 
 ---
 
@@ -104,58 +120,84 @@ type LocaleLoaderCollection = {
 function useFintI18n<Schema extends MessageSchema = any>(): FintI18n<Schema>;
 ```
 
-**Возвращает:** Экземпляр `FintI18n`, предоставляющий доступ к реактивной локали и методам перевода. Бросает исключение, если для приложения не был вызван `installI18n()`.
+**Возвращает:** Экземпляр `FintI18n`, предоставляющий доступ к реактивной локали и методам перевода. Бросает исключение,
+если для приложения не был вызван `installI18n()`.
 
 ### `useI18nScope(blocks, options?)`
 
-Асинхронный композабл для управления областью видимости блоков перевода в компоненте. Импортируется из `@feugene/fint-i18n/vue`.
+Асинхронный композабл для управления областью видимости блоков перевода в компоненте. Импортируется из
+`@feugene/fint-i18n/vue`.
 
 ```typescript
 async function useI18nScope(
-  blocks: string | string[],
-  options?: UseI18nScopeOptions,
+    blocks: string | string[],
+    options?: UseI18nScopeOptions,
 ): Promise<I18nScope>;
 
 interface UseI18nScopeOptions {
-  /**
-   * Префиксовать ключи именем блока: t('login') → t('auth.login').
-   * Работает только с одиночным конкретным блоком (не паттерном).
-   */
-  prefix?: boolean;
+    /**
+     * Префиксовать ключи именем блока: t('login') → t('auth.login').
+     * Работает только с одиночным конкретным блоком (не паттерном).
+     */
+    prefix?: boolean;
 }
 
 interface I18nScope {
-  t: (key: string, params?: Record<string, any>) => string;
-  locale: ComputedRef<Locale>;
-  setLocale: (l: Locale) => Promise<void>;
+    t: (key: string, params?: Record<string, any>) => string;
+    locale: ComputedRef<Locale>;
+    setLocale: (l: Locale) => Promise<void>;
 }
 ```
 
 **Параметры:**
-- `blocks` (`string | string[]`): Имя блока или массив имён блоков, необходимых компоненту. Поддерживаются wildcard-паттерны (`prefix.*`, `prefix.**`).
-- `options.prefix` (`boolean`, optional): Если `true` и передан один конкретный блок, `scope.t('key')` автоматически префиксуется именем блока. Для нескольких блоков или паттерна игнорируется (с предупреждением в консоль).
+
+- `blocks` (`string | string[]`): Имя блока или массив имён блоков, необходимых компоненту. Поддерживаются
+  wildcard-паттерны (`prefix.*`, `prefix.**`).
+- `options.prefix` (`boolean`, optional): Если `true` и передан один конкретный блок, `scope.t('key')` автоматически
+  префиксуется именем блока. Для нескольких блоков или паттерна игнорируется (с предупреждением в консоль).
 
 **Особенности:**
-- Автоматически загружает указанные блоки при инициализации компонента и регистрирует/снимает их использование (подсчёт ссылок) в течение жизненного цикла компонента.
+
+- Автоматически загружает указанные блоки при инициализации компонента и регистрирует/снимает их использование (подсчёт
+  ссылок) в течение жизненного цикла компонента.
 - Должен использоваться с `await` в `<script setup>` (требует `Suspense` в родительском компоненте).
 
 ### `useI18nScopeSync(blocks, options?)`
 
-Синхронный вариант `useI18nScope` — **не** требует `<Suspense>`. Блоки грузятся в фоне; флаг `ready` сигнализирует о готовности. Импортируется из `@feugene/fint-i18n/vue`.
+Синхронный вариант `useI18nScope` — **не** требует `<Suspense>`. Блоки грузятся в фоне; флаг `ready` сигнализирует о
+готовности. Импортируется из `@feugene/fint-i18n/vue`.
 
 ```typescript
 function useI18nScopeSync(
-  blocks: string | string[],
-  options?: UseI18nScopeOptions,
+    blocks: string | string[],
+    options?: UseI18nScopeOptions,
 ): I18nScopeSync;
 
 interface I18nScopeSync extends I18nScope {
-  /** Становится `true`, когда все блоки скоупа загружены. */
-  ready: Ref<boolean>;
+    /** Становится `true`, когда все блоки скоупа загружены. */
+    ready: Ref<boolean>;
 }
 ```
 
-Пока `ready` не станет `true`, `t()` возвращает ключи, которые разрешаются по мере прихода блоков (директива и `t()` реактивны, поэтому UI обновится автоматически). Ошибки загрузки репортятся в `console.error`.
+Пока `ready` не станет `true`, `t()` возвращает ключи, которые разрешаются по мере прихода блоков (директива и `t()`
+реактивны, поэтому UI обновится автоматически). Ошибки загрузки репортятся в `console.error`.
+
+### `useI18nFormat()`
+
+Форматтеры чисел и дат, привязанные к текущей локали. Импортируется из `@feugene/fint-i18n/vue`.
+
+```typescript
+function useI18nFormat(): I18nFormatters;
+
+interface I18nFormatters {
+    n: (value: number | bigint, options?: Intl.NumberFormatOptions) => string;
+    d: (value: Date | number | string, options?: Intl.DateTimeFormatOptions) => string;
+}
+```
+
+Локаль читается в момент вызова, поэтому результат в шаблоне или `computed` пересчитывается после `setLocale()`. Набор
+форматтеров общий на инстанс — вызов композабла в множестве компонентов не создаёт лишних объектов.
+См. [Форматирование чисел и дат](#форматирование-чисел-и-дат).
 
 ---
 
@@ -166,18 +208,22 @@ interface I18nScopeSync extends I18nScope {
 ### `locale`
 
 ```typescript
-readonly locale: WritableComputedRef<Locale>;
+readonly
+locale: WritableComputedRef<Locale>;
 ```
 
 Реактивная текущая локаль. **Чтение** реактивно (`i18n.locale.value`).
 
 > [!WARNING]
-> Прямая запись (`i18n.locale.value = 'ru'`) **устарела**: она делегирует в `setLocale()` и выводит одноразовое предупреждение. Используйте `setLocale()` напрямую — он к тому же дожидается загрузки используемых блоков перед переключением.
+> Прямая запись (`i18n.locale.value = 'ru'`) **устарела**: она делегирует в `setLocale()` и выводит одноразовое
+предупреждение. Используйте `setLocale()` напрямую — он к тому же дожидается загрузки используемых блоков перед
+переключением.
 
 ### `messages`
 
 ```typescript
-readonly messages: Readonly<Record<Locale, MessageSchema>>;
+readonly
+messages: Readonly<Record<Locale, MessageSchema>>;
 ```
 
 Read-only представление загруженных словарей. Изменять — только через `mergeMessages()` / `loadBlock()`.
@@ -188,26 +234,30 @@ Read-only представление загруженных словарей. И
 
 ```typescript
 declare function t(
-  key: MessageKey<Schema>,
-  params?: Record<string, any>,
-  options?: TranslateOptions,
+    key: MessageKey<Schema>,
+    params?: Record<string, any>,
+    options?: TranslateOptions,
 ): string;
 
 interface TranslateOptions {
-  /** Переопределяет `fallbackLocale` инстанса только для этого вызова. */
-  fallbackLocale?: Locale;
+    /** Переопределяет `fallbackLocale` инстанса только для этого вызова. */
+    fallbackLocale?: Locale;
 }
 ```
 
 - **`key`** (string): Полный путь к ключу (например, `common.welcome`).
 - **`params`** (object, optional): Параметры для интерполяции. Поддерживает значения `Ref` (они разворачиваются).
 - **`options`** (object, optional):
-  - **`fallbackLocale`** (`Locale`): Резервная локаль для этого вызова, имеет приоритет над `fallbackLocale` уровня инстанса. Если ключ отсутствует в текущей локали, он ищется здесь.
-- **Возвращает:** разрешённую строку либо сам `key`, если он не разрешился ни в текущей, ни в резервной локали (missing-key репортится один раз на пару `locale:key`).
+    - **`fallbackLocale`** (`Locale`): Резервная локаль для этого вызова, имеет приоритет над `fallbackLocale` уровня
+      инстанса. Если ключ отсутствует в текущей локали, он ищется здесь.
+- **Возвращает:** разрешённую строку либо сам `key`, если он не разрешился ни в текущей, ни в резервной локали
+  (missing-key репортится один раз на пару `locale:key`).
 
 ### `setLocale(locale)`
 
-Сменяет текущую локаль приложения. Перед переключением дожидается загрузки зарегистрированных, но ещё не загруженных блоков для целевой локали — чтобы не показывать сырые ключи. Конкурентные вызовы схлопываются: применяется только последняя запрошенная локаль.
+Сменяет текущую локаль приложения. Перед переключением дожидается загрузки зарегистрированных, но ещё не загруженных
+блоков для целевой локали — чтобы не показывать сырые ключи. Конкурентные вызовы схлопываются: применяется только
+последняя запрошенная локаль.
 
 ```typescript
 declare function setLocale(locale: Locale): Promise<void>;
@@ -223,23 +273,30 @@ declare function setLocale(locale: Locale): Promise<void>;
 declare function loadBlock(blockName: string, locale?: Locale): Promise<void>;
 ```
 
-- **`blockName`** (string): Имя блока для загрузки. Wildcard-паттерны (`prefix.*`, `prefix.**`) разворачиваются, и совпавшие блоки грузятся параллельно.
-- **`locale`** (`Locale`, optional): Если не указано, загружает для текущей локали. При включённом `preloadFallback` блок также грузится для `fallbackLocale`.
+- **`blockName`** (string): Имя блока для загрузки. Wildcard-паттерны (`prefix.*`, `prefix.**`) разворачиваются, и
+  совпавшие блоки грузятся параллельно.
+- **`locale`** (`Locale`, optional): Если не указано, загружает для текущей локали. При включённом `preloadFallback`
+  блок также грузится для `fallbackLocale`.
 
 **Правила резолвинга loaders:**
+
 - Сначала ищется точный `blockName`.
-- Если точный block не найден и имя содержит точку, ищется ближайший parent block (`pages.articles.comments` → `pages.articles` → `pages`).
+- Если точный block не найден и имя содержит точку, ищется ближайший parent block (`pages.articles.comments` →
+  `pages.articles` → `pages`).
 - Если для блока найден массив loaders, они выполняются последовательно.
 
 ### `addLoaders(source)`
 
-Регистрирует дополнительные лоадеры после создания инстанса (микрофронтенды, динамически подключаемые модули). Сбрасывает кэш развёртки wildcard-паттернов.
+Регистрирует дополнительные лоадеры после создания инстанса (микрофронтенды, динамически подключаемые модули).
+Сбрасывает кэш развёртки wildcard-паттернов.
 
 ```typescript
 declare function addLoaders(source: LocaleLoaderSource): void;
 ```
 
-> Паттерны, развёрнутые более ранним вызовом, пересчитываются при следующем использовании; но см. оговорку в [Блоки → Wildcard-регистрация](./blocks.md#wildcard-регистрация-prefix-и-prefix): развёртка паттерна опирается на лоадеры, известные на момент развёртки.
+> Паттерны, развёрнутые более ранним вызовом, пересчитываются при следующем использовании; но см. оговорку
+> в [Блоки → Wildcard-регистрация](./blocks.md#wildcard-регистрация-prefix-и-prefix): развёртка паттерна опирается на
+> лоадеры, известные на момент развёртки.
 
 ### `getKnownLocales()`
 
@@ -271,17 +328,20 @@ declare function isBlockLoaded(blockName: string, locale?: Locale): boolean;
 
 ### `unloadBlock(blockName, locale?)`
 
-Выгружает блок из памяти: удаляет поддерево сообщений, инвалидирует кэш компиляции и сбрасывает отметку о загрузке (следующий `loadBlock` загрузит его заново).
+Выгружает блок из памяти: удаляет поддерево сообщений, инвалидирует кэш компиляции и сбрасывает отметку о загрузке
+(следующий `loadBlock` загрузит его заново).
 
 ```typescript
 declare function unloadBlock(blockName: string, locale?: Locale): void;
 ```
 
-> Если блок был загружен через родительский лоадер (например, `pages.articles` резолвится в `pages`), выгружать нужно по **имени загруженного (родительского) блока**.
+> Если блок был загружен через родительский лоадер (например, `pages.articles` резолвится в `pages`), выгружать нужно по
+> **имени загруженного (родительского) блока**.
 
 ### Подсчёт использований: `registerUsage` / `registerBlocks` / `unregisterUsage`
 
-Подсчёт ссылок, который управляет ленивой загрузкой в `setLocale()` (через `loadUsedBlocks`) и опциональной выгрузкой (`unloadUnusedBlocks`). `useI18nScope` вызывает их за вас; вне компонентов используйте напрямую.
+Подсчёт ссылок, который управляет ленивой загрузкой в `setLocale()` (через `loadUsedBlocks`) и опциональной выгрузкой
+(`unloadUnusedBlocks`). `useI18nScope` вызывает их за вас; вне компонентов используйте напрямую.
 
 ```typescript
 declare function registerUsage(blockName: string): void;    // +1 (поддерживает паттерны)
@@ -289,11 +349,14 @@ declare function registerBlocks(blockNames: string[]): void; // registerUsage д
 declare function unregisterUsage(blockName: string): void;   // -1 (поддерживает паттерны)
 ```
 
-Wildcard-паттерны (`prefix.*`, `prefix.**`) разворачиваются в конкретные имена блоков через общий кэш, поэтому `unregisterUsage` снимает счётчики ровно у тех child-блоков, которым их поднял `registerUsage`.
+Wildcard-паттерны (`prefix.*`, `prefix.**`) разворачиваются в конкретные имена блоков через общий кэш, поэтому
+`unregisterUsage` снимает счётчики ровно у тех child-блоков, которым их поднял `registerUsage`.
 
 ### `loadUsedBlocks(locale)`
 
-Грузит все зарегистрированные и всё ещё используемые блоки, которые ещё не загружены для `locale`, циклом до сходимости (блоки, зарегистрированные во время загрузки, догружаются следующей итерацией). Ошибка одного блока не отменяет загрузку остальных — отказы репортятся через хук `onError`.
+Грузит все зарегистрированные и всё ещё используемые блоки, которые ещё не загружены для `locale`, циклом до сходимости
+(блоки, зарегистрированные во время загрузки, догружаются следующей итерацией). Ошибка одного блока не отменяет загрузку
+остальных — отказы репортятся через хук `onError`.
 
 ```typescript
 declare function loadUsedBlocks(locale: Locale): Promise<void>;
@@ -301,7 +364,9 @@ declare function loadUsedBlocks(locale: Locale): Promise<void>;
 
 ### `markBlockLoaded(blockName, locale)`
 
-Низкоуровневый метод: помечает блок как загруженный для локали (используется внутри после успешной загрузки). Вызывайте напрямую только если внедряете сообщения через `mergeMessages()` и хотите, чтобы блок считался загруженным (например, SSR-гидрация).
+Низкоуровневый метод: помечает блок как загруженный для локали (используется внутри после успешной загрузки). Вызывайте
+напрямую только если внедряете сообщения через `mergeMessages()` и хотите, чтобы блок считался загруженным (например,
+SSR-гидрация).
 
 ```typescript
 declare function markBlockLoaded(blockName: string, locale: Locale): void;
@@ -309,7 +374,8 @@ declare function markBlockLoaded(blockName: string, locale: Locale): void;
 
 ### `dispose()`
 
-Деинициализирует инстанс: вызывает `uninstall()` у каждого установленного плагина и очищает список плагинов. Вызывайте, когда per-request/SSR-инстанс больше не нужен.
+Деинициализирует инстанс: вызывает `uninstall()` у каждого установленного плагина и очищает список плагинов. Вызывайте,
+когда per-request/SSR-инстанс больше не нужен.
 
 ```typescript
 declare function dispose(): void;
@@ -327,15 +393,15 @@ declare function on<K extends keyof FintI18nHooks>(name: K, fn: FintI18nHooks[K]
 
 **Доступные хуки (`FintI18nHooks`):**
 
-| Хук | Payload | Когда |
-| --- | --- | --- |
-| `afterInit` | `void` | Эмитится синхронно в конце конструктора (успевают подписаться только плагины). |
-| `onLocaleChange` | `{ locale, previous }` | После смены активной локали. |
-| `beforeLoadBlock` | `string` (имя блока) | Перед запуском loaders блока. |
-| `afterLoadBlock` | `{ block, locale, messages }` | После завершения загрузки блока. |
-| `onMissingKey` | `{ key, locale }` | Ключ не удалось разрешить (дедуп по `locale:key`). |
-| `onTranslate` | `{ key, params?, result }` | На каждый вызов `t()`; обработчик может переписать `result`. |
-| `onError` | `{ error, block?, locale? }` | Ошибки асинхронной загрузки блоков. Без подписчиков — `console.error`. |
+| Хук               | Payload                       | Когда                                                                          |
+|-------------------|-------------------------------|--------------------------------------------------------------------------------|
+| `afterInit`       | `void`                        | Эмитится синхронно в конце конструктора (успевают подписаться только плагины). |
+| `onLocaleChange`  | `{ locale, previous }`        | После смены активной локали.                                                   |
+| `beforeLoadBlock` | `string` (имя блока)          | Перед запуском loaders блока.                                                  |
+| `afterLoadBlock`  | `{ block, locale, messages }` | После завершения загрузки блока.                                               |
+| `onMissingKey`    | `{ key, locale }`             | Ключ не удалось разрешить (дедуп по `locale:key`).                             |
+| `onTranslate`     | `{ key, params?, result }`    | На каждый вызов `t()`; обработчик может переписать `result`.                   |
+| `onError`         | `{ error, block?, locale? }`  | Ошибки асинхронной загрузки блоков. Без подписчиков — `console.error`.         |
 
 ---
 
@@ -348,64 +414,77 @@ type VTDirectiveValue = string | { path: string, params?: Record<string, any> };
 ```
 
 **Синтаксис:**
+
 - `v-t="'block.key'"` — простой вывод.
 - `v-t="{ path: 'block.key', params: { name: 'John' } }"` — с параметрами.
 
 **Реактивность (по умолчанию):**
-- Текст элемента **реактивен**: перерисовывается при смене локали и при доподгрузке ленивых блоков (через per-element `watchEffect`). Это поведение по умолчанию — модификатор не нужен.
+
+- Текст элемента **реактивен**: перерисовывается при смене локали и при доподгрузке ленивых блоков (через per-element
+  `watchEffect`). Это поведение по умолчанию — модификатор не нужен.
 
 **Модификаторы:**
-- `.once`: Рендерит перевод **один раз**, без реактивности. Последующие изменения локали/параметров/блоков игнорируются — используйте для статичных подписей, где реактивность не нужна.
-- `.preserve`: Если ключ не разрешился (`t()` вернул сам ключ), сохраняет текущий текст элемента вместо перезаписи его сырым ключом. Полезно, чтобы не мигать сырыми ключами, пока блок ещё грузится.
+
+- `.once`: Рендерит перевод **один раз**, без реактивности. Последующие изменения локали/параметров/блоков
+  игнорируются — используйте для статичных подписей, где реактивность не нужна.
+- `.preserve`: Если ключ не разрешился (`t()` вернул сам ключ), сохраняет текущий текст элемента вместо перезаписи его
+  сырым ключом. Полезно, чтобы не мигать сырыми ключами, пока блок ещё грузится.
 
 ```vue
-<span v-t="'common.welcome'" />          <!-- реактивно -->
-<span v-t.once="'brand.name'" />         <!-- рендерится один раз, без реактивности -->
-<span v-t.preserve="'lazy.title'" />     <!-- сохраняет текущий текст, пока ключ не разрешится -->
+<span v-t="'common.welcome'"/>          <!-- реактивно -->
+<span v-t.once="'brand.name'"/>         <!-- рендерится один раз, без реактивности -->
+<span v-t.preserve="'lazy.title'"/>     <!-- сохраняет текущий текст, пока ключ не разрешится -->
 ```
 
 **SSR:**
-- Директива реализует `getSSRProps`, поэтому при серверном рендеринге выводит переведённый текст в `textContent`. Убедитесь, что нужные блоки загружены до рендера на сервере (например, `await i18n.loadBlock(...)` / `loadUsedBlocks()`).
+
+- Директива реализует `getSSRProps`, поэтому при серверном рендеринге выводит переведённый текст в `textContent`.
+  Убедитесь, что нужные блоки загружены до рендера на сервере (например, `await i18n.loadBlock(...)` /
+  `loadUsedBlocks()`).
 
 ---
 
 ## Vue-плагин (`installI18n`)
 
-Регистрирует экземпляр `FintI18n` в приложении Vue: провайдит его через `provide/inject`, опционально регистрирует глобальные свойства (`$t`, `$i18n`) и директиву `v-t`. Импортируется из `@feugene/fint-i18n/vue`.
+Регистрирует экземпляр `FintI18n` в приложении Vue: провайдит его через `provide/inject`, опционально регистрирует
+глобальные свойства (`$t`, `$i18n`) и директиву `v-t`. Импортируется из `@feugene/fint-i18n/vue`.
 
 ```typescript
-import type { App } from 'vue'
+import type {App} from 'vue'
 
 type GlobalInstallFn = (app: App, i18n: FintI18n) => void
 
 interface InstallI18nOptions {
-  /**
-   * Управляет регистрацией директивы `v-t`.
-   * - `string` — зарегистрировать директиву под указанным именем (например, `'i18n'` → `v-i18n`).
-   * - `true` или не задано — зарегистрировать под именем по умолчанию `'t'` (`v-t`).
-   * - `false` — директива не регистрируется.
-   */
-  directive?: string | boolean
+    /**
+     * Управляет регистрацией директивы `v-t`.
+     * - `string` — зарегистрировать директиву под указанным именем (например, `'i18n'` → `v-i18n`).
+     * - `true` или не задано — зарегистрировать под именем по умолчанию `'t'` (`v-t`).
+     * - `false` — директива не регистрируется.
+     */
+    directive?: string | boolean
 
-  /**
-   * Управляет регистрацией глобальных свойств (`$t`, `$i18n`).
-   * - функция — вызывается вместо стандартной регистрации; вы сами решаете,
-   *   как и под какими именами выставлять свойства (или добавлять дополнительные хелперы);
-   * - `true` — выполняется стандартная регистрация (`app.config.globalProperties.$t = i18n.t`,
-   *   `app.config.globalProperties.$i18n = i18n`);
-   * - `false` — ничего не регистрируется.
-   * Если опция не передана — используется значение `true`.
-   */
-  globalInstall?: boolean | GlobalInstallFn
+    /**
+     * Управляет регистрацией глобальных свойств (`$t`, `$i18n`).
+     * - функция — вызывается вместо стандартной регистрации; вы сами решаете,
+     *   как и под какими именами выставлять свойства (или добавлять дополнительные хелперы);
+     * - `true` — выполняется стандартная регистрация (`app.config.globalProperties.$t = i18n.t`,
+     *   `app.config.globalProperties.$i18n = i18n`);
+     * - `false` — ничего не регистрируется.
+     * Если опция не передана — используется значение `true`.
+     */
+    globalInstall?: boolean | GlobalInstallFn
 }
 
 declare function installI18n(app: App, i18n: FintI18n, options?: InstallI18nOptions): void
 ```
 
 **Поведение:**
-- Всегда вызывает `app.provide(FINT_I18N_KEY, i18n)`, поэтому `useFintI18n()` и `useI18nScope()` работают независимо от `globalInstall`.
+
+- Всегда вызывает `app.provide(FINT_I18N_KEY, i18n)`, поэтому `useFintI18n()` и `useI18nScope()` работают независимо от
+  `globalInstall`.
 - Эффективное значение `globalInstall` вычисляется как `options.globalInstall ?? true`.
-- Если передана функция, она полностью заменяет стандартную регистрацию — `$t` и `$i18n` автоматически выставлены не будут.
+- Если передана функция, она полностью заменяет стандартную регистрацию — `$t` и `$i18n` автоматически выставлены не
+  будут.
 
 #### Примеры
 
@@ -418,68 +497,75 @@ installI18n(app, i18n) // регистрирует $t, $i18n и директив
 Отключить глобальные свойства (когда используются только композаблы и/или директива `v-t`):
 
 ```typescript
-installI18n(app, i18n, { globalInstall: false })
+installI18n(app, i18n, {globalInstall: false})
 ```
 
 Кастомная регистрация — например, выставить под другими именами или добавить хелперы:
 
 ```typescript
-import { installI18n } from '@feugene/fint-i18n/vue'
+import {installI18n} from '@feugene/fint-i18n/vue'
 
 installI18n(app, i18n, {
-  globalInstall: (app, i18n) => {
-    app.config.globalProperties.$tr = i18n.t
-    app.config.globalProperties.$i18n = i18n
-    app.config.globalProperties.$locale = i18n.locale
-  },
+    globalInstall: (app, i18n) => {
+        app.config.globalProperties.$tr = i18n.t
+        app.config.globalProperties.$i18n = i18n
+        app.config.globalProperties.$locale = i18n.locale
+    },
 })
 ```
 
 Изменить имя директивы или отключить её:
 
 ```typescript
-installI18n(app, i18n, { directive: 'i18n' }) // v-i18n="..."
-installI18n(app, i18n, { directive: false })  // не регистрировать директиву
+installI18n(app, i18n, {directive: 'i18n'}) // v-i18n="..."
+installI18n(app, i18n, {directive: false})  // не регистрировать директиву
 ```
 
 ### `createFintI18nPlugin(i18n, options?)`
 
-Стандартная обёртка Vue-плагина поверх `installI18n` — для конвенционального `app.use()`. Импортируется из `@feugene/fint-i18n/vue`.
+Стандартная обёртка Vue-плагина поверх `installI18n` — для конвенционального `app.use()`. Импортируется из
+`@feugene/fint-i18n/vue`.
 
 ```typescript
 declare function createFintI18nPlugin(i18n: FintI18n, options?: InstallI18nOptions): Plugin;
 ```
 
 ```typescript
-import { createFintI18n } from '@feugene/fint-i18n/core'
-import { createFintI18nPlugin } from '@feugene/fint-i18n/vue'
+import {createFintI18n} from '@feugene/fint-i18n/core'
+import {createFintI18nPlugin} from '@feugene/fint-i18n/vue'
 
-const i18n = createFintI18n({ locale: 'en' })
-app.use(createFintI18nPlugin(i18n, { globalInstall: false }))
+const i18n = createFintI18n({locale: 'en'})
+app.use(createFintI18nPlugin(i18n, {globalInstall: false}))
 ```
 
 ---
 
 ## Глобальные свойства
 
-При регистрации через `installI18n(app, i18n)` из `@feugene/fint-i18n/vue` со включённым `globalInstall` (по умолчанию), в шаблонах становятся доступны:
+При регистрации через `installI18n(app, i18n)` из `@feugene/fint-i18n/vue` со включённым `globalInstall` (по умолчанию),
+в шаблонах становятся доступны:
 
 - **`$t`**: Глобальный аналог функции `t()`.
 - **`$i18n`**: Доступ к экземпляру i18n.
 
 > [!TIP]
-> Если передан `globalInstall: false`, `$t`/`$i18n` не регистрируются. Используйте `useFintI18n()` / `useI18nScope()` или передайте функцию-регистратор, чтобы выставить свойства под собственными именами.
+> Если передан `globalInstall: false`, `$t`/`$i18n` не регистрируются. Используйте `useFintI18n()` / `useI18nScope()`
+или передайте функцию-регистратор, чтобы выставить свойства под собственными именами.
 
 ### Опциональная глобальная аугментация типов
 
-Регистрация `$t`, `$i18n` и `v-t` в рантайме сама по себе **не** включает их типизацию в шаблонах. Глобальная TypeScript-аугментация (`ComponentCustomProperties.$t` / `$i18n` и типы директивы `v-t`) теперь **opt-in** — импортируйте её один раз, например в entry-файле приложения или в `*.d.ts`:
+Регистрация `$t`, `$i18n` и `v-t` в рантайме сама по себе **не** включает их типизацию в шаблонах. Глобальная
+TypeScript-аугментация (`ComponentCustomProperties.$t` / `$i18n` и типы директивы `v-t`) теперь **opt-in** —
+импортируйте её один раз, например в entry-файле приложения или в `*.d.ts`:
 
 ```typescript
 import '@feugene/fint-i18n/vue/global-types'
 ```
 
 > [!IMPORTANT]
-> Раньше эта аугментация применялась автоматически. Если вы полагались на типизацию `$t`/`$i18n`/`v-t` в шаблонах, добавьте импорт выше после обновления. См. [migration note в installation.md](./installation.md#migration-глобальная-аугментация-типов-теперь-opt-in).
+> Раньше эта аугментация применялась автоматически. Если вы полагались на типизацию `$t`/`$i18n`/`v-t` в шаблонах,
+добавьте импорт выше после обновления.
+См. [migration note в installation.md](./installation.md#migration-глобальная-аугментация-типов-теперь-opt-in).
 
 ---
 
@@ -492,6 +578,124 @@ import '@feugene/fint-i18n/vue/global-types'
 - `{{` и `}}` — **экранирование**: выводятся как литеральные `{` и `}`.
 
 ```typescript
-i18n.t('greeting', { name: 'Alex' }) // "Hello, {name}!" → "Hello, Alex!"
+i18n.t('greeting', {name: 'Alex'}) // "Hello, {name}!" → "Hello, Alex!"
 i18n.t('literal')                    // "Use {{name}} as a placeholder" → "Use {name} as a placeholder"
 ```
+
+---
+
+## Плюрализация
+
+Формы множественного числа — часть сообщения, поэтому их обрабатывает `t()`, отдельного метода нет. Формы разделяются
+`|`; нужная выбирается через `Intl.PluralRules` по параметру `count` (или `n`).
+
+```typescript
+i18n.mergeMessages('ru', 'cart', {
+    items: 'one:{count} товар | few:{count} товара | many:{count} товаров',
+})
+
+i18n.t('cart.items', {count: 1})  // "1 товар"
+i18n.t('cart.items', {count: 3})  // "3 товара"
+i18n.t('cart.items', {count: 11}) // "11 товаров"
+```
+
+### Формы с метками
+
+Метка — категория CLDR (`zero`, `one`, `two`, `few`, `many`, `other`) либо точное значение `=N`, которое проверяется
+раньше категорий.
+
+```
+=0:нет файлов | one:{n} файл | other:{n} файлов
+```
+
+Если локаль выбрала категорию, для которой ветки нет, берётся `other`; при отсутствии `other` — последняя ветка.
+
+### Позиционные формы
+
+Без меток формы ложатся на категории CLDR **этой локали** в каноническом порядке:
+
+| Локаль | Порядок категорий             |
+|--------|-------------------------------|
+| `en`   | `one`, `other`                |
+| `ru`   | `one`, `few`, `many`, `other` |
+
+```typescript
+compileTemplate('{n} file | {n} files', 'en')                       // 2 формы — для en достаточно
+compileTemplate('{n} файл | {n} файла | {n} файлов | {n} файла', 'ru') // 4 формы для ru
+```
+
+Если форм меньше, чем категорий, оставшиеся категории делят последнюю форму. Для локалей с более чем двумя категориями
+предпочтительны метки.
+
+### Когда `|` — не плюрализация
+
+- `||` выводит литеральный символ `|`.
+- Без параметра `count`/`n` сообщение **без меток** возвращается целиком: `t('columns')` на `"Name | Email"` даст
+  `"Name | Email"`. Сообщения с метками однозначны, поэтому плюрализуются всегда и откатываются на `other`.
+- Счётчик не-число игнорируется; числовая строка (`'3'`) приводится к числу.
+
+### Правила какой локали применяются
+
+Применяются правила **той локали, из которой пришло сообщение**, а не текущей. Перевод, разрешённый через
+`fallbackLocale`, сохраняет правила fallback — текст и его грамматика едут вместе.
+
+Правила резолвятся один раз при компиляции, поэтому в момент вызова остаются только `select()` и вызов ветки. Хелперы
+экспортируются из `@feugene/fint-i18n/core`:
+
+```typescript
+function getPluralRules(locale?: Locale): Intl.PluralRules;
+
+function getPluralCategories(locale?: Locale): PluralCategory[];
+
+function selectPluralCategory(locale: Locale | undefined, count: number): PluralCategory;
+
+function clearPluralCache(): void;
+```
+
+Без локали используются английские правила.
+
+---
+
+## Форматирование чисел и дат
+
+Форматтеры — не методы инстанса: они лежат в отдельном модуле, поэтому приложение, которое ничего не форматирует, за них
+не платит. Импортируются из `@feugene/fint-i18n/core`.
+
+```typescript
+function createFormatters(getLocale: () => Locale): I18nFormatters;
+
+function formatNumber(locale: Locale, value: number | bigint, options?: Intl.NumberFormatOptions): string;
+
+function formatDate(locale: Locale, value: Date | number | string, options?: Intl.DateTimeFormatOptions): string;
+
+function getNumberFormat(locale: Locale, options?: Intl.NumberFormatOptions): Intl.NumberFormat;
+
+function getDateTimeFormat(locale: Locale, options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat;
+
+function clearFormatterCache(): void;
+```
+
+```typescript
+const {n, d} = createFormatters(() => i18n.locale.value)
+
+n(1234567.891)                                    // "1 234 567,891" (ru)
+n(42.5, {style: 'currency', currency: 'USD'})   // "$42.50" (en)
+d(Date.now(), {dateStyle: 'long'})              // "4 августа 2026 г." (ru)
+```
+
+В компонентах используйте [`useI18nFormat()`](#usei18nformat) — та же пара, полученная из инжектированного инстанса.
+
+### Кэширование
+
+Создание `Intl`-форматтера и есть дорогая часть — примерно в 25 раз дороже самого форматирования. Инстансы кэшируются по
+локали и опциям; `getNumberFormat`/`getDateTimeFormat` отдают закэшированный инстанс для `formatToParts` и подобного.
+
+Кэш ограничен (64 записи на каждый вид) и при переполнении сбрасывается целиком, поэтому генерируемые опции не могут
+растить его бесконечно.
+
+### Краевые случаи
+
+- `d()` принимает `Date`, timestamp или строку, разбираемую `new Date()`. Невалидное значение возвращается как есть с
+  предупреждением — форматирование не должно ронять рендер.
+- Локаль, не являющаяся валидным BCP 47 тегом, откатывается на `en` с предупреждением. `Locale` в библиотеке —
+  произвольный ключ, и плохой тег не должен ломать перевод.

@@ -28,6 +28,24 @@ When calling `t()`, these parameters will be replaced by their corresponding val
 }
 ```
 
+### Plural Forms
+
+Forms are separated by `|` and selected by `Intl.PluralRules` from the `count` (or `n`) parameter.
+Labels are CLDR categories (`zero`, `one`, `two`, `few`, `many`, `other`) or an exact value (`=0`).
+
+```json
+{
+  "files": "one:{n} file | other:{n} files",
+  "filesRu": "=0:no files | one:{n} файл | few:{n} файла | many:{n} файлов"
+}
+```
+
+Without labels the forms are positional, in the CLDR category order **of that locale**
+(`en` — `one`, `other`; `ru` — `one`, `few`, `many`, `other`).
+
+A `|` inside plain text keeps working: without a `count` parameter an unlabelled
+message is returned whole. Use `||` for a literal pipe. Full reference: [api.md](./api.md#pluralization).
+
 ## Methods for Defining Translations
 
 ### 1. Static Loaders (Lazy Loading)

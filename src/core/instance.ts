@@ -145,7 +145,9 @@ export class FintI18n<Schema extends MessageSchema = any> {
     const current = getMessageValue(messages, key)
 
     if (typeof current === 'string') {
-      const fn = compileTemplate(current)
+      // скомпилированная функция привязана к правилам своей локали,
+      // как и кэш `compiledMessages`.
+      const fn = compileTemplate(current, locale)
       this.setCompiled(locale, key, fn)
       return fn(params)
     }
@@ -315,7 +317,7 @@ export class FintI18n<Schema extends MessageSchema = any> {
 
   private precompileBlock = (locale: Locale, fullKey: string, messages: MessageValue) => {
     if (typeof messages === 'string') {
-      const fn = compileTemplate(messages)
+      const fn = compileTemplate(messages, locale)
       this.setCompiled(locale, fullKey, fn)
       return
     }
@@ -332,7 +334,7 @@ export class FintI18n<Schema extends MessageSchema = any> {
       const nestedKey = `${fullKey}.${key}`
 
       if (typeof value === 'string') {
-        const fn = compileTemplate(value)
+        const fn = compileTemplate(value, locale)
         this.setCompiled(locale, nestedKey, fn)
       }
       else if (typeof value === 'function') {

@@ -1,5 +1,6 @@
 import { bench, describe } from 'vitest'
 import { compileTemplate } from '@/core/compiler'
+import { createFormatters } from '@/core/format'
 import { createFintI18n } from '@/core/instance'
 import type { MessageSchema } from '@/core/types'
 
@@ -56,6 +57,25 @@ translateInstance.t('analytics.summary', { revenue: '$12k', growth: 8 })
 await localeSwitchInstance.loadBlock('analytics', 'en')
 await localeSwitchInstance.loadBlock('analytics', 'ru')
 
+const pluralInstance = createFintI18n({
+  locale: 'ru',
+  fallbackLocale: 'ru',
+})
+
+pluralInstance.mergeMessages('ru', 'cart', {
+  items: 'one:{count} товар | few:{count} товара | many:{count} товаров',
+})
+
+pluralInstance.t('cart.items', { count: 3 })
+
+const { n, d } = createFormatters(() => 'ru')
+const currency = { style: 'currency', currency: 'EUR' } as const
+const dateStyle = { dateStyle: 'long' } as const
+const moment = new Date(Date.UTC(2026, 7, 4))
+
+n(1234.5, currency)
+d(moment, dateStyle)
+
 const defaultBenchOptions = {
   iterations: 200,
   time: 250,
@@ -85,6 +105,47 @@ describe('fint-i18n core benchmarks', () => {
     'i18n.t() nested cached lookup',
     () => {
       translateInstance.t('common.nested.title')
+    },
+    defaultBenchOptions,
+  )
+
+  bench(
+    'compileTemplate() cold compile, plural',
+    () => {
+      const fn = compileTemplate('one:{n} файл | few:{n} файла | many:{n} файлов', 'ru')
+      fn({ n: 3 })
+    },
+    defaultBenchOptions,
+  )
+
+  bench(
+    'i18n.t() warm cached lookup, plural',
+    () => {
+      pluralInstance.t('cart.items', { count: 3 })
+    },
+    defaultBenchOptions,
+  )
+
+  bench(
+    'n() warm cached formatter',
+    () => {
+      n(1234.5, currency)
+    },
+    defaultBenchOptions,
+  )
+
+  bench(
+    'd() warm cached formatter',
+    () => {
+      d(moment, dateStyle)
+    },
+    defaultBenchOptions,
+  )
+
+  bench(
+    'Intl.NumberFormat construction (no cache)',
+    () => {
+      new Intl.NumberFormat('ru', currency).format(1234.5)
     },
     defaultBenchOptions,
   )

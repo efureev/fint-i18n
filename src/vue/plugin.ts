@@ -16,7 +16,12 @@ export interface InstallI18nOptions {
   globalInstall?: boolean | GlobalInstallFn
 }
 
-function defaultGlobalInstall(app: App, i18n: FintI18n) {
+/**
+ * Стандартная регистрация глобальных свойств.
+ * Экспортируется, чтобы кастомный `globalInstall` мог дополнить её
+ * (например, форматтерами `$n`/`$d`), а не переписывать с нуля.
+ */
+export function defaultGlobalInstall(app: App, i18n: FintI18n) {
   app.config.globalProperties.$t = i18n.t
   app.config.globalProperties.$i18n = i18n
 }

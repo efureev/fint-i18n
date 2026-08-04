@@ -157,6 +157,21 @@ interface I18nScopeSync extends I18nScope {
 
 Before `ready` turns `true`, `t()` returns keys that resolve as blocks arrive (the directive/`t()` are reactive, so the UI updates automatically). Load failures are reported to `console.error`.
 
+### `useI18nFormat()`
+
+Number and date formatters bound to the current locale. Imported from `@feugene/fint-i18n/vue`.
+
+```typescript
+function useI18nFormat(): I18nFormatters;
+
+interface I18nFormatters {
+  n: (value: number | bigint, options?: Intl.NumberFormatOptions) => string;
+  d: (value: Date | number | string, options?: Intl.DateTimeFormatOptions) => string;
+}
+```
+
+The locale is read at call time, so results inside a template or `computed` recompute after `setLocale()`. One formatter set is shared per instance — calling the composable in many components allocates nothing extra. See [Number and Date Formatting](#number-and-date-formatting).
+
 ---
 
 ## `FintI18n` Instance (Core API)
@@ -495,3 +510,102 @@ Messages are compiled to functions (no `new Function`, CSP-safe). Placeholder sy
 i18n.t('greeting', { name: 'Alex' }) // "Hello, {name}!" → "Hello, Alex!"
 i18n.t('literal')                    // "Use {{name}} as a placeholder" → "Use {name} as a placeholder"
 ```
+
+---
+
+## Pluralization
+
+Plural forms are part of the message, so `t()` handles them — there is no separate method. Forms are separated by `|`; the form is selected by `Intl.PluralRules` from the `count` parameter (or `n`).
+
+```typescript
+i18n.mergeMessages('ru', 'cart', {
+  items: 'one:{count} товар | few:{count} товара | many:{count} товаров',
+})
+
+i18n.t('cart.items', { count: 1 })  // "1 товар"
+i18n.t('cart.items', { count: 3 })  // "3 товара"
+i18n.t('cart.items', { count: 11 }) // "11 товаров"
+```
+
+### Labelled Forms
+
+A label is a CLDR category — `zero`, `one`, `two`, `few`, `many`, `other` — or an exact value `=N`, which is checked before categories.
+
+```
+=0:no files | one:{n} file | other:{n} files
+```
+
+If the locale selects a category with no branch, `other` is used; without an `other` branch, the last one is.
+
+### Positional Forms
+
+Without labels the forms map onto the CLDR categories **of that locale**, in canonical order:
+
+| Locale | Category order |
+| --- | --- |
+| `en` | `one`, `other` |
+| `ru` | `one`, `few`, `many`, `other` |
+
+```typescript
+compileTemplate('{n} file | {n} files', 'en')                       // 2 forms — enough for en
+compileTemplate('{n} файл | {n} файла | {n} файлов | {n} файла', 'ru') // 4 forms for ru
+```
+
+If there are fewer forms than categories, the remaining categories share the last form. For locales with more than two categories, prefer labels.
+
+### Pipes That Are Not Plurals
+
+- `||` renders a literal `|`.
+- Without a `count`/`n` parameter, an **unlabelled** message is returned whole: `t('columns')` on `"Name | Email"` yields `"Name | Email"`. Labelled messages are unambiguous, so they always pluralize and fall back to `other`.
+- A count that is not a number is ignored; a numeric string (`'3'`) is coerced.
+
+### Which Locale's Rules Apply
+
+The rules are those of **the locale the message came from**, not of the current one. A message resolved through `fallbackLocale` keeps the rules of the fallback — the text and its grammar stay together.
+
+Rules are resolved once at compile time, so at call time only `select()` and the branch call remain. Helpers are exported from `@feugene/fint-i18n/core`:
+
+```typescript
+function getPluralRules(locale?: Locale): Intl.PluralRules;
+function getPluralCategories(locale?: Locale): PluralCategory[];
+function selectPluralCategory(locale: Locale | undefined, count: number): PluralCategory;
+function clearPluralCache(): void;
+```
+
+Without a locale the English rules are used.
+
+---
+
+## Number and Date Formatting
+
+Formatters are not methods of the instance: they live in a separate module, so an application that never formats numbers does not pay for them. Imported from `@feugene/fint-i18n/core`.
+
+```typescript
+function createFormatters(getLocale: () => Locale): I18nFormatters;
+function formatNumber(locale: Locale, value: number | bigint, options?: Intl.NumberFormatOptions): string;
+function formatDate(locale: Locale, value: Date | number | string, options?: Intl.DateTimeFormatOptions): string;
+function getNumberFormat(locale: Locale, options?: Intl.NumberFormatOptions): Intl.NumberFormat;
+function getDateTimeFormat(locale: Locale, options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat;
+function clearFormatterCache(): void;
+```
+
+```typescript
+const { n, d } = createFormatters(() => i18n.locale.value)
+
+n(1234567.891)                                    // "1,234,567.891" (en)
+n(42.5, { style: 'currency', currency: 'USD' })   // "$42.50"
+d(Date.now(), { dateStyle: 'long' })              // "August 4, 2026"
+```
+
+In components use [`useI18nFormat()`](#usei18nformat) — the same pair, resolved from the injected instance.
+
+### Caching
+
+Building an `Intl` formatter is the expensive part — roughly 25× more expensive than a format call. Instances are cached by locale plus options; `getNumberFormat`/`getDateTimeFormat` expose the cached instance for `formatToParts` and similar.
+
+The cache is bounded (64 entries per kind) and dropped wholesale when exceeded, so generated options cannot grow it without bound.
+
+### Edge Cases
+
+- `d()` accepts a `Date`, a timestamp or a string parsed by `new Date()`. An invalid value is returned as-is with a warning — formatting must not break a render.
+- A locale that is not a valid BCP 47 tag falls back to `en` with a warning. `Locale` in this library is an arbitrary key, and a bad tag must not break translation.

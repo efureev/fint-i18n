@@ -92,6 +92,28 @@
       "errorButton": "Trigger a failing loader",
       "injectResultLabel": "Injected block (`runtime.hello`)",
       "errorHint": "A failing loader is reported through the `onError` hook (watch the debug panel) without crashing the app."
+    },
+    "plural": {
+      "eyebrow": "10. Pluralization",
+      "title": "CLDR forms via `Intl.PluralRules`",
+      "description": "Drag the counter and switch the locale: English has two forms, Russian has four.",
+      "counterLabel": "Count",
+      "categoryLabel": "Selected CLDR category",
+      "orderLabel": "Category order of this locale",
+      "notPluralLabel": "A pipe that is not a plural",
+      "notPluralHint": "Without a `count` an unlabelled message is returned whole; `||` renders a literal pipe."
+    },
+    "format": {
+      "eyebrow": "11. Numbers and dates",
+      "title": "`useI18nFormat()` over `Intl`",
+      "description": "Formatters read the locale at call time, so every value re-renders on switch.",
+      "numberLabel": "Number",
+      "decimalLabel": "Decimal",
+      "currencyLabel": "Currency",
+      "percentLabel": "Percent",
+      "dateLabel": "Date",
+      "dateTimeLabel": "Date and time",
+      "cacheHint": "Formatter instances are cached by locale plus options — building them is the expensive part."
     }
   },
   "status": {

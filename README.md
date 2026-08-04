@@ -15,6 +15,8 @@ Localization library for Vue 3 with lazy-loading blocks, template compilation, a
 - **Small surface area**: The package is split into `core`, `vue`, and `plugins` entry points.
 - **Performant runtime**: Templates are compiled into functions and cached.
 - **Async blocks**: Support for splitting translations into blocks and lazy-loading them.
+- **CLDR pluralization**: Forms are selected by `Intl.PluralRules`, resolved at compile time.
+- **Numbers and dates**: `n()` / `d()` over `Intl` with formatter caching, in a separate module.
 - **Bridge Mode**: Transparent integration with `vue-i18n`.
 - **Plugins**: Hook system for extending functionality (persistence, logging, etc.).
 - **Simple runtime contract**: The only peer dependency is `vue`.
