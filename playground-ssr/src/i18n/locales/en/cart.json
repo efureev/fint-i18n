@@ -1,0 +1,8 @@
+{
+  "items": {
+    "=0": "the cart is empty",
+    "one": "{n} item",
+    "other": "{n} items"
+  },
+  "checkout": "Checkout"
+}

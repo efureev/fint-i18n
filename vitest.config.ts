@@ -14,7 +14,11 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
+      // Обе витрины исключены: у них свой прогон (playground/vitest.config.ts).
+      // Шаблон без `-ssr` не матчил бы `playground-ssr/`, и её тесты попадали бы
+      // в пакетный прогон вторым экземпляром.
       '**/playground/**',
+      '**/playground-ssr/**',
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest}.config.*',

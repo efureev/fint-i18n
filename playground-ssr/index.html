@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@feugene/fint-i18n — SSR playground</title>
+  <style>
+    :root { color-scheme: light dark; --line: #d7dae0; --muted: #6b7280; --ok: #047857; --warn: #b45309; }
+    @media (prefers-color-scheme: dark) {
+      :root { --line: #333a45; --muted: #9aa3af; --ok: #34d399; --warn: #fbbf24; }
+      body { background: #14171c; color: #e5e7eb; }
+      .panel { background: #1b1f26; }
+      code { background: #262b33; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 2rem 1rem; font: 15px/1.55 ui-sans-serif, system-ui, sans-serif; }
+    main { max-width: 46rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+    .head h1 { margin: 0 0 .25rem; font-size: 1.6rem; }
+    .head p { margin: .25rem 0; color: var(--muted); }
+    .panel { border: 1px solid var(--line); border-radius: .75rem; padding: 1rem 1.25rem; }
+    .panel h2 { margin: 0 0 .75rem; font-size: 1.05rem; }
+    .lead { font-size: 1.5rem; font-weight: 600; margin: .25rem 0 .75rem; }
+    .grid { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: .35rem 1rem; margin: 0; }
+    .grid dt { color: var(--muted); }
+    .grid dd { margin: 0; }
+    .row { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .5rem 0; }
+    .chip { border: 1px solid var(--line); border-radius: .5rem; padding: .25rem .6rem; background: none;
+            color: inherit; font: inherit; cursor: pointer; text-decoration: none; }
+    .chip.active { border-color: currentColor; font-weight: 600; }
+    .hint { color: var(--muted); font-size: .875rem; margin: .75rem 0 0; }
+    .loading { color: var(--muted); }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    code { background: #eef0f3; border-radius: .25rem; padding: .05rem .3rem; font-size: .9em; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <div id="app"><!--app-html--></div>
+  <script>window.__STATE__ = /*--app-state--*/null/*--/app-state--*/;</script>
+  <script type="module" src="/src/entry-client.ts"></script>
+</body>
+</html>

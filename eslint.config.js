@@ -7,6 +7,7 @@ export default antfu(
       'dist/**',
       'node_modules/**',
       'playground/**',
+      'playground-ssr/**',
       'docs/**',
       '**/*.md',
       '**/*.md/**',

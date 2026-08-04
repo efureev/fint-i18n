@@ -116,6 +116,11 @@ jobs:
       - name: Build playground
         run: yarn playground:build
 
+      # Единственный гейт типов SSR-витрины: она вне tsconfig и вне eslint,
+      # как и основная витрина.
+      - name: Build SSR playground
+        run: yarn playground:ssr:build
+
       - name: Upload dist
         if: matrix.node == 24
         uses: actions/upload-artifact@v7

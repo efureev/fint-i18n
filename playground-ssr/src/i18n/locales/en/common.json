@@ -1,0 +1,5 @@
+{
+  "title": "SSR playground",
+  "greeting": "Rendered on the server for {name}",
+  "renderedAt": "Snapshot taken at {time}"
+}

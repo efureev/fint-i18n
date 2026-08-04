@@ -1,6 +1,6 @@
 {
   "name": "@feugene/fint-i18n",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Lightweight Vue 3 i18n library with lazy-loading blocks and template caching",
   "author": "Fureev Eugene<https://feugene.org>",
   "license": "MIT",
@@ -100,6 +100,9 @@
     "lint:fix": "eslint . --fix",
     "size": "yarn build && node scripts/check-size.mjs",
     "size:check": "node scripts/check-size.mjs",
-    "codemod:plurals": "node scripts/codemod-plural-forms.mjs"
+    "codemod:plurals": "node scripts/codemod-plural-forms.mjs",
+    "playground:ssr": "node playground-ssr/server.mjs",
+    "playground:ssr:build": "vite build --config playground-ssr/vite.config.ts --outDir dist/client --ssrManifest && vite build --config playground-ssr/vite.config.ts --outDir dist/server --ssr src/entry-server.ts",
+    "playground:ssr:prod": "node playground-ssr/server.mjs --prod"
   }
 }
