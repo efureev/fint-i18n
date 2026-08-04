@@ -1,0 +1,5 @@
+{
+  "title": "Perfil de la cuenta",
+  "subtitle": "Cargado con useI18nScopeSync",
+  "hint": "No hace falta <Suspense>: el bloque llega solo y `ready` pasa a true."
+}

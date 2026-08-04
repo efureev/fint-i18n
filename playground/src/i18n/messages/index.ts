@@ -8,12 +8,12 @@
  * Usage from the consumer side:
  *
  * ```ts
- * import { en, ru } from './i18n/messages'
+ * import { en, es, ru } from './i18n/messages'
  *
  * createFintI18n({
  *   locale: 'en',
  *   fallbackLocale: 'en',
- *   loaders: [en, ru],
+ *   loaders: [en, ru, es],
  * })
  * ```
  *
@@ -22,4 +22,5 @@
  * file, otherwise per-locale tree-shaking would be defeated.
  */
 export { en } from './en'
+export { es } from './es'
 export { ru } from './ru'

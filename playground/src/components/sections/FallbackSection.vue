@@ -6,11 +6,10 @@ import PlaygroundSection from '../PlaygroundSection.vue'
 const i18n = useFintI18n()
 const { t, locale } = i18n
 
-// Load the `fallback` block for BOTH locales so the fallback chain has
-// something to resolve against regardless of the active locale.
+// Блок `fallback` грузится для всех известных локалей, а не для пары
+// перечисленных: цепочке нужно, чтобы было куда падать при любой активной.
 onMounted(() => {
-  void i18n.loadBlock('fallback', 'en')
-  void i18n.loadBlock('fallback', 'ru')
+  for (const known of i18n.getAvailableLocales()) void i18n.loadBlock('fallback', known)
 })
 
 // Pinning the fallback to the current locale disables cross-locale fallback,

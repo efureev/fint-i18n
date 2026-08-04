@@ -30,10 +30,13 @@ const boundaries = computed(() => [
   result: tm(row.key) === undefined ? 'undefined' : `{ ${Object.keys(tm(row.key)!).join(', ')} }`,
 })))
 
+const HELP_LABEL: Record<string, string> = { en: 'Help', ru: 'Помощь', es: 'Ayuda' }
+
 const added = ref(false)
 function addMenuEntry() {
-  const label = locale.value === 'ru' ? 'Помощь' : 'Help'
-  i18n.mergeMessages(locale.value, 'common', { menu: { help: label } })
+  i18n.mergeMessages(locale.value, 'common', {
+    menu: { help: HELP_LABEL[locale.value] ?? HELP_LABEL.en },
+  })
   added.value = true
 }
 </script>

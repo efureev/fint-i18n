@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
+import LocaleSwitcher from '../LocaleSwitcher.vue'
 
-const i18n = useFintI18n()
-const { t, locale } = i18n
-
-const localeBadge = computed(() => locale.value.toUpperCase())
-
-const toggleLocale = async () => {
-  await i18n.setLocale(locale.value === 'en' ? 'ru' : 'en')
-}
+const { t } = useFintI18n()
 </script>
 
 <template>
@@ -47,22 +40,12 @@ const toggleLocale = async () => {
         </p>
       </div>
 
-      <div class="flex flex-col gap-3 md:items-end">
-        <div class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs text-slate-500 ring-1 ring-slate-200 shadow-sm shadow-slate-900/5">
-          <span class="i-lucide-badge-info text-indigo-500" />
-          {{ t('ui.header.localeBadge') }}
-          <span class="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700">{{ localeBadge }}</span>
-        </div>
+      <div class="flex flex-col gap-2.5 md:items-end">
+        <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+          {{ t('ui.header.localeLabel') }}
+        </p>
 
-        <button
-          data-test="toggle-locale"
-          class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 font-medium text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-500 active:bg-indigo-700"
-          type="button"
-          @click="toggleLocale"
-        >
-          <span class="i-lucide-repeat" />
-          {{ t('common.changeLang') }}
-        </button>
+        <LocaleSwitcher />
 
         <p class="max-w-xs text-xs leading-5 text-slate-500 md:text-right">
           {{ t('ui.header.toggleHint') }}

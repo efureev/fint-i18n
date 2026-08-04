@@ -3,8 +3,9 @@
     "eyebrow": "playground",
     "title": "@feugene/fint-i18n",
     "description": "A focused sandbox for validating runtime behavior, lazy blocks, Vue integration and developer ergonomics.",
-    "localeBadge": "Locale",
-    "toggleHint": "Switch the active locale and observe reactive updates across the page."
+    "localeLabel": "Locale",
+    "localeSwitcher": "Choose a language",
+    "toggleHint": "Pick a locale and watch the whole page update reactively."
   },
   "sections": {
     "basic": {
@@ -100,7 +101,7 @@
     "plural": {
       "eyebrow": "10. Pluralization",
       "title": "CLDR forms via `Intl.PluralRules`",
-      "description": "Drag the counter and switch the locale: English has two forms, Russian has four.",
+      "description": "Drag the counter and switch the locale: English has two forms, Spanish three, Russian four.",
       "counterLabel": "Count",
       "categoryLabel": "Selected CLDR category",
       "orderLabel": "Category order of this locale",

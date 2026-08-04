@@ -1,0 +1,22 @@
+{
+  "welcome": "¡Bienvenido, {name}!",
+  "changeLang": "Cambiar idioma",
+  "currentLang": "Idioma actual: {lang}",
+  "blocks": "Bloques cargados: {blocks}",
+  "namePlaceholder": "Escribe tu nombre...",
+  "escaped": "Escapado: {{braces}} se queda literal, mientras que {name} se interpola",
+  "files": {
+    "=0": "ningún archivo",
+    "one": "{n} archivo",
+    "many": "{n} de archivos",
+    "other": "{n} archivos"
+  },
+  "columns": "Nombre | Correo",
+  "literalPipe": "Atajo: Ctrl || Shift",
+  "selfNamed": "common.selfNamed",
+  "menu": {
+    "home": "Inicio",
+    "settings": "Ajustes",
+    "profile": "Perfil"
+  }
+}

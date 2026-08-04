@@ -78,12 +78,32 @@ describe('Playground', () => {
     expect(wrapper.text()).toContain('Reactive `v-t`')
     expect(wrapper.text()).toContain('Static `v-t.once`')
 
-    await wrapper.get('[data-test="toggle-locale"]').trigger('click')
+    await wrapper.get('[data-test="locale-ru"]').trigger('click')
     await settleUi()
 
     expect(wrapper.text()).toContain('Добро пожаловать, Senior Developer!')
     expect(wrapper.text()).toContain('Реактивный `v-t`')
     expect(wrapper.text()).toContain('Switch Language')
+
+    await wrapper.get('[data-test="locale-es"]').trigger('click')
+    await settleUi()
+
+    expect(wrapper.text()).toContain('¡Bienvenido, Senior Developer!')
+    expect(wrapper.text()).toContain('`v-t` reactiva')
+  })
+
+  it('offers every registered locale and marks the active one', async () => {
+    const { wrapper } = await mountPlayground()
+
+    // Кнопки строятся из `getAvailableLocales()`, а не из списка в компоненте.
+    const buttons = wrapper.findAll('[data-test^="locale-"]')
+    expect(buttons.map(button => button.text())).toEqual(['EN', 'RU', 'ES'])
+
+    expect(wrapper.get('[data-test="locale-en"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('[data-test="locale-es"]').attributes('aria-pressed')).toBe('false')
+
+    // Подпись — язык на самом себе: её ищет тот, кто текущего языка не знает.
+    expect(wrapper.get('[data-test="locale-es"]').attributes('title')).toBe('español')
   })
 
   it('loads lazy and nested blocks and records runtime hooks', async () => {

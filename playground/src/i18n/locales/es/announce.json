@@ -1,0 +1,4 @@
+{
+  "banner": "🎉 ¡Cargado con addLoaders() en tiempo de ejecución!",
+  "note": "Este bloque nunca formó parte de los loaders iniciales."
+}

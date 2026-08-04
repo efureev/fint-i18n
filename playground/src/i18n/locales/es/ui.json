@@ -1,0 +1,205 @@
+{
+  "header": {
+    "eyebrow": "escaparate",
+    "title": "@feugene/fint-i18n",
+    "description": "Un banco de pruebas centrado en el comportamiento en tiempo de ejecución, los bloques diferidos, la integración con Vue y la ergonomía del paquete.",
+    "localeLabel": "Idioma",
+    "localeSwitcher": "Elegir idioma",
+    "toggleHint": "Elige un idioma y observa cómo toda la página se actualiza de forma reactiva."
+  },
+  "sections": {
+    "basic": {
+      "eyebrow": "1. Traducción básica",
+      "title": "Uso reactivo de `t()`",
+      "description": "Cambia el campo del nombre para comprobar la interpolación y el cambio de idioma instantáneo.",
+      "inputLabel": "Nombre del visitante",
+      "escapedLabel": "Escapado de llaves `{{ }}`",
+      "escapedHint": "Las llaves dobles se muestran literales; las simples interpolan el parámetro."
+    },
+    "directive": {
+      "eyebrow": "2. Directivas",
+      "title": "`v-t`, `v-t.once` y `v-t.preserve`",
+      "description": "Compara la actualización reactiva del texto con las variantes de una sola vez y de conservación.",
+      "normalLabel": "`v-t` reactiva",
+      "onceLabel": "`v-t.once` estática",
+      "onceHint": "Este valor no cambia tras cambiar de idioma, y es intencionado.",
+      "preserveLabel": "`v-t.preserve` de reserva",
+      "preserveHint": "Mantiene el texto actual mientras falta `lab.motto` y se actualiza en cuanto el bloque se carga.",
+      "preserveButton": "Cargar el bloque `lab`"
+    },
+    "lazy": {
+      "eyebrow": "3. Bloques diferidos",
+      "title": "Ámbito de componente bajo demanda",
+      "description": "Monta el componente asíncrono de autenticación para cargar el bloque `auth` solo cuando la interfaz lo necesita de verdad.",
+      "button": "Cargar el componente de autenticación",
+      "loading": "Cargando el componente y su bloque de traducciones..."
+    },
+    "partial": {
+      "eyebrow": "4. Carga parcial",
+      "title": "Carga de bloques JSON anidados",
+      "description": "Un bloque anidado puede tener su propio loader, o recurrir al del padre. Carga los dos y compara qué queda marcado como cargado.",
+      "loadArticles": "Cargar `page.articles`",
+      "loadArticlesHint": "Tiene su propio loader",
+      "loadTerms": "Cargar `page.terms`",
+      "loadTermsHint": "Sin loader propio → se resuelve hacia `page`",
+      "loadedLabel": "getLoadedBlocks() para este idioma",
+      "unloadHint": "Fíjate en la asimetría: `page.articles` queda marcado con su propio nombre, mientras que `page.terms` lo cubre `page`. Para descargar hace falta el nombre realmente cargado — `unloadBlock(\"page.terms\")` no haría nada."
+    },
+    "wildcard": {
+      "eyebrow": "5. Registro con comodín",
+      "title": "Cargar bloques hermanos con `widgets.*`",
+      "description": "Una sola llamada a `loadBlock(\"widgets.*\")` expande el patrón a todos los hijos directos registrados (`widgets.alpha`, `widgets.beta`, `widgets.gamma`) y los carga en paralelo. Los loaders se registran uno por hijo, como siempre; solo la petición es un patrón. `*` cubre exactamente un segmento, `**` cubre cualquier profundidad.",
+      "button": "Cargar `widgets.*`",
+      "buttonHint": "El patrón se expande una vez y se reutiliza al cambiar de idioma",
+      "loadedBadge": "{count} bloques cargados",
+      "expandedLabel": "En qué se expandió el patrón",
+      "expandedHint": "Esta lista viene de `getLoadedBlocks()`, no de una lista escrita en el componente: la composición la decide el patrón."
+    },
+    "fallback": {
+      "eyebrow": "6. Idioma de reserva",
+      "title": "`fallbackLocale` y `TranslateOptions` por llamada",
+      "description": "Las claves ausentes recurren a otro idioma: de forma global con el `fallbackLocale` de la instancia, o por llamada con `t(key, params, { fallbackLocale })`.",
+      "keyColumn": "Clave",
+      "currentColumn": "Idioma actual",
+      "fallbackColumn": "Con reserva",
+      "instanceNote": "El `fallbackLocale: 'en'` de la instancia resuelve las claves que solo existen en inglés.",
+      "perCallNote": "El `{ fallbackLocale: 'ru' }` por llamada resuelve las claves que solo existen en ruso.",
+      "missing": "(ausente → devuelve la clave)"
+    },
+    "scopeSync": {
+      "eyebrow": "7. Ámbito síncrono",
+      "title": "`useI18nScopeSync` + `prefix`",
+      "description": "Carga un bloque sin `<Suspense>`. `ready` pasa a true en cuanto llega el bloque; `prefix: true` permite llamar a las claves de forma relativa al bloque.",
+      "readyBadge": "listo",
+      "loadingBadge": "cargando…",
+      "prefixNote": "Las claves de abajo se llaman como `t('title')` y se resuelven como `profile.title` gracias a `prefix: true`."
+    },
+    "memory": {
+      "eyebrow": "8. Memoria y uso",
+      "title": "Recuento de referencias y descarga manual",
+      "description": "Registra el uso, carga los bloques registrados con `loadUsedBlocks`, comprueba `isBlockLoaded` y libera memoria con `unloadBlock`.",
+      "knownLocales": "Idiomas conocidos (`getKnownLocales()`)",
+      "register": "registerUsage('metrics')",
+      "loadUsed": "loadUsedBlocks(locale)",
+      "unload": "unloadBlock('metrics')",
+      "statusLoaded": "metrics: cargado",
+      "statusNotLoaded": "metrics: sin cargar",
+      "previewLabel": "vista previa de metrics",
+      "autoNote": "Activa `unloadUnusedBlocks: true` al inicializar para descargar automáticamente cuando el contador de usos llegue a cero."
+    },
+    "dynamic": {
+      "eyebrow": "9. Loaders dinámicos y errores",
+      "title": "`addLoaders`, `mergeMessages`, `onError`",
+      "description": "Registra bloques nuevos en tiempo de ejecución, inyecta mensajes a mano y observa cómo se reportan los errores mediante hooks.",
+      "addButton": "addLoaders() + cargar `announce`",
+      "injectButton": "mergeMessages() + markBlockLoaded()",
+      "errorButton": "Provocar un loader que falla",
+      "injectResultLabel": "Bloque inyectado (`runtime.hello`)",
+      "errorHint": "Un loader que falla se reporta por el hook `onError` (míralo en el panel de depuración) sin tumbar la aplicación.",
+      "injectedValue": "Inyectado directamente con mergeMessages()"
+    },
+    "plural": {
+      "eyebrow": "10. Pluralización",
+      "title": "Formas CLDR con `Intl.PluralRules`",
+      "description": "Mueve el contador y cambia de idioma: el inglés tiene dos formas, el español tres y el ruso cuatro.",
+      "counterLabel": "Cantidad",
+      "categoryLabel": "Categoría CLDR elegida",
+      "orderLabel": "Orden de categorías de este idioma",
+      "notPluralLabel": "Cadenas que simplemente contienen una barra vertical",
+      "notPluralHint": "El plural es la forma del valor, así que ningún carácter de la cadena es especial: las dos líneas de abajo se muestran enteras."
+    },
+    "format": {
+      "eyebrow": "11. Números y fechas",
+      "title": "`useI18nFormat()` sobre `Intl`",
+      "description": "Los formateadores leen el idioma en el momento de la llamada, así que cada valor se vuelve a renderizar al cambiarlo.",
+      "numberLabel": "Número",
+      "decimalLabel": "Decimal",
+      "currencyLabel": "Moneda",
+      "percentLabel": "Porcentaje",
+      "dateLabel": "Fecha",
+      "dateTimeLabel": "Fecha y hora",
+      "cacheHint": "Las instancias de formateador se cachean por idioma y opciones: construirlas es la parte cara."
+    },
+    "introspection": {
+      "eyebrow": "12. Introspección",
+      "title": "`te()` y los idiomas disponibles",
+      "description": "Pregunta si una traducción existe y enumera los idiomas a los que puedes cambiar.",
+      "existsLabel": "te(key)",
+      "keyLabel": "Clave",
+      "tLabel": "t(key)",
+      "compareLabel": "t(key) !== key",
+      "liesHint": "La última fila es un mensaje cuyo valor coincide con su propia clave. `te()` responde bien; comparar `t()` con la clave, no.",
+      "localesLabel": "Idiomas",
+      "knownLabel": "getKnownLocales() — de los loaders",
+      "availableLabel": "getAvailableLocales() — loaders más mensajes fusionados",
+      "mergeButton": "mergeMessages() para un idioma nuevo",
+      "localesHint": "Fusiona un idioma en tiempo de ejecución y observa cómo crece solo la segunda lista: la primera responde a otra pregunta."
+    },
+    "subtree": {
+      "eyebrow": "13. Traducciones como datos",
+      "title": "`tm()` — un subárbol en lugar de un solo mensaje",
+      "description": "`t()` devuelve un mensaje y necesita su clave. `tm()` devuelve un espacio de nombres entero, así que una lista puede venir del diccionario y el componente nunca nombra sus elementos.",
+      "dictLabel": "En el diccionario",
+      "codeLabel": "En el componente",
+      "resultLabel": "Renderizado",
+      "pointHint": "Nada en el código de abajo menciona `home`, `settings` ni `profile`. Añade una entrada al diccionario y la lista crece sola: pulsa el botón y míralo.",
+      "addButton": "mergeMessages() — añadir una entrada al menú",
+      "addedNote": "`common.menu.help` se fusionó en tiempo de ejecución. El componente no se tocó.",
+      "boundaryLabel": "Qué devuelve `tm()`",
+      "namespaceNote": "espacio de nombres → el subárbol",
+      "leafNote": "hoja → undefined, léela con t()",
+      "pluralNote": "formas plurales → undefined, también son una hoja",
+      "missingNote": "clave ausente → undefined",
+      "readonlyHint": "El subárbol es de solo lectura: escribir en él saltaría `mergeMessages()` y dejaría obsoleta la caché de compilación."
+    },
+    "retry": {
+      "eyebrow": "14. Reintento de una carga fallida",
+      "title": "`retry` — intentos, espera y un único error final",
+      "description": "Un loader que lanza un error se reintenta en lugar de dejar el bloque vacío. Desactivado por defecto; la demo usa su propia instancia para que la opción se vea en el código.",
+      "recoverButton": "Falla dos veces y luego funciona",
+      "exhaustButton": "Falla en todos los intentos",
+      "optionLabel": "Opción de la instancia",
+      "optionHint": "Los reintentos viven dentro de la promesa del bloque, así que las llamadas concurrentes a `loadBlock()` la siguen compartiendo y la deduplicación se mantiene.",
+      "logLabel": "Intentos del loader",
+      "logEmpty": "Pulsa un botón para ejecutar el loader.",
+      "attemptLine": "intento {attempt} en +{at} ms —",
+      "attemptOk": "resuelto",
+      "attemptFailed": "falló",
+      "payload": "Cargado en un reintento",
+      "failedNote": "Todos los intentos fallaron. Solo sale el último error: uno por bloque, no uno por intento.",
+      "disposeHint": "La instancia de la demo se libera con `dispose()` al desmontar: suelta mensajes, cachés y suscripciones de plugins, y detiene un ciclo de reintentos en curso."
+    }
+  },
+  "status": {
+    "ready": "Listo",
+    "loaded": "Cargado"
+  },
+  "debug": {
+    "title": "Depuración en tiempo real",
+    "loadedMessages": "Mensajes cargados",
+    "runtimeHooks": "Hooks en tiempo de ejecución",
+    "empty": "Todavía no se ha emitido ningún hook",
+    "clear": "Limpiar",
+    "blocks": "bloques",
+    "keys": "claves",
+    "probe": "Probar onTranslate"
+  },
+  "footer": {
+    "capabilities": {
+      "lazy": "Bloques diferidos",
+      "vue": "Integración con Vue",
+      "scope": "Loaders por ámbito",
+      "fallback": "Cadena de reserva",
+      "dynamic": "Loaders dinámicos",
+      "plural": "Plurales CLDR",
+      "format": "Formato con Intl",
+      "introspection": "Introspección",
+      "retry": "Reintentos de carga"
+    },
+    "links": {
+      "docs": "Documentación",
+      "ssr": "Escaparate SSR",
+      "tooling": "Herramientas de diccionarios"
+    }
+  }
+}

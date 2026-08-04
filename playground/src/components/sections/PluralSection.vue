@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { getPluralCategories, selectPluralCategory } from '@feugene/fint-i18n/core'
-import { useFintI18n } from '@feugene/fint-i18n/vue'
+import { useFintI18n, useI18nFormat } from '@feugene/fint-i18n/vue'
 import PlaygroundSection from '../PlaygroundSection.vue'
 
 const { t, locale } = useFintI18n()
+const { n } = useI18nFormat()
 
 const count = ref(1)
 
 const category = computed(() => selectPluralCategory(locale.value, count.value))
 const order = computed(() => getPluralCategories(locale.value))
-const samples = [0, 1, 2, 5, 11, 21, 101]
+
+// Форму выбирает `count`, а подставляется `n`: в `compilePluralForms`
+// `params.count` имеет приоритет над `params.n`, поэтому в текст можно отдать
+// уже отформатированное число, не сломав выбор ветки.
+// Миллион здесь не для красоты: в испанском `many` — единственная категория,
+// до которой нельзя дойти маленькими числами, и без него форма из словаря
+// осталась бы недостижимой с экрана.
+const samples = [0, 1, 2, 5, 11, 21, 101, 1_000_000]
 </script>
 
 <template>
@@ -23,7 +31,7 @@ const samples = [0, 1, 2, 5, 11, 21, 101]
     <div class="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
       <div class="rounded-2xl border border-slate-200 bg-white p-4">
         <p class="text-3xl font-semibold text-slate-900">
-          {{ t('common.files', { n: count }) }}
+          {{ t('common.files', { count, n: n(count) }) }}
         </p>
 
         <div class="mt-4 flex flex-wrap gap-2">
@@ -37,7 +45,7 @@ const samples = [0, 1, 2, 5, 11, 21, 101]
               : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400'"
             @click="count = sample"
           >
-            {{ sample }}
+            {{ n(sample) }}
           </button>
         </div>
 

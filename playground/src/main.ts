@@ -19,7 +19,7 @@ import '@feugene/fint-i18n/vue/global-types'
 // Вариант 1 (используется в playground): per-locale импорт.
 // Бандлер уносит в сборку только перечисленные языки, остальные tree-shake'ятся.
 // ---------------------------------------------------------------------------
-import { en, ru } from './i18n/messages'
+import { en, es, ru } from './i18n/messages'
 
 // ---------------------------------------------------------------------------
 // Вариант 2: один "all"-пакет — массив всех локалей одного источника.
@@ -74,7 +74,7 @@ const i18n = createFintI18n<PlaygroundMessages>({
   preloadFallback: true,
   // Per-locale imports keep the bundle tree-shakable: only the languages
   // listed here end up in the production build.
-  loaders: [en, ru],
+  loaders: [en, ru, es],
   // Вариант 2:
   // loaders: allMessages,
   // Вариант 3:

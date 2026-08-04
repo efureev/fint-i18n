@@ -1,0 +1,10 @@
+{
+  "articles": {
+    "title": "Artículos (carga completa)",
+    "description": "Resultado de la carga completa de `page`"
+  },
+  "terms": {
+    "title": "Términos",
+    "content": "Todos los términos están aquí."
+  }
+}

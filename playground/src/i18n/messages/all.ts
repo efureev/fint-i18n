@@ -9,11 +9,12 @@
  * In production builds prefer per-locale imports from `./index.ts`:
  *
  * ```ts
- * import { en, ru } from './i18n/messages'
+ * import { en, es, ru } from './i18n/messages'
  * ```
  */
 import { en } from './en'
+import { es } from './es'
 import { ru } from './ru'
 
-export const loaders = [en, ru]
+export const loaders = [en, ru, es]
 export default loaders
