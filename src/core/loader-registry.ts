@@ -76,28 +76,9 @@ export class LocaleLoaderRegistry {
 
     for (let i = 0; i < this.knownBlockNames.length; i++) {
       const name = this.knownBlockNames[i]
-      if (name.length <= needleLen) continue
-      // Быстрый префикс-чек без выделения подстроки.
-      let matches = true
-      for (let j = 0; j < needleLen; j++) {
-        if (name.charCodeAt(j) !== needle.charCodeAt(j)) {
-          matches = false
-          break
-        }
-      }
-      if (!matches) continue
-
-      if (!deep) {
-        // shallow `.*`: запрещаем точки в остатке имени.
-        let hasDot = false
-        for (let j = needleLen; j < name.length; j++) {
-          if (name.charCodeAt(j) === 46 /* '.' */) {
-            hasDot = true
-            break
-          }
-        }
-        if (hasDot) continue
-      }
+      if (name.length <= needleLen || !name.startsWith(needle)) continue
+      // shallow `.*`: в остатке имени не должно быть точек.
+      if (!deep && name.includes('.', needleLen)) continue
 
       result.push(name)
     }
