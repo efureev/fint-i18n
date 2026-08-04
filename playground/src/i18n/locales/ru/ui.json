@@ -150,9 +150,7 @@
   },
   "status": {
     "ready": "Готово",
-    "loaded": "Загружено",
-    "pending": "Ожидает",
-    "notLoaded": "Не загружено"
+    "loaded": "Загружено"
   },
   "debug": {
     "title": "Runtime-отладка",

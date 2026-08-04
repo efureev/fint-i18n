@@ -150,9 +150,7 @@
   },
   "status": {
     "ready": "Ready",
-    "loaded": "Loaded",
-    "pending": "Pending",
-    "notLoaded": "Not loaded"
+    "loaded": "Loaded"
   },
   "debug": {
     "title": "Runtime debug",

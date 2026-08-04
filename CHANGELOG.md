@@ -34,6 +34,26 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `() => Promise` with no abort channel, so an abandoned request may still
   finish in the background.
   See [Retrying a failed load](./docs/en/api.md#retrying-a-failed-load).
+- **Command-line tooling for dictionaries**, shipped as `bin` entries so a
+  consuming project can run them through `npx` without installing anything:
+
+  `fint-i18n-check-messages <locales dir> [--source <dir>]` checks that the
+  locales agree with each other, that every set of plural forms covers the
+  categories its locale actually uses, and — given `--source` — that the keys in
+  the code and the keys in the dictionaries are the same set. Code is read
+  through the TypeScript AST and `@vue/compiler-sfc`, so a `t('…')` inside a
+  comment or a string is not mistaken for a call; `v-t` and prefixed scopes are
+  understood. Keys assembled at runtime are reported rather than guessed, which
+  is why unused keys are a report by default and only fail under `--strict`.
+
+  `fint-i18n-codemod-plurals <paths…>` migrates 0.4.0 `|` markup to 0.5.0 form
+  objects. It converts only labelled branches, where intent is unambiguous, and
+  hands everything else to a human — `"Name | Email"` and `"{n} file | {n} files"`
+  are indistinguishable in the old syntax, and guessing between them is what made
+  that syntax dangerous in the first place.
+
+  The parsers are loaded on demand and are not dependencies of this package.
+  See [Tooling for dictionaries](./docs/en/tooling.md).
 
 ## [0.5.0] — 2026-08-04
 

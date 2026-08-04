@@ -23,6 +23,8 @@
   "type": "module",
   "files": [
     "dist",
+    "scripts/check-messages.mjs",
+    "scripts/codemod-plural-forms.mjs",
     "LICENSE",
     "README.md",
     "CHANGELOG.md"
@@ -103,6 +105,11 @@
     "codemod:plurals": "node scripts/codemod-plural-forms.mjs",
     "playground:ssr": "node playground-ssr/server.mjs",
     "playground:ssr:build": "vite build --config playground-ssr/vite.config.ts --outDir dist/client --ssrManifest && vite build --config playground-ssr/vite.config.ts --outDir dist/server --ssr src/entry-server.ts",
-    "playground:ssr:prod": "node playground-ssr/server.mjs --prod"
+    "playground:ssr:prod": "node playground-ssr/server.mjs --prod",
+    "check:messages": "node scripts/check-messages.mjs playground/src/i18n/locales --source playground/src --allow fallback.enOnly --allow fallback.ruOnly --allow common.menu --allow runtime.hello"
+  },
+  "bin": {
+    "fint-i18n-check-messages": "./scripts/check-messages.mjs",
+    "fint-i18n-codemod-plurals": "./scripts/codemod-plural-forms.mjs"
   }
 }

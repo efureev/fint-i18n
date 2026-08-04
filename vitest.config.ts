@@ -23,6 +23,14 @@ export default defineConfig({
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest}.config.*',
     ],
+    // Скрипты из `scripts/` — обычные Node-модули с shebang'ом (они же `bin`).
+    // Vite дописывает свой импорт перед первой строкой и ломается о `#!`, а
+    // трансформировать их незачем: они и запускаются голым Node.
+    server: {
+      deps: {
+        external: [/scripts\/.*\.mjs$/],
+      },
+    },
     reporters: ['default', 'junit'],
     outputFile: {
       junit: './junit-report.xml',

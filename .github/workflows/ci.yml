@@ -40,6 +40,9 @@ jobs:
       - name: Type check
         run: yarn type-check
 
+      - name: Check messages (playground dictionaries)
+        run: yarn check:messages
+
       - name: Test
         run: yarn test:coverage:package
 
