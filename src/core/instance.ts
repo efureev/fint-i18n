@@ -5,11 +5,39 @@ import { isBlockPattern, LocaleLoaderRegistry } from './loader-registry'
 import { deepMerge, getMessageValue, isMessageObject, mergeMessageValues } from './message-utils'
 import { compilePluralForms, isPluralForms } from './plural'
 import { normalizeTranslateParams } from './translate-params'
-import type { FintI18nOptions, FintI18nPlugin, Locale, LocaleLoaderSource, MessageKey, MessageSchema, MessageSchemaConstraint, MessageValue, TranslateOptions } from './types'
+import type { FintI18nOptions, FintI18nPlugin, Locale, LocaleBlockLoader, LocaleLoaderSource, MessageKey, MessageSchema, MessageSchemaConstraint, MessageValue, RetryOptions, TranslateOptions } from './types'
 
 function rootSegment(key: string): string {
   const dot = key.indexOf('.')
   return dot === -1 ? key : key.slice(0, dot)
+}
+
+const DEFAULT_RETRY_ATTEMPTS = 3
+
+/** 100, 200, 400… — экспоненциальная пауза по умолчанию. */
+function defaultBackoff(attempt: number): number {
+  return 100 * 2 ** (attempt - 1)
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * Ограничение ожидания. Таймер обязательно снимается: незакрытый `setTimeout`
+ * держит процесс живым, и на сервере это заметно сразу.
+ */
+function withTimeout<T>(promise: Promise<T>, ms?: number): Promise<T> {
+  if (!ms) return promise
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`[fint-i18n] Loader timed out after ${ms}ms`)), ms)
+    }),
+  ]).finally(() => clearTimeout(timer))
 }
 
 export class FintI18n<Schema extends MessageSchemaConstraint = any> {
@@ -26,6 +54,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   private readonly localeRef: Ref<Locale>
   private readonly preloadFallback: boolean
   private readonly unloadUnusedBlocks: boolean
+  private readonly retry?: RetryOptions
   private compiledMessages: Record<Locale, Record<string, MessageFunction>> = Object.create(null)
   // Индекс «локаль → корневой блок → его скомпилированные ключи».
   // Существует только ради адресной инвалидации, на чтение перевода не влияет.
@@ -63,6 +92,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     this.fallbackLocale = options.fallbackLocale || ''
     this.preloadFallback = options.preloadFallback ?? false
     this.unloadUnusedBlocks = options.unloadUnusedBlocks ?? false
+    this.retry = options.retry
     this.loaderRegistry = new LocaleLoaderRegistry(options.loaders)
 
     if (options.plugins) {
@@ -292,6 +322,37 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     await Promise.all(jobs)
   }
 
+  /**
+   * Вызов лоадера с повторами. Повторяется именно лоадер, а не блок целиком:
+   * данные соседних лоадеров того же блока уже смержены и переделывать их
+   * незачем.
+   *
+   * Повторы живут **внутри** промиса блока, поэтому запись в `loadingBlocks`
+   * не меняется. Иначе конкурентные `loadBlock` разъехались бы по разным
+   * попыткам и дедупликация сломалась бы.
+   */
+  private runLoader = async (loader: LocaleBlockLoader) => {
+    const retry = this.retry
+    const attempts = Math.max(1, retry ? retry.attempts ?? DEFAULT_RETRY_ATTEMPTS : 1)
+    let lastError: unknown
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      // Инстанс освободили между попытками — продолжать нечего.
+      if (this.disposed) return undefined
+
+      try {
+        return await withTimeout(loader(), retry?.timeout)
+      }
+      catch (error) {
+        lastError = error
+        if (attempt === attempts) break
+        await wait((retry?.backoff ?? defaultBackoff)(attempt))
+      }
+    }
+
+    throw lastError
+  }
+
   // Не `async`: промис обязан попасть в `loadingBlocks` до первого `await`,
   // иначе конкурентные вызовы успевают пройти проверку и грузят блок повторно.
   private loadConcreteBlock = (blockName: string, targetLocale: Locale): Promise<void> => {
@@ -316,7 +377,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
         let loadedMessages: MessageValue | undefined
 
         for (const loader of resolvedLoaders.loaders) {
-          const module = await loader()
+          const module = await this.runLoader(loader)
 
           // Инстанс освободили, пока лоадер отрабатывал: домерживать некуда,
           // иначе `dispose()` оставлял бы после себя воскресший словарь.

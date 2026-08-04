@@ -5,7 +5,25 @@ All notable changes to `@feugene/fint-i18n` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] — Unreleased
+## [0.6.0] — Unreleased
+
+### Added
+
+- **Retrying a failed block load.** `createFintI18n({ retry: { attempts, backoff,
+  timeout } })` repeats a loader that threw. Off by default — without the option
+  behaviour is unchanged, a single attempt.
+
+  Retries happen inside the block's promise, so concurrent `loadBlock()` calls
+  keep sharing it and deduplication still holds. A loader is retried rather than
+  the whole block: messages already merged by its siblings stay put. Only the
+  final failure surfaces, and `dispose()` stops the loop.
+
+  `timeout` bounds the wait, it does not cancel: a loader is a plain
+  `() => Promise` with no abort channel, so an abandoned request may still
+  finish in the background.
+  See [Retrying a failed load](./docs/en/api.md#retrying-a-failed-load).
+
+## [0.5.0] — 2026-08-04
 
 Pluralization is reworked from the ground up. **Every message that contains a
 `|` behaves differently than in 0.4.0** — see the migration notes below.

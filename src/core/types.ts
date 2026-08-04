@@ -21,11 +21,32 @@ export interface FintI18nPlugin {
   uninstall?: (instance: FintI18n) => void
 }
 
+/**
+ * Повторы загрузки блока. Без этой опции попытка ровно одна — так вело себя
+ * всё до 0.6.0.
+ */
+export interface RetryOptions {
+  /** Всего попыток, включая первую. По умолчанию 3. */
+  attempts?: number
+  /**
+   * Пауза перед попыткой номер `attempt` (нумерация с 1), в миллисекундах.
+   * По умолчанию 100 · 2^(attempt−1): 100, 200, 400…
+   */
+  backoff?: (attempt: number) => number
+  /**
+   * Потолок ожидания одной попытки, мс. Загрузку **не отменяет** — у лоадера
+   * нет для этого интерфейса; просто перестаёт её ждать и идёт на повтор.
+   */
+  timeout?: number
+}
+
 export interface FintI18nOptions {
   locale: Locale
   fallbackLocale?: Locale
   loaders?: LocaleLoaderSource
   plugins?: FintI18nPlugin[]
+  /** Повторы загрузки блока при отказе лоадера. По умолчанию выключены. */
+  retry?: RetryOptions
   /**
    * Грузить блоки также для `fallbackLocale` при каждом `loadBlock`.
    * Без этого fallback срабатывает только по уже загруженным сообщениям.

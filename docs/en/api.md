@@ -28,6 +28,13 @@ interface FintI18nOptions {
   plugins?: FintI18nPlugin[];        // List of plugins
   preloadFallback?: boolean;         // Also load blocks for fallbackLocale (default: false)
   unloadUnusedBlocks?: boolean;      // Free a block when its usage counter hits 0 (default: false)
+  retry?: RetryOptions;              // Retry a failed block load (default: no retry)
+}
+
+interface RetryOptions {
+  attempts?: number;                 // Total attempts including the first (default: 3)
+  backoff?: (attempt: number) => number; // Delay in ms before attempt `n` (default: 100·2^(n−1))
+  timeout?: number;                  // Cap on a single attempt, ms
 }
 ```
 
@@ -39,6 +46,7 @@ interface FintI18nOptions {
   - `plugins` (`FintI18nPlugin[]`, optional): Array of plugins to extend functionality.
   - `preloadFallback` (`boolean`, optional, default `false`): When `true`, every `loadBlock()` also loads the same block for `fallbackLocale`. Without it, fallback only works against messages that happen to be already loaded.
   - `unloadUnusedBlocks` (`boolean`, optional, default `false`): When `true`, a block is removed from memory (messages + compilation cache) once its usage counter drops to zero (the last component that requested it via `useI18nScope` is unmounted). See [Blocks → Lifecycle and Memory](./blocks.md#lifecycle-and-memory).
+  - `retry` (`RetryOptions`, optional): Retry a loader that failed. Off by default — a single attempt, exactly as before 0.6.0. See [Retrying a failed load](#retrying-a-failed-load).
 
 **Returns:** A `FintI18n<Schema>` instance.
 
@@ -682,3 +690,49 @@ function hydrate(i18n: FintI18n, state: FintI18nSSRState): void;
 
 The full recipe, including the contract and its limits, is in
 [Server-Side Rendering](./ssr.md).
+
+---
+
+## Retrying a failed load
+
+A loader that throws leaves its block unloaded. Nothing retries on its own:
+`useI18nScope()` rejects once, `useI18nScopeSync()` records the reason in
+`error` and stops. A single network blip on startup therefore leaves the user
+looking at keys until something calls `loadBlock()` again.
+
+`retry` makes the library do that itself:
+
+```typescript
+const i18n = createFintI18n({
+  locale: 'en',
+  loaders,
+  retry: {
+    attempts: 3,                          // total, including the first
+    backoff: attempt => 100 * 2 ** attempt, // ms before attempt `attempt + 1`
+    timeout: 5000,                        // cap on one attempt
+  },
+})
+```
+
+Defaults, once `retry` is present: three attempts and a 100 · 2^(n−1) ms pause
+(100, 200, 400). Omit `retry` entirely and behaviour is unchanged — one attempt,
+no timeout.
+
+### What exactly is retried
+
+- **A loader, not a block.** If a block has several loaders and the second one
+  fails, the first is not replayed — its messages are already merged.
+- **The block promise stays the same.** Retries happen inside it, so concurrent
+  `loadBlock()` calls keep sharing one promise and the loader is not invoked
+  twice in parallel.
+- **Only the final failure surfaces.** Intermediate attempts are not reported;
+  the rejection carries the last error, and `onError` fires once.
+- **`dispose()` stops the loop.** An instance released between attempts does not
+  continue retrying.
+
+### The timeout does not cancel anything
+
+A loader is a plain `() => Promise`, with no way to abort it. `timeout` only
+stops *waiting*: the attempt is treated as failed and the next one starts, while
+the abandoned request may still complete in the background. Set it to bound the
+wait, not to save the connection.
