@@ -49,6 +49,16 @@ describe('SSR playground: server render', () => {
     expect(state.i18n.blocks.ru.sort()).toEqual(['cart', 'common', 'stats'])
   })
 
+  it('leaves the deferred block out: the server never rendered its component', async () => {
+    const { html, payload } = await render('/?locale=ru')
+    const state = parsePayload(payload)
+
+    expect(state.app.serverCalls).not.toContain('ru:promo')
+    expect(state.i18n.blocks.ru).not.toContain('promo')
+    expect(state.i18n.messages.ru.promo).toBeUndefined()
+    expect(html).not.toContain('Отложенная секция')
+  })
+
   it('carries only the rendered locale', async () => {
     const { payload } = await render('/?locale=ru')
     const state = parsePayload(payload)
@@ -93,6 +103,34 @@ describe('SSR playground: client hydration', () => {
     expect(stats.calls).toEqual([])
     expect(i18n.t('common.title')).toBe('SSR-витрина')
     expect(i18n.t('cart.items', { n: 5 })).toBe('5 товаров')
+  })
+
+  it('fetches the deferred block only when the section asks for it', async () => {
+    const { payload } = await render('/?locale=ru')
+    const state = parsePayload(payload)
+
+    const { i18n, stats } = createI18n('ru')
+    hydrate(i18n, state.i18n)
+
+    // Гидрация покрыла отрисованное сервером — до клика лоадеры молчат.
+    await Promise.all([i18n.loadBlock('common'), i18n.loadBlock('cart'), i18n.loadBlock('stats')])
+    expect(stats.calls).toEqual([])
+
+    await i18n.loadBlock('promo')
+
+    expect(stats.calls).toEqual(['ru:promo'])
+    expect(i18n.t('promo.headline')).toBe('Отложенная секция')
+  })
+
+  it('reloads the deferred block on a locale switch while the section is mounted', async () => {
+    const { i18n, stats } = createI18n('ru')
+
+    i18n.registerUsage('promo')
+    await i18n.loadBlock('promo')
+    await i18n.setLocale('en')
+
+    expect(stats.calls).toEqual(['ru:promo', 'en:promo'])
+    expect(i18n.t('promo.headline')).toBe('Deferred section')
   })
 
   it('loads the blocks when hydration is skipped', async () => {

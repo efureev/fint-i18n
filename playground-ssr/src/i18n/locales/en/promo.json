@@ -1,0 +1,6 @@
+{
+  "headline": "Deferred section",
+  "lead": "The component chunk and its {block} block arrived together — after the click.",
+  "note": "The server never rendered this section, so the snapshot never carried its messages. The click is what put the first entry into the browser loader counter above. The section holds the block while it is mounted, so switching the locale fetches it again.",
+  "locale": "Rendered in {locale}"
+}

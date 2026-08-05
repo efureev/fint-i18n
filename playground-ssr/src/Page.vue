@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useFintI18n, useI18nScope } from '@feugene/fint-i18n/vue'
 import FormatDemo from './components/FormatDemo.vue'
+import LazyBlockDemo from './components/LazyBlockDemo.vue'
 import PluralDemo from './components/PluralDemo.vue'
 import SsrPanel from './components/SsrPanel.vue'
 
@@ -30,5 +31,6 @@ const other = locale.value === 'ru' ? 'en' : 'ru'
     <SsrPanel />
     <PluralDemo />
     <FormatDemo />
+    <LazyBlockDemo />
   </main>
 </template>

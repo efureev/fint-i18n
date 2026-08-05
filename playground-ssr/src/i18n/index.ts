@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import type { FintI18n, LocaleLoaderCollection } from '@feugene/fint-i18n/core'
 
@@ -29,6 +30,9 @@ function buildLoaders(stats: LoaderStats): LocaleLoaderCollection[] {
         common: track('en', 'common', () => import('./locales/en/common.json')),
         cart: track('en', 'cart', () => import('./locales/en/cart.json')),
         stats: track('en', 'stats', () => import('./locales/en/stats.json')),
+        // Блок отложенной секции: страница его не рисует, поэтому лоадер зовёт
+        // только компонент, приезжающий по клику.
+        promo: track('en', 'promo', () => import('./locales/en/promo.json')),
       },
     },
     {
@@ -36,6 +40,7 @@ function buildLoaders(stats: LoaderStats): LocaleLoaderCollection[] {
         common: track('ru', 'common', () => import('./locales/ru/common.json')),
         cart: track('ru', 'cart', () => import('./locales/ru/cart.json')),
         stats: track('ru', 'stats', () => import('./locales/ru/stats.json')),
+        promo: track('ru', 'promo', () => import('./locales/ru/promo.json')),
       },
     },
   ]
@@ -51,7 +56,9 @@ export interface CreatedI18n {
  * состояние блоков и текущая локаль у них разные.
  */
 export function createI18n(locale: PlaygroundLocale): CreatedI18n {
-  const stats: LoaderStats = { calls: [] }
+  // Массив реактивен: блок может догрузиться и после гидрации (отложенная
+  // секция), и панель обязана показать это, а не снимок на момент монтирования.
+  const stats: LoaderStats = { calls: reactive<string[]>([]) }
 
   return {
     i18n: createFintI18n({ locale, loaders: buildLoaders(stats) }),

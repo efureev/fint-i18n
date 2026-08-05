@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
 import { useFintI18n } from '@feugene/fint-i18n/vue'
 import { APP_CONTEXT } from '../context'
 
@@ -9,12 +9,16 @@ const ctx = inject(APP_CONTEXT)!
 // Всё, что известно только после рендера, заполняется после монтирования.
 // Отрисуй сервер и клиент это по-разному — Vue сообщил бы о расхождении
 // гидрации; здесь же оба выдают «—», а значение появляется следующим тиком.
-const clientCalls = ref<string[] | null>(null)
+const mounted = ref(false)
 const snapshotBlocks = ref<string>('—')
 const payloadBytes = ref<string>('—')
 
+// Счётчик живой, а не снятый один раз: отложенная секция ниже догружает свой
+// блок уже после гидрации, и это должно быть видно здесь же.
+const clientCalls = computed(() => (mounted.value ? ctx.stats.calls : null))
+
 onMounted(() => {
-  clientCalls.value = [...ctx.stats.calls]
+  mounted.value = true
 
   const raw = (window as any).__STATE__
   if (!raw) return
@@ -58,7 +62,8 @@ onMounted(() => {
     <p class="hint">
       The snapshot is taken with <code>getSSRState(i18n, { locales: [locale] })</code> and replayed by
       <code>hydrate()</code> before mounting. The blocks arrive marked as loaded, so the browser makes
-      no request for them — that is what the browser counter shows.
+      no request for them — that is what the browser counter shows. A call showing up there later
+      belongs to a block the server never rendered: the deferred section at the bottom of the page.
     </p>
 
     <p class="hint">
