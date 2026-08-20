@@ -44,10 +44,10 @@ export default defineConfig({
       // Пороги стоят чуть ниже фактического покрытия: они запрещают падение,
       // а не требуют роста. Поднимать вместе с реальным улучшением.
       thresholds: {
-        statements: 85,
-        branches: 80,
-        functions: 78,
-        lines: 86,
+        statements: 97,
+        branches: 94,
+        functions: 96,
+        lines: 98,
       },
     },
   },

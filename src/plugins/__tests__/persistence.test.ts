@@ -123,3 +123,96 @@ describe('PersistencePlugin', () => {
     }
   })
 })
+
+describe('PersistencePlugin: storage guards', () => {
+  it('does nothing when the storage object has no getItem', () => {
+    const broken = { setItem: vi.fn() } as unknown as Storage
+
+    const i18n = createFintI18n({
+      locale: 'en',
+      plugins: [new PersistencePlugin({ storage: broken, syncTabs: false, allowedLocales: ['en', 'ru'] })],
+    })
+
+    expect(i18n.locale.value).toBe('en')
+    expect(() => i18n.dispose()).not.toThrow()
+  })
+
+  it('ignores storage events for a different key', async () => {
+    const storage = {
+      getItem: vi.fn().mockReturnValue(null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    }
+
+    const listeners: ((event: StorageEvent) => void)[] = []
+    const original = globalThis.window
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: {
+        addEventListener: (_: string, fn: (event: StorageEvent) => void) => listeners.push(fn),
+        removeEventListener: vi.fn(),
+        localStorage: storage,
+      },
+    })
+
+    try {
+      const i18n = createFintI18n({
+        locale: 'en',
+        plugins: [new PersistencePlugin({ storage, syncTabs: true, allowedLocales: ['en', 'ru'] })],
+      })
+
+      listeners[0]({ key: 'somebody-elses-key', newValue: 'ru' } as StorageEvent)
+      await Promise.resolve()
+      expect(i18n.locale.value).toBe('en')
+
+      listeners[0]({ key: 'fint-i18n-locale', newValue: 'ru' } as StorageEvent)
+      await Promise.resolve()
+      expect(i18n.locale.value).toBe('ru')
+    }
+    finally {
+      Object.defineProperty(globalThis, 'window', { configurable: true, writable: true, value: original })
+    }
+  })
+
+  it('ignores a storage event clearing the value', async () => {
+    const storage = {
+      getItem: vi.fn().mockReturnValue(null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    }
+
+    const listeners: ((event: StorageEvent) => void)[] = []
+    const original = globalThis.window
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: {
+        addEventListener: (_: string, fn: (event: StorageEvent) => void) => listeners.push(fn),
+        removeEventListener: vi.fn(),
+        localStorage: storage,
+      },
+    })
+
+    try {
+      const i18n = createFintI18n({
+        locale: 'en',
+        plugins: [new PersistencePlugin({ storage, syncTabs: true, allowedLocales: ['en', 'ru'] })],
+      })
+
+      listeners[0]({ key: 'fint-i18n-locale', newValue: null } as StorageEvent)
+      await Promise.resolve()
+
+      expect(i18n.locale.value).toBe('en')
+    }
+    finally {
+      Object.defineProperty(globalThis, 'window', { configurable: true, writable: true, value: original })
+    }
+  })
+})

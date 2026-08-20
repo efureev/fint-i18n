@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createFintI18n } from '@/core'
-import { installI18n } from '../plugin'
+import { createFintI18nPlugin, installI18n } from '../plugin'
 import { useFintI18n } from '../inject'
 import { createApp, defineComponent } from 'vue'
 
@@ -110,5 +110,54 @@ describe('Vue Plugin', () => {
       // ignore
     }
     console.warn = originalWarn
+  })
+})
+
+describe('createFintI18nPlugin', () => {
+  it('installs through the conventional app.use()', () => {
+    const app = createApp({})
+    const i18n = createFintI18n({ locale: 'en' })
+
+    app.use(createFintI18nPlugin(i18n))
+
+    expect(app.config.globalProperties.$i18n).toBe(i18n)
+    expect(app.config.globalProperties.$t).toBe(i18n.t)
+  })
+
+  it('forwards options to installI18n', () => {
+    const app = createApp({})
+    const i18n = createFintI18n({ locale: 'en' })
+
+    app.use(createFintI18nPlugin(i18n, { globalInstall: false, directive: false }))
+
+    expect(app.config.globalProperties.$i18n).toBeUndefined()
+    expect(app._context.directives.t).toBeUndefined()
+  })
+
+  it('honours a custom directive name', () => {
+    const app = createApp({})
+    const i18n = createFintI18n({ locale: 'en' })
+
+    app.use(createFintI18nPlugin(i18n, { directive: 'trans' }))
+
+    expect(app._context.directives.trans).toBeDefined()
+    expect(app._context.directives.t).toBeUndefined()
+  })
+
+  it('provides the instance to useFintI18n', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    i18n.mergeMessages('en', 'common', { hello: 'Hello' })
+    let resolved: unknown
+
+    const app = createApp(defineComponent({
+      setup() {
+        resolved = useFintI18n()
+        return () => null
+      },
+    }))
+    app.use(createFintI18nPlugin(i18n))
+    app.mount(document.createElement('div'))
+
+    expect(resolved).toBe(i18n)
   })
 })
