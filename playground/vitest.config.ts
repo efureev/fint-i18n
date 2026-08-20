@@ -34,8 +34,8 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      reportsDirectory: '../coverage/playground',
+      reporter: ['text', 'json', 'lcov', 'html'],
+      reportsDirectory: 'coverage/playground',
       include: ['playground/src/**/*.vue', 'playground/src/**/*.ts', 'playground-ssr/src/**/*.vue', 'playground-ssr/src/**/*.ts'],
       exclude: ['**/__tests__/**', '**/*.test.ts', '**/*.spec.ts'],
     },
