@@ -5,7 +5,48 @@ All notable changes to `@feugene/fint-i18n` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] — Unreleased
+## [0.7.0] — 2026-08-21
+
+### Added
+
+- **`negotiateLocale(requested, available, fallback?)`** — picks a starting
+  locale from what the user asks for. Each requested tag runs a full cascade
+  before the next one gets a turn: exact match, base language (`ru-RU` → `ru`),
+  then any region of the same language (`ru` → `ru-RU`). Request order beats
+  exactness, so `['ru-RU', 'en']` against `['en', 'ru']` yields `ru`. Comparison
+  is case-insensitive and the returned value keeps the spelling from
+  `available`, because that spelling is a dictionary key.
+- **`parseAcceptLanguage(header)`** — the server-side source of preferences,
+  where `navigator.languages` does not exist. Sorts by `q`, keeps header order
+  for equal weights, drops `*` and `q=0`.
+
+  Both are free functions in `@feugene/fint-i18n/core` and tree-shake away for
+  applications that pick their locale some other way.
+  See [Locale negotiation](./docs/en/api.md#locale-negotiation).
+
+### Changed
+
+- **A regional locale now falls back to the loaders of its base language.**
+  With `locale: 'ru-RU'` and loaders registered for `ru`, the `ru` dictionary is
+  found instead of the block being reported missing. Previously `ru-RU` and `ru`
+  were unrelated keys, and a regional locale without its own loaders resolved to
+  nothing.
+
+  This changes resolution behaviour for anyone whose locales carry a region.
+  An exact match still wins, and the walk is one-way: a `ru` locale does not
+  pick up loaders registered for `ru-RU`. Messages are stored under the locale
+  that was **requested**, not the one the loader was registered for, so `Intl`
+  keeps receiving the full tag and `en-GB` goes on formatting dates the British
+  way. The cost is memory if an application genuinely uses both spellings at
+  once: the dictionary is then held under each key.
+  See [Regional subtags](./docs/en/blocks.md#regional-subtags).
+- **`PersistencePlugin` matches the stored locale through `negotiateLocale()`**
+  instead of string equality. A value saved as `ru-RU` while the application
+  ships `ru` is now applied as `ru` rather than discarded — storage values
+  usually come from the browser, so they usually carry a region. A tag of an
+  unrelated language is still rejected.
+
+## [0.6.0] — 2026-08-05
 
 ### Added
 
