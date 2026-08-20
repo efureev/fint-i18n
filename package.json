@@ -106,7 +106,7 @@
     "playground:ssr": "node playground-ssr/server.mjs",
     "playground:ssr:build": "vite build --config playground-ssr/vite.config.ts --outDir dist/client --ssrManifest && vite build --config playground-ssr/vite.config.ts --outDir dist/server --ssr src/entry-server.ts",
     "playground:ssr:prod": "node playground-ssr/server.mjs --prod",
-    "check:messages": "node scripts/check-messages.mjs playground/src/i18n/locales --source playground/src --allow fallback.enOnly --allow fallback.ruOnly --allow common.menu --allow runtime.hello --allow flaky.message",
+    "check:messages": "node scripts/check-messages.mjs playground/src/i18n/locales --source playground/src --allow fallback.enOnly --allow fallback.ruOnly --allow common.menu --allow runtime.hello --allow flaky.message --allow demo.title",
     "size:consumer": "node scripts/consumer-size.mjs"
   },
   "bin": {

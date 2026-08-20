@@ -86,7 +86,8 @@ When `loadBlock(blockName)` is called, the library follows these rules:
 
 1. It first searches for an **exact** match for `blockName`.
 2. If no exact match is found and the block is nested, it looks for the nearest parent block.
-3. If multiple loaders are registered for the found block, they are executed **sequentially**.
+3. If the locale carries a region (`ru-RU`) and neither step found anything, both are repeated for its base language (`ru`).
+4. If multiple loaders are registered for the found block, they are executed **sequentially**.
 
 Example:
 
@@ -151,6 +152,36 @@ Correct approaches:
    ```
 
 3. **Wildcard Registration** — see the next section.
+
+### Regional subtags
+
+A locale with a region is served by the loaders of its base language. Register
+`ru` once, and `ru-RU`, `ru-BY` and `ru-KZ` all find that dictionary instead of
+falling through to `fallbackLocale`:
+
+```typescript
+const i18n = createFintI18n({
+  locale: 'ru-RU',
+  loaders: { ru: { common: () => import('./ru/common.json') } },
+})
+
+await i18n.loadBlock('common')
+i18n.t('common.title') // resolved from the `ru` loader
+```
+
+An exact match always wins: register `ru-RU` explicitly and it is used instead
+of `ru`. The walk goes one way only — a `ru` locale does **not** pick up loaders
+registered for `ru-RU`, the same rule as for parent and child blocks.
+
+**Messages are stored under the locale you asked for, not the one the loader was
+registered for.** Above, the dictionary lands in `messages['ru-RU']`. That is
+deliberate: `Intl` receives the full tag, so plural rules, dates and numbers keep
+their regional form — `en-GB` must not start formatting dates the American way.
+
+> [!NOTE]
+> The flip side is memory: an application that genuinely uses both `ru` and
+> `ru-RU` at once holds the same dictionary twice, once under each key. Pick one
+> spelling per language unless the regions really do differ.
 
 ## Wildcard Registration: `prefix.*` and `prefix.**`
 

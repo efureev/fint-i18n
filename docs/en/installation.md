@@ -133,6 +133,21 @@ app.mount('#app')
 - All loaders for a found block are executed **sequentially**.
 - In case of key conflicts in messages, the last loaded value overrides the previous one.
 - When `loadBlock('pages.articles')` is called, it first looks for an exact block match, then the nearest parent block (`pages`).
+- A regional locale falls back to its base language: with `locale: 'ru-RU'` and loaders registered for `ru`, the `ru` dictionary is used and stored under `ru-RU`. See [Blocks](./blocks.md#regional-subtags).
+
+## Locale Tags
+
+A locale is a plain object key, but it is also handed to `Intl` as-is — plural
+rules, `n()` and `d()` all build on it. **Use BCP 47 tags** (`en`, `ru`,
+`en-GB`, `pt-BR`): an invalid tag does not break translation, but it does fall
+back to English rules with a warning, and that is easy to miss.
+
+Keeping the region in the tag is what makes `en-GB` format dates the British way
+while still reading the `en` dictionary — so prefer `en-GB` over inventing
+`en_gb` or `british`.
+
+To choose the starting tag from what the user actually prefers, use
+[`negotiateLocale()`](./api.md#locale-negotiation) rather than matching by hand.
 
 ## TypeScript
 

@@ -1,4 +1,5 @@
 import type { FintI18n, FintI18nPlugin, Locale } from '../core'
+import { negotiateLocale } from '../core'
 
 export interface PersistenceOptions {
   key?: string
@@ -52,8 +53,12 @@ export class PersistencePlugin implements FintI18nPlugin {
     // локали, о существовании которых есть подтверждение. Если подтверждения
     // нет, значение не применяется: подменённый ключ иначе оставил бы
     // приложение вообще без переводов.
-    const isValidLocale = (value: string | null): value is string => {
-      if (!value) return false
+    //
+    // Сопоставление идёт через `negotiateLocale`, а не по точному совпадению:
+    // сохранённая `ru-RU` при существующей `ru` — обычное дело, когда локаль
+    // пришла из браузера, и отвергать её значило бы терять выбор пользователя.
+    const resolveStored = (value: string | null): Locale | null => {
+      if (!value) return null
 
       const known = this.knownLocales(i18n)
 
@@ -62,15 +67,15 @@ export class PersistencePlugin implements FintI18nPlugin {
           this.unknownLocalesWarned = true
           console.warn('[fint-i18n] PersistencePlugin cannot tell which locales exist; stored locale ignored. Pass `allowedLocales`.')
         }
-        return false
+        return null
       }
 
-      return known.includes(value)
+      return negotiateLocale([value], known) ?? null
     }
 
     // Load initial locale
-    const saved = storage.getItem(storageKey)
-    if (isValidLocale(saved) && saved !== i18n.locale.value) {
+    const saved = resolveStored(storage.getItem(storageKey))
+    if (saved !== null && saved !== i18n.locale.value) {
       void i18n.setLocale(saved)
     }
 
@@ -82,8 +87,11 @@ export class PersistencePlugin implements FintI18nPlugin {
     // Sync tabs
     if (this.options.syncTabs && typeof window !== 'undefined') {
       this.storageListener = (event: StorageEvent) => {
-        if (event.key === storageKey && isValidLocale(event.newValue) && event.newValue !== i18n.locale.value) {
-          void i18n.setLocale(event.newValue)
+        if (event.key !== storageKey) return
+
+        const next = resolveStored(event.newValue)
+        if (next !== null && next !== i18n.locale.value) {
+          void i18n.setLocale(next)
         }
       }
       window.addEventListener('storage', this.storageListener)

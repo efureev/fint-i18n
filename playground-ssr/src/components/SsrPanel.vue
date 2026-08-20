@@ -38,6 +38,17 @@ onMounted(() => {
       <dt>Locale</dt>
       <dd><code>{{ locale }}</code></dd>
 
+      <dt>Picked from</dt>
+      <dd>
+        <span v-if="ctx.localeSource === 'query'"><code>?locale=</code> — explicit, negotiation skipped</span>
+        <span v-else-if="ctx.localeSource === 'header'" class="ok">
+          <code>Accept-Language: {{ ctx.acceptLanguage }}</code>
+        </span>
+        <span v-else class="warn">
+          default — <code>{{ ctx.acceptLanguage || 'no Accept-Language sent' }}</code> matched nothing
+        </span>
+      </dd>
+
       <dt>Loader calls on the server</dt>
       <dd>{{ ctx.serverCalls.length }} — {{ ctx.serverCalls.join(', ') || '—' }}</dd>
 
@@ -67,9 +78,18 @@ onMounted(() => {
     </p>
 
     <p class="hint">
+      Without <code>?locale=</code> the server picks the locale with
+      <code>negotiateLocale(parseAcceptLanguage(header), LOCALES)</code>. A regional tag resolves to
+      its base language, so <code>ru-RU</code> lands on the <code>ru</code> dictionary. The chosen
+      locale travels in the snapshot: the header is not visible to browser JavaScript, so deriving it
+      again on the client would risk a hydration mismatch.
+    </p>
+
+    <p class="hint">
       See it for yourself:
       <a :href="`?locale=${locale}&hydrate=1`">with hydration</a> ·
-      <a :href="`?locale=${locale}&hydrate=0`">without it</a>.
+      <a :href="`?locale=${locale}&hydrate=0`">without it</a> ·
+      <a href="?">let the header decide</a>.
       With hydration off the same blocks are fetched again in the browser.
     </p>
   </section>

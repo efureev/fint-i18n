@@ -168,6 +168,25 @@
       "payload": "Cargado en un reintento",
       "failedNote": "Todos los intentos fallaron. Solo sale el último error: uno por bloque, no uno por intento.",
       "disposeHint": "La instancia de la demo se libera con `dispose()` al desmontar: suelta mensajes, cachés y suscripciones de plugins, y detiene un ciclo de reintentos en curso."
+    },
+    "negotiation": {
+      "eyebrow": "15. Negociación de idioma",
+      "title": "`negotiateLocale()` y subetiquetas regionales",
+      "description": "Elegir el idioma inicial a partir de lo que realmente pide el usuario y dejar que `ru-RU` encuentre el diccionario `ru` en lugar de caer en el idioma de respaldo.",
+      "pickLabel": "Negociación",
+      "tagsLabel": "Etiquetas solicitadas",
+      "tagsHint": "Etiquetas BCP 47 separadas por comas, la preferida primero — justo lo que entrega `navigator.languages`.",
+      "availableLabel": "Disponibles",
+      "resultLabel": "Elegido",
+      "noMatch": "sin coincidencias — se aplica el respaldo",
+      "orderHint": "El orden de la petición pesa más que la exactitud: de `ru-RU, en` con `en, ru` disponibles gana `ru`, porque la primera etiqueta recorre toda la cascada antes de que le toque a la segunda.",
+      "subtagLabel": "Subetiqueta regional",
+      "subtagButton": "Cargar un bloque como ru-RU",
+      "subtagIdle": "Pulsa el botón para cargar un bloque en una instancia aparte.",
+      "subtagInstance": "Idioma de la instancia",
+      "subtagLoader": "Cargador registrado para",
+      "subtagStored": "Diccionario guardado bajo",
+      "subtagHint": "El cargador se encuentra por el idioma base, pero los mensajes se guardan bajo el idioma solicitado — así `Intl` conserva la región y las fechas y los números mantienen su formato local."
     }
   },
   "status": {

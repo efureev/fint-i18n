@@ -5,6 +5,7 @@ import type {
   LocaleLoaderCollection,
   LocaleLoaderSource,
 } from './types'
+import { baseLanguage } from './negotiate'
 
 export interface ResolvedLocaleBlockLoaders {
   resolvedBlockName: string
@@ -86,7 +87,24 @@ export class LocaleLoaderRegistry {
     return result
   }
 
+  /**
+   * Лоадеры блока для локали.
+   *
+   * Региональный подтег обслуживается лоадерами базового языка: `ru-RU` без
+   * собственных лоадеров резолвится в `ru`. Сообщения при этом мержатся под
+   * запрошенную локаль (`ru-RU`) — так регион доезжает до `Intl`, а `t()` и
+   * инвалидация кэша продолжают работать по точному ключу.
+   */
   public resolve(locale: Locale, blockName: string): ResolvedLocaleBlockLoaders | null {
+    const exact = this.resolveIn(locale, blockName)
+    if (exact) return exact
+
+    const base = baseLanguage(locale)
+
+    return base === undefined ? null : this.resolveIn(base, blockName)
+  }
+
+  private resolveIn(locale: Locale, blockName: string): ResolvedLocaleBlockLoaders | null {
     const localeLoaders = this.loaders[locale]
     if (!localeLoaders) return null
 

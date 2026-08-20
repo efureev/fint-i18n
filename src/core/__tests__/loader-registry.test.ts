@@ -168,4 +168,54 @@ describe('LocaleLoaderRegistry', () => {
       expect(registry.expandPattern('components.*')).toEqual(['components.first'])
     })
   })
+
+  describe('regional subtags', () => {
+    const noop = async () => ({})
+
+    it('serves a regional locale from its base language loaders', () => {
+      const ruLoader = vi.fn(async () => ({ title: 'Заголовок' }))
+      const registry = new LocaleLoaderRegistry({ ru: { common: ruLoader } })
+
+      expect(registry.resolve('ru-RU', 'common')).toEqual({
+        resolvedBlockName: 'common',
+        loaders: [ruLoader],
+      })
+    })
+
+    it('prefers the regional locale over its base language', () => {
+      const ruLoader = vi.fn(async () => ({ title: 'Заголовок' }))
+      const regionalLoader = vi.fn(async () => ({ title: 'Заголовок РФ' }))
+      const registry = new LocaleLoaderRegistry({
+        'ru': { common: ruLoader },
+        'ru-RU': { common: regionalLoader },
+      })
+
+      expect(registry.resolve('ru-RU', 'common')).toEqual({
+        resolvedBlockName: 'common',
+        loaders: [regionalLoader],
+      })
+    })
+
+    it('combines the subtag fallback with the upward block resolve', () => {
+      const pagesLoader = vi.fn(async () => ({ articles: { title: 'Статьи' } }))
+      const registry = new LocaleLoaderRegistry({ ru: { pages: pagesLoader } })
+
+      expect(registry.resolve('ru-RU', 'pages.articles')).toEqual({
+        resolvedBlockName: 'pages',
+        loaders: [pagesLoader],
+      })
+    })
+
+    it('does not walk from a base language down to a region', () => {
+      const registry = new LocaleLoaderRegistry({ 'ru-RU': { common: noop } })
+
+      expect(registry.resolve('ru', 'common')).toBeNull()
+    })
+
+    it('does not treat one region as another', () => {
+      const registry = new LocaleLoaderRegistry({ 'en-GB': { common: noop } })
+
+      expect(registry.resolve('en-US', 'common')).toBeNull()
+    })
+  })
 })

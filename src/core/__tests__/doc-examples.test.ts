@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createFintI18n } from '../instance'
+import { negotiateLocale, parseAcceptLanguage } from '../negotiate'
 
 /**
  * Примеры из `docs/{en,ru}/**` выполняются здесь дословно.
@@ -82,5 +83,38 @@ describe('docs: api → pluralization overview', () => {
     expect(i18n.t('cart.items', { count: 1 })).toBe('1 товар')
     expect(i18n.t('cart.items', { count: 3 })).toBe('3 товара')
     expect(i18n.t('cart.items', { count: 11 })).toBe('11 товаров')
+  })
+})
+
+describe('docs: blocks → regional subtags', () => {
+  it('serves ru-RU from the ru loader and stores it under ru-RU', async () => {
+    const i18n = createFintI18n({
+      locale: 'ru-RU',
+      loaders: { ru: { common: () => Promise.resolve({ title: 'Заголовок' }) } },
+    })
+
+    await i18n.loadBlock('common')
+
+    expect(i18n.t('common.title')).toBe('Заголовок')
+    expect(Object.keys(i18n.messages)).toEqual(['ru-RU'])
+  })
+})
+
+describe('docs: api → locale negotiation', () => {
+  it('runs the browser example as written', () => {
+    const languages = ['ru-RU', 'ru', 'en-US']
+
+    expect(negotiateLocale(languages, ['en', 'ru'], 'en')).toBe('ru')
+  })
+
+  it('runs the server example as written', () => {
+    const requested = parseAcceptLanguage('ru-RU,ru;q=0.9,en;q=0.8')
+
+    expect(requested).toEqual(['ru-RU', 'ru', 'en'])
+    expect(negotiateLocale(requested, ['en', 'ru'], 'en')).toBe('ru')
+  })
+
+  it('applies the fallback when nothing matches', () => {
+    expect(negotiateLocale(['pt-BR'], ['en', 'ru'], 'en')).toBe('en')
   })
 })

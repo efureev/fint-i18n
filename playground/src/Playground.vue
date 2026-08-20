@@ -9,6 +9,7 @@ import FormatSection from './components/sections/FormatSection.vue'
 import IntrospectionSection from './components/sections/IntrospectionSection.vue'
 import LazyLoadSection from './components/sections/LazyLoadSection.vue'
 import MemorySection from './components/sections/MemorySection.vue'
+import NegotiationSection from './components/sections/NegotiationSection.vue'
 import PartialBlocksSection from './components/sections/PartialBlocksSection.vue'
 import PlaygroundFooter from './components/sections/PlaygroundFooter.vue'
 import PlaygroundHeader from './components/sections/PlaygroundHeader.vue'
@@ -48,6 +49,7 @@ const { events: hookEvents, clear: clearHookEvents, probeTranslate } = usePlaygr
           <IntrospectionSection />
           <SubtreeSection />
           <RetrySection />
+          <NegotiationSection />
         </div>
 
         <PlaygroundFooter />

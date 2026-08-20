@@ -805,6 +805,64 @@ d(Date.now(), {dateStyle: 'long'})              // "4 августа 2026 г." (
 
 ---
 
+## Подбор локали
+
+Свободные функции, импортируются из `@feugene/fint-i18n/core`. Приложение,
+выбирающее локаль иначе, их не бандлит.
+
+```typescript
+function negotiateLocale(
+  requested: readonly Locale[] | Locale | undefined,
+  available: readonly Locale[],
+  fallback?: Locale,
+): Locale | undefined;
+
+function parseAcceptLanguage(header: string): Locale[];
+```
+
+`negotiateLocale` отвечает на один вопрос: с какой локали стартовать, если
+известно, чего хочет пользователь и что есть в наличии.
+
+```typescript
+import { negotiateLocale } from '@feugene/fint-i18n/core';
+
+const locale = negotiateLocale(navigator.languages, ['en', 'ru'], 'en');
+const i18n = createFintI18n({ locale, fallbackLocale: 'en', loaders });
+```
+
+Каждый запрошенный тег проходит полный каскад раньше, чем очередь дойдёт до
+следующего:
+
+1. точное совпадение;
+2. базовый язык — `ru-RU` находит `ru`;
+3. любой регион того же языка — `ru` находит `ru-RU`.
+
+**Порядок запроса важнее точности.** Из `['ru-RU', 'en']` при доступных
+`['en', 'ru']` получится `ru`, а не `en`: первый тег — более сильное
+предпочтение, даже если второй совпадает точно. Сравнение регистронезависимо,
+но возвращается элемент `available` в исходном написании — оно же ключ словаря.
+
+На сервере `navigator.languages` нет, поэтому список предпочтений берётся из
+заголовка запроса:
+
+```typescript
+import { negotiateLocale, parseAcceptLanguage } from '@feugene/fint-i18n/core';
+
+const requested = parseAcceptLanguage(req.headers['accept-language'] ?? '');
+const locale = negotiateLocale(requested, ['en', 'ru'], 'en');
+```
+
+`parseAcceptLanguage` сортирует по `q` (по умолчанию `1`), при равных весах
+сохраняет порядок заголовка и отбрасывает `*` вместе с тегами `q=0` — последнее
+означает явный отказ от языка, а не слабое предпочтение.
+
+> При рендере на сервере передавайте выбранную локаль клиенту в полезной
+> нагрузке, а не выводите её там заново. Заголовок браузерному JavaScript
+> недоступен, а `navigator.languages` ему не тождествен — расхождение даст
+> ошибку гидрации.
+
+---
+
 ## Снимок состояния для SSR и гидрация
 
 Свободные функции, импортируются из `@feugene/fint-i18n/core`. Приложение,

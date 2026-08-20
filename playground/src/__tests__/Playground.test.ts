@@ -59,7 +59,7 @@ describe('Playground', () => {
     const eyebrows = wrapper.findAll('main section')
       .map(section => section.find('p').text().split('.')[0])
 
-    expect(eyebrows).toEqual(Array.from({ length: 14 }, (_, i) => String(i + 1)))
+    expect(eyebrows).toEqual(Array.from({ length: 15 }, (_, i) => String(i + 1)))
   })
 
   it('renders runtime debug panel as part of page flow without viewport-locked scrolling', async () => {

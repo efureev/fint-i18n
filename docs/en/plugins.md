@@ -42,6 +42,7 @@ interface PersistenceOptions {
 - **Automatic Loading**: Upon initialization, the plugin checks for a saved value in `storage`.
 - **Tab Synchronization**: Uses the `storage` event to instantly update the locale in all open tabs when it changes in one of them.
 - **Validation**: A stored value is applied only when the locale is known to exist — from `allowedLocales`, from the registered loaders, or from messages already merged. A stale or tampered key therefore cannot leave the application with no translations at all.
+- **Negotiation**: the stored tag is matched with [`negotiateLocale()`](./api.md#locale-negotiation), not by string equality. A locale saved as `ru-RU` while the application ships `ru` resolves to `ru` and is applied — the value in storage usually came from the browser, so it usually carries a region. A tag of an unrelated language is still rejected.
 
 > [!IMPORTANT]
 > If dictionaries come from `mergeMessages()` rather than loaders, the library has no way to know which locales exist and will ignore the stored value with a warning. Pass `allowedLocales` in that setup.

@@ -105,6 +105,7 @@ see [Defining messages](./docs/en/defining-messages.md) for the merge order and 
 |-----------------------|-----------------------------------------------------------------------------------------------------|
 | **Translation**       | `t()`, `$t`, the `v-t` directive with `.once` / `.preserve`, per-call fallback locale               |
 | **Blocks**            | lazy loading, upward resolution, `prefix.*` wildcards, reference counting, `retry` on a failed load |
+| **Locales**           | `negotiateLocale()` over `navigator.languages` / `Accept-Language`, `ru-RU` resolving to `ru`        |
 | **Pluralization**     | CLDR categories via `Intl.PluralRules`, rules resolved once at compile time                         |
 | **Numbers and dates** | `n()` / `d()` over `Intl` with formatter caching, in a separate module                              |
 | **SSR**               | a state snapshot on the server, hydration on the client, no refetch                                 |

@@ -168,6 +168,25 @@
       "payload": "Loaded on a retry",
       "failedNote": "Every attempt failed. Only the last error surfaces — one per block, not one per attempt.",
       "disposeHint": "The demo instance is released with `dispose()` on unmount: it drops messages, caches and plugin subscriptions, and stops a retry loop that is still running."
+    },
+    "negotiation": {
+      "eyebrow": "15. Locale negotiation",
+      "title": "`negotiateLocale()` and regional subtags",
+      "description": "Pick a starting locale from what the user actually asks for, and let `ru-RU` find the `ru` dictionary instead of falling through to the fallback.",
+      "pickLabel": "Negotiation",
+      "tagsLabel": "Requested tags",
+      "tagsHint": "Comma-separated BCP 47 tags, most wanted first — exactly what `navigator.languages` hands you.",
+      "availableLabel": "Available",
+      "resultLabel": "Negotiated",
+      "noMatch": "no match — the fallback applies",
+      "orderHint": "Request order beats exactness: from `ru-RU, en` against `en, ru` the winner is `ru`, because the first tag runs its whole cascade before the second gets a turn.",
+      "subtagLabel": "Regional subtag",
+      "subtagButton": "Load a block as ru-RU",
+      "subtagIdle": "Press the button to load a block on a throwaway instance.",
+      "subtagInstance": "Instance locale",
+      "subtagLoader": "Loader registered for",
+      "subtagStored": "Dictionary stored under",
+      "subtagHint": "The loader is found through the base language, but the messages are stored under the requested locale — so `Intl` still receives the region, and dates and numbers keep their local format."
     }
   },
   "status": {

@@ -718,6 +718,64 @@ The cache is bounded (64 entries per kind) and dropped wholesale when exceeded, 
 
 ---
 
+## Locale Negotiation
+
+Free functions imported from `@feugene/fint-i18n/core`. An application that picks
+its locale some other way does not bundle them.
+
+```typescript
+function negotiateLocale(
+  requested: readonly Locale[] | Locale | undefined,
+  available: readonly Locale[],
+  fallback?: Locale,
+): Locale | undefined;
+
+function parseAcceptLanguage(header: string): Locale[];
+```
+
+`negotiateLocale` answers one question: given what the user wants and what you
+actually have, which locale should start?
+
+```typescript
+import { negotiateLocale } from '@feugene/fint-i18n/core';
+
+const locale = negotiateLocale(navigator.languages, ['en', 'ru'], 'en');
+const i18n = createFintI18n({ locale, fallbackLocale: 'en', loaders });
+```
+
+Each requested tag runs a full cascade before the next one gets a turn:
+
+1. an exact match;
+2. the base language — `ru-RU` matches `ru`;
+3. any region of the same language — `ru` matches `ru-RU`.
+
+**Request order beats exactness.** From `['ru-RU', 'en']` against `['en', 'ru']`
+the result is `ru`, not `en`: the first tag is a stronger preference than the
+second, even though the second matches exactly. Comparison is case-insensitive,
+but the returned value is the entry from `available` in its original spelling —
+that spelling is a dictionary key.
+
+On the server there is no `navigator.languages`, so the preference list comes
+from the request header:
+
+```typescript
+import { negotiateLocale, parseAcceptLanguage } from '@feugene/fint-i18n/core';
+
+const requested = parseAcceptLanguage(req.headers['accept-language'] ?? '');
+const locale = negotiateLocale(requested, ['en', 'ru'], 'en');
+```
+
+`parseAcceptLanguage` sorts by `q` (defaulting to `1`), keeps header order for
+equal weights, and drops both `*` and any tag with `q=0` — the latter is an
+explicit refusal, not a weak preference.
+
+> If you render on the server, send the chosen locale to the client in your
+> payload instead of deriving it again there. The header is not available to
+> browser JavaScript and `navigator.languages` is not identical to it; deriving
+> it twice risks a hydration mismatch.
+
+---
+
 ## SSR Snapshot and Hydration
 
 Free functions imported from `@feugene/fint-i18n/core`. An application that never

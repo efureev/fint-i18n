@@ -89,4 +89,38 @@ describe('PersistencePlugin: stored locale validation', () => {
 
     expect(i18n.locale.value).toBe('ru')
   })
+
+  // Локаль в хранилище обычно пришла из браузера, то есть с регионом.
+  it('negotiates a stored regional locale down to its base language', () => {
+    const i18n = createFintI18n({
+      locale: 'en',
+      loaders: { en: { a: async () => ({}) }, ru: { a: async () => ({}) } },
+      plugins: [new PersistencePlugin({ storage: makeStorage('ru-RU'), syncTabs: false })],
+    })
+
+    expect(i18n.locale.value).toBe('ru')
+  })
+
+  it('keeps preferring an exactly matching regional locale', () => {
+    const i18n = createFintI18n({
+      locale: 'en',
+      plugins: [new PersistencePlugin({
+        storage: makeStorage('ru-RU'),
+        syncTabs: false,
+        allowedLocales: ['en', 'ru', 'ru-RU'],
+      })],
+    })
+
+    expect(i18n.locale.value).toBe('ru-RU')
+  })
+
+  it('still rejects a stored locale of an unrelated language', () => {
+    const i18n = createFintI18n({
+      locale: 'en',
+      loaders: { en: { a: async () => ({}) }, ru: { a: async () => ({}) } },
+      plugins: [new PersistencePlugin({ storage: makeStorage('pt-BR'), syncTabs: false })],
+    })
+
+    expect(i18n.locale.value).toBe('en')
+  })
 })

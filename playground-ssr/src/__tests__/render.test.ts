@@ -7,7 +7,14 @@ function parsePayload(payload: string) {
   // Сервер экранирует `<`; JSON.parse понимает < как обычный символ.
   return JSON.parse(payload) as {
     i18n: { messages: Record<string, any>, blocks: Record<string, string[]> }
-    app: { renderedAt: string, hydrated: boolean, serverCalls: string[] }
+    app: {
+      renderedAt: string
+      hydrated: boolean
+      serverCalls: string[]
+      locale: string
+      localeSource: string
+      acceptLanguage: string
+    }
   }
 }
 
@@ -87,6 +94,62 @@ describe('SSR playground: server render', () => {
     expect(Object.keys(parsePayload(en.payload).i18n.messages)).toEqual(['en'])
     expect(ru.html).toContain('5 товаров')
     expect(en.html).toContain('5 items')
+  })
+})
+
+describe('SSR playground: locale negotiation', () => {
+  it('picks the locale from Accept-Language when no query asks for one', async () => {
+    const { locale, localeSource, html } = await render('/', 'ru-RU,ru;q=0.9,en;q=0.8')
+
+    expect(locale).toBe('ru')
+    expect(localeSource).toBe('header')
+    expect(html).toContain('SSR-витрина')
+  })
+
+  it('resolves a regional tag to the base language dictionary', async () => {
+    const { locale, html } = await render('/', 'ru-RU')
+
+    expect(locale).toBe('ru')
+    expect(html).toContain('5 товаров')
+  })
+
+  it('honours q-weights over header order', async () => {
+    const { locale } = await render('/', 'en;q=0.2,ru;q=0.9')
+
+    expect(locale).toBe('ru')
+  })
+
+  it('lets an explicit ?locale= win over the header', async () => {
+    const { locale, localeSource } = await render('/?locale=en', 'ru-RU,ru;q=0.9')
+
+    expect(locale).toBe('en')
+    expect(localeSource).toBe('query')
+  })
+
+  it('falls back to english when the header matches nothing', async () => {
+    const { locale, localeSource } = await render('/', 'pt-BR,es;q=0.8')
+
+    expect(locale).toBe('en')
+    expect(localeSource).toBe('default')
+  })
+
+  it('falls back to english without a header at all', async () => {
+    const { locale, localeSource } = await render('/')
+
+    expect(locale).toBe('en')
+    expect(localeSource).toBe('default')
+  })
+
+  // Заголовок браузерному JS недоступен — без локали в снимке клиент выбрал бы
+  // другую и разошёлся бы с разметкой сервера.
+  it('carries the negotiated locale in the payload for the client', async () => {
+    const { payload } = await render('/', 'ru-RU,ru;q=0.9')
+    const state = parsePayload(payload)
+
+    expect(state.app.locale).toBe('ru')
+    expect(state.app.localeSource).toBe('header')
+    expect(state.app.acceptLanguage).toBe('ru-RU,ru;q=0.9')
+    expect(Object.keys(state.i18n.messages)).toEqual(['ru'])
   })
 })
 

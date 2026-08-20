@@ -56,7 +56,8 @@ createHttpServer((req, res) => {
   const handle = async () => {
     try {
       const { template, render } = await server.resolve(req.url)
-      const { html, payload } = await render(req.url)
+      // Заголовок — единственный источник языковых предпочтений на сервере.
+      const { html, payload } = await render(req.url, req.headers['accept-language'] ?? '')
 
       const page = template
         .replace(PLACEHOLDER_HTML, html)
