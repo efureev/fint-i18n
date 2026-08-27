@@ -98,4 +98,40 @@ describe('HookManager', () => {
     expect(lateHandler).toHaveBeenCalledTimes(1)
   })
 
+  // Одному подписчику `emitSync` не копирует массив — снимок длины даёт тот же
+  // результат дешевле. Оба теста ниже держат эту эквивалентность.
+  it('keeps the snapshot stable when the only handler subscribes another one', () => {
+    const manager = new HookManager()
+    const lateHandler = vi.fn(payload => ({ ...payload, result: `${payload.result}late` }))
+
+    manager.on('onTranslate', (payload) => {
+      manager.on('onTranslate', lateHandler)
+      return { ...payload, result: `${payload.result}first` }
+    })
+
+    const result = manager.emitSync('onTranslate', { key: 'test', result: '' })
+
+    expect(result.result).toBe('first')
+    expect(lateHandler).not.toHaveBeenCalled()
+
+    expect(manager.emitSync('onTranslate', { key: 'test', result: '' }).result).toBe('firstlate')
+  })
+
+  it('survives the only handler unsubscribing itself mid-emit', () => {
+    const manager = new HookManager()
+    const handler = vi.fn(payload => ({ ...payload, result: 'once' }))
+
+    const off = manager.on('onTranslate', (payload) => {
+      off()
+      return handler(payload)
+    })
+
+    expect(manager.emitSync('onTranslate', { key: 'test', result: '' }).result).toBe('once')
+    expect(handler).toHaveBeenCalledTimes(1)
+
+    // Подписки не осталось — второй эмит проходит мимо.
+    expect(manager.emitSync('onTranslate', { key: 'test', result: 'raw' }).result).toBe('raw')
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(manager.has('onTranslate')).toBe(false)
+  })
 })

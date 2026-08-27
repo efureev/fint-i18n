@@ -58,6 +58,17 @@ translateInstance.t('analytics.summary', { revenue: '$12k', growth: 8 })
 await localeSwitchInstance.loadBlock('analytics', 'en')
 await localeSwitchInstance.loadBlock('analytics', 'ru')
 
+/**
+ * Тот же горячий путь, но с подписчиком `onTranslate`: он единственный хук,
+ * который эмитится на каждый перевод, и именно на нём видно цену payload'а
+ * и обхода подписок.
+ */
+const hookedInstance = createFintI18n({ locale: 'en', fallbackLocale: 'en' })
+
+hookedInstance.mergeMessages('en', 'common', baseMessages.common)
+hookedInstance.hooks.on('onTranslate', data => data)
+hookedInstance.t('common.greeting', { name: 'Alex', count: 3 })
+
 const pluralInstance = createFintI18n({
   locale: 'ru',
   fallbackLocale: 'ru',
@@ -103,6 +114,14 @@ describe('fint-i18n core benchmarks', () => {
     'i18n.t() warm cached lookup',
     () => {
       translateInstance.t('common.greeting', { name: 'Alex', count: 3 })
+    },
+    defaultBenchOptions,
+  )
+
+  bench(
+    'i18n.t() with an onTranslate subscriber',
+    () => {
+      hookedInstance.t('common.greeting', { name: 'Alex', count: 3 })
     },
     defaultBenchOptions,
   )

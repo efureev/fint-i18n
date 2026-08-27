@@ -44,6 +44,17 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   reaches `onError` along with the block name and the locale, and the console
   fallback lives there.
 
+### Performance
+
+- **`emitSync` no longer copies the subscriber array when there is exactly one
+  subscriber** — the common case for the bridge, the hook logger and anything
+  built on `onTranslate`, which is emitted on every `t()` call. A length
+  snapshot gives the same guarantee the copy gave: a handler that subscribes or
+  unsubscribes mid-emit cannot shift the walk. Measured on
+  `bench/core.bench.ts`: `t()` with an `onTranslate` subscriber 13.4 → 14.5 M
+  ops/s, about −5 ns per call. A benchmark case for that path was added, since
+  it had none.
+
 ### Fixed
 
 - **Overwriting a message now re-renders every component showing it.** The

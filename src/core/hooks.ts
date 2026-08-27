@@ -131,11 +131,16 @@ export class HookManager {
     const hooks = this.hooks.get(name)
     if (!hooks || hooks.length === 0) return arg
 
+    // Копия нужна, чтобы подписка, снятая или добавленная прямо из обработчика,
+    // не сдвинула индексы посреди обхода. Одному подписчику она не нужна:
+    // снимок длины уже даёт тот же результат, а это самый частый случай —
+    // bridge, логгер, devtools.
+    const queue = hooks.length === 1 ? hooks : hooks.slice()
+    const total = queue.length
     let currentArg = arg
-    const hookQueue = hooks.slice()
 
-    for (const hook of hookQueue) {
-      const result = hook(currentArg)
+    for (let i = 0; i < total; i++) {
+      const result = queue[i](currentArg)
       if (result instanceof Promise) {
         console.warn(`[fint-i18n] Sync hook "${name}" received a promise from handler. This will be ignored in sync execution.`)
         continue
