@@ -60,6 +60,19 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   about 17% per translation. A miss stays a miss: `t()` still returns the key
   and `onMissingKey` still fires.
 
+- **`connectVueDevtools(app, devtools)`** — a plugin for the Vue Devtools
+  extension: its own inspector (instance → locales → blocks → keys → misses,
+  with values editable in place), a timeline layer fed from the same event
+  stream, and a `fint-i18n › blocks` field in the component inspector showing
+  which blocks a component asked for. That last one is the only thing the in-app
+  panel cannot offer, and it is why the integration exists at all.
+
+  `@vue/devtools-api` is an **optional** peer dependency loaded dynamically:
+  without it the call warns with instructions and returns `false` while
+  everything else keeps working. The integration uses the v6-compatible plugin
+  API, which extensions 7 and 8 support officially — in v8 it is literally the
+  plugin API, `DevToolsPluginAPI = DevToolsV6PluginAPI`.
+
 ### Changed
 
 - **The compilation-cache version is now read on every `t()`, not only on a

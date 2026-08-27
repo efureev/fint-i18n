@@ -139,6 +139,11 @@ export interface FintI18nDevtools extends FintI18nPlugin {
    * потому что на большом приложении это десятки тысяч строк.
    */
   dictionary: () => DictionaryEntry[]
+  /**
+   * Какие блоки попросил конкретный компонент. Знание есть только у devtools:
+   * счётчики инстанса считают блоки, но не тех, кто их попросил.
+   */
+  componentBlocks: (component: object) => { name: string, blocks: string[] } | null
   /** Write-операции: всё через публичный API инстанса. */
   readonly actions: DevtoolsActions
   /**

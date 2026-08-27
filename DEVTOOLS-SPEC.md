@@ -360,6 +360,13 @@ src/devtools/          ← новый слой; импортирует core и v
   `registerUsage` через `getCurrentInstance()`: `useI18nScope` вызывает
   `registerUsage` синхронно, **до первого `await`**, поэтому контекст компонента ещё доступен (после `await` он был бы
   потерян).
+
+  Про версии API — проверено по `@vue/devtools-api@8.2.1` и документации: нужный путь это `setupDevtoolsPlugin` из
+  v6-совместимого API, и он в v8 не легаси, а **единственный** API плагинов — `DevToolsPluginAPI =
+  DevToolsV6PluginAPI`. Официально: «Since v7.3.0, we are fully compatible with the v6 plugin API». Новые
+  `addCustomTab`/`addCustomCommand` — про другое: целая вкладка с iframe или статичным VNode, инспектор ими не
+  построить. Две поправки к ожиданиям: `enableEarlyProxy` в v8 не используется вовсе (буферизация плагинов встроена),
+  а ленты плагинов в расширении 7+ живут в меню самого плагина, а не общей вкладкой Timeline.
 - **Цена.** 0 байт в проде. Плюс запись в `peerDependenciesMeta` — единственное место, где `publint` может придраться,
   проверить в CI.
 - **Слом API.** Нет.

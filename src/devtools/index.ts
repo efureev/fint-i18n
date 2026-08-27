@@ -1,4 +1,5 @@
 import { getCurrentInstance } from 'vue'
+import type { App } from 'vue'
 import type { FintI18n, FintI18nHooks, Locale } from '../core'
 import { createActions } from './actions'
 import { isNameTaken, publishToBridge } from './bridge'
@@ -47,6 +48,26 @@ export async function mountDevtoolsOverlay(
   return mountOverlay(devtools, options)
 }
 
+/**
+ * Мост к расширению Vue Devtools: custom inspector, слой ленты и поле «какие
+ * блоки просит этот компонент» в инспекторе компонентов — единственное, чего
+ * панель из `mountDevtoolsOverlay()` дать не может.
+ *
+ * ```ts
+ * const app = createApp(App)
+ * app.use(createFintI18nPlugin(i18n))
+ * await connectVueDevtools(app, devtools)
+ * ```
+ *
+ * `@vue/devtools-api` — необязательная peer-зависимость. Нет её — вернётся
+ * `false` и предупреждение с инструкцией; всё остальное продолжает работать.
+ */
+export async function connectVueDevtools(app: App, devtools: FintI18nDevtools): Promise<boolean> {
+  const { connectVueDevtools: connect } = await import('./vue-devtools')
+
+  return connect(app, devtools)
+}
+
 /** Методы-стрелки, которые оборачиваются: событий на них хук-система не даёт. */
 type WrappedMethod =
   | 'registerUsage'
@@ -67,14 +88,18 @@ function pickName(requested?: string): string {
   return `i18n-${index}`
 }
 
-/** Компонент, из чьего `setup` пришёл вызов. `useI18nScope` регистрирует блок до первого `await`. */
-function currentComponentName(): string | undefined {
+/**
+ * Компонент, из чьего `setup` пришёл вызов. `useI18nScope` регистрирует блок
+ * синхронно, до первого `await`, — поэтому контекст ещё доступен; после `await`
+ * его бы уже не было.
+ */
+function currentComponent(): { instance: object, name: string } | null {
   const instance = getCurrentInstance()
-  if (!instance) return undefined
+  if (!instance) return null
 
   const type = instance.type as { name?: string, __name?: string }
 
-  return type.name ?? type.__name ?? 'anonymous'
+  return { instance, name: type.name ?? type.__name ?? 'anonymous' }
 }
 
 /**
@@ -212,9 +237,12 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
       })
 
       wrap(instance, 'registerUsage', (block: string) => {
-        const component = currentComponentName()
+        const component = currentComponent()
+
         state.usageChanged(block, 1)
-        timeline.push('usage', { block, delta: 1, component })
+        if (component) state.trackComponent(component.instance, component.name, block)
+
+        timeline.push('usage', { block, delta: 1, component: component?.name })
       })
 
       wrap(instance, 'unregisterUsage', (block: string) => {
@@ -274,6 +302,8 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
 
       return state.dictionary(target)
     },
+
+    componentBlocks: component => state.componentBlocks(component),
 
     get actions() {
       if (!target) throw new Error('[fint-i18n] devtools is not attached to an instance')

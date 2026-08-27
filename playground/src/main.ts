@@ -97,6 +97,11 @@ app.mount('#app')
 // Инстанс здесь передаётся готовым, а не через `plugins`, только потому, что
 // `createFintI18n` выше — часть демонстрации API. В своём коде лучше через
 // `plugins`: тогда `install` отработает в конструкторе и история будет полной.
-void import('@feugene/fint-i18n/devtools').then(({ createDevtools, mountDevtoolsOverlay }) => {
-  return mountDevtoolsOverlay(createDevtools(i18n), { hotkey: 'alt+i' })
+void import('@feugene/fint-i18n/devtools').then(async ({ createDevtools, connectVueDevtools, mountDevtoolsOverlay }) => {
+  const devtools = createDevtools(i18n)
+
+  await mountDevtoolsOverlay(devtools, { hotkey: 'alt+i' })
+  // Мост к расширению Vue Devtools: дублирует панель, но добавляет то, чего в
+  // ней нет, — блоки в инспекторе компонента.
+  await connectVueDevtools(app, devtools)
 })

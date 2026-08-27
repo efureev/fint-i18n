@@ -79,6 +79,9 @@ export default defineConfig(({mode}) => {
             rolldownOptions: {
                 external: [
                     'vue',
+                    // Необязательная peer-зависимость: её динамический импорт
+                    // обязан остаться импортом, а не уехать в чанк devtools.
+                    '@vue/devtools-api',
                 ],
                 output: {
                     entryFileNames: '[name].js',

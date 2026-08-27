@@ -168,6 +168,46 @@ devtools invalidates the compilation cache, whose version `t()` reads on every
 call. The one thing this does not reach is a component showing a key that does
 not exist: its last render never touched the cache.
 
+## The Vue Devtools extension
+
+`connectVueDevtools(app, devtools)` registers a plugin with the extension: its
+own inspector, a timeline layer and a field in the component inspector.
+
+```typescript
+const app = createApp(App)
+app.use(createFintI18nPlugin(i18n))
+
+const devtools = createDevtools(i18n)
+await connectVueDevtools(app, devtools)
+```
+
+The inspector repeats the panel — locales, blocks, keys, misses — and that is
+deliberate: whoever lives in the extension should not have to leave it for i18n.
+A key's value is editable right there, as it is in the panel; a set of plural
+forms and a message function stay read-only.
+
+The one thing the panel cannot offer is a **link to the component tree**. In the
+Components tab a component gains a `fint-i18n › blocks` field: the blocks it
+asked for through `useI18nScope`. That knowledge is collected in the wrapper
+around `registerUsage` — the scope calls it synchronously, before the first
+`await`, so the component context is still there.
+
+### An optional dependency
+
+`@vue/devtools-api` is declared an `optional` peer dependency and loaded
+dynamically. Without the package you get a warning with instructions and
+`false`; the panel, the snapshot, the timeline and the `window` bridge keep
+working in full.
+
+```bash
+yarn add -D @vue/devtools-api
+```
+
+The integration uses the v6-compatible plugin API — the same one Pinia and Vue
+Router are built on. Extensions 7 and 8 support it officially: "Since v7.3.0, we
+are fully compatible with the v6 plugin API". Note that in extension 7+ plugin
+timelines live in the plugin's own menu rather than in a shared Timeline tab.
+
 ## The window bridge
 
 On attach devtools publishes itself into `window.__FINT_I18N_DEVTOOLS__` — this

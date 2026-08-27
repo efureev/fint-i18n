@@ -59,6 +59,9 @@ export interface ShadowState {
   blockLoadFailed: (block: string | undefined, locale: Locale | undefined, error: unknown) => void
   blockUnloaded: (block: string, locale: Locale) => void
   usageChanged: (block: string, delta: number) => void
+  /** Кто попросил блок. Ключ — инстанс компонента, поэтому запись умирает вместе с ним. */
+  trackComponent: (component: object, name: string, block: string) => void
+  componentBlocks: (component: object) => { name: string, blocks: string[] } | null
   /** Возвращает `true`, если ключ виден впервые: только такие идут в ленту. */
   missingKeySeen: (key: string, locale: Locale) => boolean
   fallbackSeen: (key: string, locale: Locale, fallbackLocale: Locale) => boolean
@@ -74,6 +77,7 @@ export function createShadowState(): ShadowState {
   const missingKeys = new Map<string, MissingKeyState>()
   const fallbacks = new Map<string, FallbackState>()
   const warnings = new Map<string, WarningState>()
+  const components = new WeakMap<object, { name: string, blocks: Set<string> }>()
 
   const upsert = (block: string, locale: Locale, patch: Partial<BlockState>): BlockState => {
     const key = blockKey(locale, block)
@@ -146,6 +150,18 @@ export function createShadowState(): ShadowState {
       const next = (usage.get(block) ?? 0) + delta
       if (next > 0) usage.set(block, next)
       else usage.delete(block)
+    },
+
+    trackComponent(component, name, block) {
+      const entry = components.get(component) ?? { name, blocks: new Set<string>() }
+      entry.blocks.add(block)
+      components.set(component, entry)
+    },
+
+    componentBlocks(component) {
+      const entry = components.get(component)
+
+      return entry ? { name: entry.name, blocks: [...entry.blocks] } : null
     },
 
     missingKeySeen(key, locale) {
