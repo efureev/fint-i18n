@@ -93,6 +93,21 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   untouched. `failAttempts` only shows on an instance created with `retry`,
   since without it the first failure is final.
 
+- **`@feugene/fint-i18n/vite`** — a dev-server plugin that closes the loop: a
+  miss or an edit made in the devtools panel is written into the dictionary
+  files on disk instead of staying in the tab's memory. Wire
+  `fintI18nDevtools({ locales })` into the Vite config and the panel gains a
+  `disk` chip, edits in the dictionary tab persist, and the missing tab gains a
+  "write stub to dictionaries" button.
+
+  The stub never overwrites an existing value, which matters more than it
+  sounds: a key lands in the missing list also when it exists in the file and
+  the block simply was not loaded yet, so without that guard "create what is
+  missing" would erase translations. Dictionary formatting is preserved, key
+  paths coming over the wire are validated segment by segment, and writes are
+  confined to the configured directory. The plugin declares `apply: 'serve'`, so
+  in a production build the endpoint does not exist at all.
+
 ### Changed
 
 - **The compilation-cache version is now read on every `t()`, not only on a

@@ -30,6 +30,23 @@ const METRICS_POLL_MS = 500
 
 const simulation = ref({ delay: 0, failPercent: 0, failAttempts: 0 })
 const simulating = ref(false)
+const onDisk = ref(false)
+const written = ref('')
+
+void props.devtools.devServer.probe().then((ready) => { onDisk.value = ready })
+
+/**
+ * Правка уезжает и в память, и на диск. Записывать молча правильнее, чем
+ * заводить вторую кнопку: правка в словаре — уже осознанное действие, а
+ * несохранённая правка теряется при первом же перезапуске.
+ */
+function persist(patch: Record<string, any>, overwrite: boolean) {
+  if (!onDisk.value) return
+
+  void props.devtools.devServer.write(patch, { overwrite })
+    .then((files) => { written.value = `wrote ${files.length} file(s)` })
+    .catch((error: Error) => { written.value = error.message })
+}
 
 function toggleSimulation() {
   if (simulating.value) {
@@ -182,8 +199,26 @@ function run(action: () => unknown) {
 }
 
 function patch(key: string, locale: string, event: Event) {
-  props.devtools.actions.patchMessage(locale, key, (event.target as HTMLInputElement).value)
+  const value = (event.target as HTMLInputElement).value
+
+  props.devtools.actions.patchMessage(locale, key, value)
+  persist({ [locale]: nest(key, value) }, true)
   refresh()
+}
+
+/** `common.hello` + значение → `{ common: { hello: значение } }`. */
+function nest(key: string, value: string): Record<string, any> {
+  const path = key.split('.')
+  const tree: Record<string, any> = {}
+  let node = tree
+
+  for (let i = 0; i < path.length - 1; i++) {
+    node[path[i]] = {}
+    node = node[path[i]]
+  }
+  node[path[path.length - 1]] = value
+
+  return tree
 }
 
 function download(payload: unknown, suffix: string) {
@@ -217,6 +252,7 @@ function exportReport() {
         <span class="title">fint-i18n</span>
         <span class="chip">{{ snapshot?.locale ?? '—' }}</span>
         <span v-if="snapshot?.disposed" class="chip bad">disposed</span>
+        <span v-if="onDisk" class="chip good" title="dev server plugin connected — edits are written to the locale files">disk</span>
         <span class="modes">
           <button
             v-for="name in MODES"
@@ -375,6 +411,10 @@ function exportReport() {
             <button type="button" @click="download(devtools.actions.missingKeysPatch(), 'missing')">
               export dictionary patch
             </button>
+            <button v-if="onDisk" type="button" @click="persist(devtools.actions.missingKeysPatch(), false)">
+              write stub to dictionaries
+            </button>
+            <span v-if="written" class="dim">{{ written }}</span>
           </div>
           <p v-if="!snapshot.missingKeys.length && !snapshot.fallbacks.length" class="empty">
             no misses so far

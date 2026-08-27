@@ -73,6 +73,7 @@ export default defineConfig(({mode}) => {
                     'vue-global-types': fileURLToPath(new URL('./src/vue/global-types.ts', import.meta.url)),
                     plugins: fileURLToPath(new URL('./src/plugins/index.ts', import.meta.url)),
                     devtools: fileURLToPath(new URL('./src/devtools/index.ts', import.meta.url)),
+                    vite: fileURLToPath(new URL('./src/vite/index.ts', import.meta.url)),
                 },
                 formats: ['es'],
             },
@@ -82,6 +83,9 @@ export default defineConfig(({mode}) => {
                     // Необязательная peer-зависимость: её динамический импорт
                     // обязан остаться импортом, а не уехать в чанк devtools.
                     '@vue/devtools-api',
+                    // Entry `vite` — плагин dev-сервера, то есть код для node.
+                    'vite',
+                    /^node:/,
                 ],
                 output: {
                     entryFileNames: '[name].js',

@@ -28,6 +28,7 @@ export default defineConfig({
       '@feugene/fint-i18n/vue': fileURLToPath(new URL('../src/vue/index.ts', import.meta.url)),
       '@feugene/fint-i18n/devtools': fileURLToPath(new URL('../src/devtools/index.ts', import.meta.url)),
       '@feugene/fint-i18n/plugins': fileURLToPath(new URL('../src/plugins/index.ts', import.meta.url)),
+      '@feugene/fint-i18n/vite': fileURLToPath(new URL('../src/vite/index.ts', import.meta.url)),
     },
   },
   server: {

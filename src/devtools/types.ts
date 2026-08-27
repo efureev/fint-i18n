@@ -2,6 +2,7 @@ import type { FintI18nPlugin, Locale, WarningCode } from '../core'
 import type { DevtoolsActions } from './actions'
 import type { DevtoolsMetrics } from './metrics'
 import type { DevtoolsMode } from './modes'
+import type { DevServerBridge } from './dev-server'
 import type { DevtoolsSimulator } from './simulator'
 
 export type DevtoolsEventType =
@@ -127,6 +128,8 @@ export interface DevtoolsOptions {
   eventLimit?: number
   /** Не публиковать инстанс в `window.__FINT_I18N_DEVTOOLS__`. */
   bridge?: boolean
+  /** Путь к эндпоинту плагина dev-сервера. По умолчанию `/__fint-i18n/messages`. */
+  devServerEndpoint?: string
 }
 
 export interface FintI18nDevtools extends FintI18nPlugin {
@@ -164,6 +167,11 @@ export interface FintI18nDevtools extends FintI18nPlugin {
    * `ready`/`error` и повторы в живом приложении, а не в юнит-тесте.
    */
   readonly simulator: DevtoolsSimulator
+  /**
+   * Клиент к плагину dev-сервера: записывает ключи в словари на диске.
+   * Без плагина `probe()` вернёт `false`, и панель не покажет кнопок записи.
+   */
+  readonly devServer: DevServerBridge
   /** Отцепиться, не трогая инстанс: снять подписки, вернуть обёрнутые методы. */
   detach: () => void
 }

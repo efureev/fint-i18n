@@ -3,6 +3,7 @@ import type { App } from 'vue'
 import type { FintI18n, FintI18nHooks, Locale } from '../core'
 import { createActions } from './actions'
 import { isNameTaken, publishToBridge } from './bridge'
+import { createDevServer } from './dev-server'
 import { createMetrics, type DevtoolsMetrics } from './metrics'
 import { applyMode, type DevtoolsMode } from './modes'
 import { createSimulator, type DevtoolsSimulator } from './simulator'
@@ -15,6 +16,7 @@ export { BRIDGE_KEY, type DevtoolsBridge } from './bridge'
 export { buildMissingKeysPatch, type DevtoolsActions } from './actions'
 export { type DevtoolsMetrics, type MetricsOptions, type MetricsSnapshot } from './metrics'
 export { type DevtoolsSimulator, type SimulationOptions } from './simulator'
+export { DEV_SERVER_ENDPOINT, type DevServerBridge } from './dev-server'
 export { type DevtoolsMode, pseudo } from './modes'
 
 declare const __FINT_I18N_VERSION__: string
@@ -137,6 +139,7 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
   let offMode: (() => void) | undefined
   let metrics: DevtoolsMetrics | null = null
   let simulator: DevtoolsSimulator | null = null
+  const devServer = createDevServer(options.devServerEndpoint)
   const offHooks: (() => void)[] = []
   const originals = new Map<WrappedMethod, unknown>()
 
@@ -343,6 +346,8 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
 
       return simulator
     },
+
+    devServer,
 
     setMode(next: DevtoolsMode) {
       if (!target || next === mode) return

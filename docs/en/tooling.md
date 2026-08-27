@@ -1,7 +1,8 @@
 # Tooling for dictionaries
 
-The package ships two command-line tools. They are not part of the runtime — they
-are not imported by your application and add nothing to your bundle. They exist
+The package ships two command-line tools and a dev-server plugin. None of them is
+part of the runtime — they are not imported by your application and add nothing
+to your bundle. They exist
 because dictionaries are the one part of an i18n setup that the type system never
 sees: a key you renamed in code and forgot in `ru.json` compiles fine and fails in
 front of a user.
@@ -10,11 +11,12 @@ front of a user.
 | --- | --- |
 | `fint-i18n-check-messages` | Do the locales still agree with each other and with the code? |
 | `fint-i18n-codemod-plurals` | Migrating dictionaries from the `\|` plural syntax of 0.4.0 to the form objects of 0.5.0 |
+| `@feugene/fint-i18n/vite` | A dev-server plugin: the devtools panel writes keys into the dictionaries ([devtools](./devtools.md)) |
 
 ## Running them
 
-Both are exposed as `bin` entries, so no install step is needed in a project that
-already depends on the package:
+Both command-line tools are exposed as `bin` entries, so no install step is
+needed in a project that already depends on the package:
 
 ```bash
 npx fint-i18n-check-messages src/i18n/locales --source src

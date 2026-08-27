@@ -17,6 +17,7 @@ import process from 'node:process'
 const distDir = resolve(dirname(fileURLToPath(import.meta.url)), '../dist')
 
 const DEVTOOLS_ENTRY = 'devtools.js'
+const NODE_ENTRY = 'vite.js'
 const PRODUCTION_ENTRIES = ['index.js', 'core.js', 'vue.js', 'plugins.js', 'vue-global-types.js']
 // Строка есть только в `src/devtools/bridge.ts` и переживает минификацию:
 // это ключ в `window`, переименовать его сборщик не может.
@@ -64,7 +65,31 @@ if (!readFileSync(join(distDir, DEVTOOLS_ENTRY), 'utf8').includes(MARKER)) {
   process.exit(1)
 }
 
+// Та же логика: без node-импортов в `vite.js` проверка на них ничего не значит.
+if (!/(?:from|import)\s*\(?\s*["']node:/.test(readFileSync(join(distDir, NODE_ENTRY), 'utf8'))) {
+  console.error(`✗ dist/${NODE_ENTRY} has no node built-in imports; the node check below proves nothing`)
+  process.exit(1)
+}
+
 let failed = false
+
+// `vite.js` — плагин dev-сервера, то есть код для node. Утечка его импортов в
+// браузерный entry — не «лишние байты», а сломанный бандл у потребителя.
+for (const entry of PRODUCTION_ENTRIES) {
+  const nodeImports = [...reachable(entry)].filter((file) => {
+    try {
+      return /(?:from|import)\s*\(?\s*["']node:/.test(readFileSync(join(distDir, file), 'utf8'))
+    }
+    catch {
+      return false
+    }
+  })
+
+  if (nodeImports.length > 0) {
+    failed = true
+    console.error(`✗ ${entry} pulls node built-ins through: ${nodeImports.join(', ')}`)
+  }
+}
 
 for (const entry of PRODUCTION_ENTRIES) {
   const files = [...reachable(entry)]

@@ -81,6 +81,8 @@ src/
     timeline.ts           кольцевой буфер событий
     internals.ts          единственное место, читающее приватные поля инстанса
     bridge.ts             window.__FINT_I18N_DEVTOOLS__ — консоль и e2e
+    dev-server.ts         клиент к плагину dev-сервера
+  vite/                 плагин dev-сервера (node): запись ключей в словари
 bench/core.bench.ts     горячий путь: compileTemplate, t()
 playground/             витрина (GitHub Pages), алиасы на src/**
 playground-ssr/         SSR-витрина: renderToString → снимок → гидрация
@@ -161,5 +163,6 @@ docs/{en,ru}/           11 зеркальных разделов
 | `@feugene/fint-i18n/vue/global-types` | `src/vue/global-types.ts` |
 | `@feugene/fint-i18n/plugins` | `src/plugins/index.ts` |
 | `@feugene/fint-i18n/devtools` | `src/devtools/index.ts` |
+| `@feugene/fint-i18n/vite` | `src/vite/index.ts` |
 
 Добавление следующего — шесть точек синхронизации, см. «Жёсткие правила» в `CLAUDE.md`.

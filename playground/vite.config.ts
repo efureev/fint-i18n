@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { fintI18nDevtools } from '@feugene/fint-i18n/vite'
 import UnoCSS from 'unocss/vite'
 import { createRequire } from 'node:module'
 import { fileURLToPath, URL } from 'node:url'
@@ -19,6 +20,9 @@ export default defineConfig({
     UnoCSS({
       configFile: fileURLToPath(new URL('./uno.config.ts', import.meta.url)),
     }),
+    // Плагин dev-сервера: панель devtools дописывает ключи прямо в словари.
+    // `apply: 'serve'` внутри — в сборку витрины он не попадает.
+    fintI18nDevtools({ locales: fileURLToPath(new URL('./src/i18n/locales', import.meta.url)) }),
   ],
   resolve: {
     alias: {
@@ -30,6 +34,7 @@ export default defineConfig({
       '@feugene/fint-i18n/vue': fileURLToPath(new URL('../src/vue/index.ts', import.meta.url)),
       '@feugene/fint-i18n/devtools': fileURLToPath(new URL('../src/devtools/index.ts', import.meta.url)),
       '@feugene/fint-i18n/plugins': fileURLToPath(new URL('../src/plugins/index.ts', import.meta.url)),
+      '@feugene/fint-i18n/vite': fileURLToPath(new URL('../src/vite/index.ts', import.meta.url)),
     },
   },
   server: {

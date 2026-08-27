@@ -58,6 +58,11 @@
       "import": "./dist/devtools.js",
       "default": "./dist/devtools.js"
     },
+    "./vite": {
+      "types": "./dist/types/vite/index.d.ts",
+      "import": "./dist/vite.js",
+      "default": "./dist/vite.js"
+    },
     "./plugins": {
       "types": "./dist/types/plugins/index.d.ts",
       "import": "./dist/plugins.js",

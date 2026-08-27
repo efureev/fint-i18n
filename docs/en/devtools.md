@@ -271,6 +271,54 @@ Two limits worth knowing up front:
   simulation makes it inert rather than dropping it: one extra call returning an
   empty object per block load, for the lifetime of the instance.
 
+## Writing to the dictionaries on disk
+
+This closes the loop: a miss or an edit made in the panel reaches the dictionary
+on disk instead of staying in the tab's memory. It needs the dev-server plugin —
+a separate subpath, wired into the build config:
+
+```typescript
+// vite.config.ts
+import { fintI18nDevtools } from '@feugene/fint-i18n/vite'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    fintI18nDevtools({ locales: 'src/i18n/locales' }),
+  ],
+})
+```
+
+The locales directory is the same one
+[`fint-i18n-check-messages`](./tooling.md) understands: `<locale>/<block>.json`
+(nested folders become dots in the block name) or a flat `<locale>.json`.
+
+The plugin declares `apply: 'serve'`: the endpoint writes files, and in a
+production build it does not exist in any form.
+
+The panel probes for the plugin when it opens. If it is there, a `disk` chip
+lights up in the header and from then on:
+
+- **an edit in the `dictionary` tab** goes both into memory and into the file;
+- the `missing` tab gains a **write stub to dictionaries** button — the missing
+  keys are created as empty strings, ready for a translator.
+
+The stub **never overwrites an existing value**. That matters more than it
+sounds: a key lands in the missing list also when it does exist in the file and
+the block simply was not loaded at the time. Without that guard, "create what is
+missing" would erase translations.
+
+Dictionary formatting is preserved — two spaces and a trailing newline, like
+every other file.
+
+The client is available directly too:
+
+```typescript
+if (await devtools.devServer.probe()) {
+  await devtools.devServer.write({ ru: { common: { hello: 'Привет' } } }, { overwrite: true })
+}
+```
+
 ## The window bridge
 
 On attach devtools publishes itself into `window.__FINT_I18N_DEVTOOLS__` — this
