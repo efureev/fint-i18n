@@ -16,13 +16,19 @@ import {
 import type { MetricsSnapshot } from '../metrics'
 import type { DevtoolsMode } from '../modes'
 import type { DevtoolsEvent, DevtoolsSnapshot, DictionaryEntry, FintI18nDevtools, OverlayOptions } from '../types'
+import type { PanelI18n } from './i18n'
 
 const props = defineProps<{
   devtools: FintI18nDevtools
   position: NonNullable<OverlayOptions['position']>
   collapsed: boolean
   storage?: Storage | false
+  i18n: PanelI18n
+  followLocale: boolean
 }>()
+
+/** Подписи панели, а не приложения: инстанс у них разный и намеренно. */
+const t = props.i18n.t
 
 const TABS = ['locales', 'blocks', 'dictionary', 'missing', 'events', 'metrics', 'caches'] as const
 type Tab = typeof TABS[number]
@@ -277,6 +283,7 @@ function refresh() {
 
     try {
       snapshot.value = props.devtools.snapshot()
+      if (props.followLocale) props.i18n.follow(snapshot.value.locale)
       events.value = props.devtools.events.slice().reverse()
       dictionary.value = tab.value === 'dictionary' ? props.devtools.dictionary() : []
       metrics.value = tab.value === 'metrics' ? props.devtools.metrics.snapshot() : null
@@ -456,21 +463,21 @@ function exportReport() {
     <div v-else ref="panel" class="panel" :class="{ snapping }" @pointerup="rememberSize">
       <div
         class="head"
-        title="drag to move · double-click to reset"
+        :title="t('head.hint')"
         @pointerdown="startDrag"
         @dblclick="resetLayout"
       >
         <span class="title">fint-i18n</span>
         <span class="chip">{{ snapshot?.locale ?? '—' }}</span>
-        <span v-if="snapshot?.disposed" class="chip bad">disposed</span>
-        <span v-if="onDisk" class="chip good" title="dev server plugin connected — edits are written to the locale files">disk</span>
+        <span v-if="snapshot?.disposed" class="chip bad">{{ t('head.disposed') }}</span>
+        <span v-if="onDisk" class="chip good" :title="t('head.diskHint')">{{ t('head.disk') }}</span>
         <span class="modes">
           <button
             v-for="name in MODES"
             :key="name"
             type="button"
             :class="{ on: mode === name }"
-            :title="`t() output mode: ${name}`"
+            :title="t('head.mode', { mode: name })"
             @click="setMode(name)"
           >
             {{ name }}
@@ -478,10 +485,10 @@ function exportReport() {
         </span>
         <span class="spacer" />
         <span class="meta">{{ snapshot?.name }} · v{{ snapshot?.version }}</span>
-        <button type="button" title="Export report" @click="exportReport">
+        <button type="button" :title="t('head.export')" @click="exportReport">
           ↓
         </button>
-        <button type="button" title="Hide" @click="toggle">
+        <button type="button" :title="t('head.hide')" @click="toggle">
           ✕
         </button>
       </div>
@@ -494,14 +501,14 @@ function exportReport() {
           :class="{ on: tab === name }"
           @click="select(name)"
         >
-          {{ name }}<sup>{{ counts[name] }}</sup>
+          {{ t(`tabs.${name}`) }}<sup>{{ counts[name] }}</sup>
         </button>
       </div>
 
       <div class="body">
         <template v-if="!snapshot">
           <p class="empty">
-            instance released
+            {{ t('head.released') }}
           </p>
         </template>
 
@@ -518,40 +525,46 @@ function exportReport() {
             </button>
           </div>
           <dl>
-            <dt>current</dt><dd>{{ snapshot.locale }}</dd>
-            <dt>fallback</dt><dd>{{ snapshot.fallbackLocale || '—' }}</dd>
-            <dt>known</dt><dd>{{ snapshot.knownLocales.join(', ') || '—' }}</dd>
-            <dt>available</dt><dd>{{ snapshot.availableLocales.join(', ') || '—' }}</dd>
+            <dt>{{ t('locales.current') }}</dt><dd>{{ snapshot.locale }}</dd>
+            <dt>{{ t('locales.fallback') }}</dt><dd>{{ snapshot.fallbackLocale || '—' }}</dd>
+            <dt>{{ t('locales.known') }}</dt><dd>{{ snapshot.knownLocales.join(', ') || '—' }}</dd>
+            <dt>{{ t('locales.available') }}</dt><dd>{{ snapshot.availableLocales.join(', ') || '—' }}</dd>
           </dl>
         </template>
 
         <template v-else-if="tab === 'blocks'">
           <div class="actions">
-            <span class="dim">simulate</span>
-            <label>delay <input v-model.number="simulation.delay" class="num" type="number" min="0" step="100"></label>
-            <label>fail % <input v-model.number="simulation.failPercent" class="num" type="number" min="0" max="100" step="10"></label>
-            <label>first <input v-model.number="simulation.failAttempts" class="num" type="number" min="0" max="9"></label>
+            <span class="dim">{{ t('blocks.simulate') }}</span>
+            <label>{{ t('blocks.delay') }} <input v-model.number="simulation.delay" class="num" type="number" min="0" step="100"></label>
+            <label>{{ t('blocks.failPercent') }} <input v-model.number="simulation.failPercent" class="num" type="number" min="0" max="100" step="10"></label>
+            <label>{{ t('blocks.first') }} <input v-model.number="simulation.failAttempts" class="num" type="number" min="0" max="9"></label>
             <button type="button" :class="{ on: simulating }" @click="toggleSimulation">
-              {{ simulating ? 'stop' : 'start' }}
+              {{ simulating ? t('blocks.stop') : t('blocks.start') }}
             </button>
           </div>
           <p v-if="simulating" class="cost">
-            loaders are being failed and delayed on purpose — <code>first</code> needs the instance's own
-            <code>retry</code> option to show anything
+            {{ t('blocks.simulating') }}
           </p>
 
           <p v-if="!snapshot.blocks.length" class="empty">
-            no blocks touched yet
+            {{ t('blocks.empty') }}
           </p>
           <table v-else>
             <thead>
-              <tr><th>block</th><th>locale</th><th>status</th><th>ms</th><th>uses</th><th /></tr>
+              <tr>
+                <th>{{ t('blocks.block') }}</th>
+                <th>{{ t('blocks.locale') }}</th>
+                <th>{{ t('blocks.status') }}</th>
+                <th>{{ t('blocks.ms') }}</th>
+                <th>{{ t('blocks.uses') }}</th>
+                <th />
+              </tr>
             </thead>
             <tbody>
               <tr v-for="block in snapshot.blocks" :key="`${block.locale}:${block.block}`">
                 <td class="key">
                   {{ block.block }}
-                  <span v-if="block.resolvedAs" class="chip">via {{ block.resolvedAs }}</span>
+                  <span v-if="block.resolvedAs" class="chip">{{ t('blocks.via', { block: block.resolvedAs }) }}</span>
                   <div v-if="block.error" class="dim">
                     {{ block.error }}
                   </div>
@@ -561,7 +574,7 @@ function exportReport() {
                   <span
                     class="chip"
                     :class="{ good: block.status === 'loaded', bad: block.status === 'failed', warn: block.status === 'unloaded' }"
-                  >{{ block.status }}</span>
+                  >{{ t(`status.${block.status}`) }}</span>
                 </td>
                 <td class="dim">
 {{ block.duration ?? '—' }}
@@ -570,10 +583,10 @@ function exportReport() {
 {{ snapshot.usage[block.block] ?? 0 }}
 </td>
                 <td>
-                  <button type="button" title="Reload" @click="run(() => devtools.actions.reloadBlock(block.block, block.locale))">
+                  <button type="button" :title="t('blocks.reload')" @click="run(() => devtools.actions.reloadBlock(block.block, block.locale))">
                     ↻
                   </button>
-                  <button type="button" title="Unload" @click="run(() => devtools.actions.unloadBlock(block.resolvedAs ?? block.block, block.locale))">
+                  <button type="button" :title="t('blocks.unload')" @click="run(() => devtools.actions.unloadBlock(block.resolvedAs ?? block.block, block.locale))">
                     ⌫
                   </button>
                 </td>
@@ -583,17 +596,17 @@ function exportReport() {
         </template>
 
         <template v-else-if="tab === 'dictionary'">
-          <input v-model="filter" type="search" placeholder="filter keys…">
+          <input v-model="filter" type="search" :placeholder="t('dictionary.filter')">
           <p v-if="dictionaryTotal > visibleDictionary.length" class="dim">
-            showing {{ visibleDictionary.length }} of {{ dictionaryTotal }} — refine the filter
+            {{ t('dictionary.showing', { shown: visibleDictionary.length, total: dictionaryTotal }) }}
           </p>
           <p v-if="!visibleDictionary.length" class="empty">
-            nothing loaded yet
+            {{ t('dictionary.empty') }}
           </p>
           <table v-else>
             <thead>
               <tr>
-<th>key</th><th v-for="locale in locales" :key="locale">
+<th>{{ t('dictionary.key') }}</th><th v-for="locale in locales" :key="locale">
 {{ locale }}
 </th>
 </tr>
@@ -608,7 +621,7 @@ function exportReport() {
                     v-if="entry.editable"
                     class="edit"
                     :value="entry.values[locale] ?? ''"
-                    :placeholder="`add to ${locale}`"
+                    :placeholder="t('dictionary.addTo', { locale })"
                     @change="patch(entry.key, locale, $event)"
                   >
                   <template v-else>
@@ -623,19 +636,24 @@ function exportReport() {
         <template v-else-if="tab === 'missing'">
           <div v-if="snapshot.missingKeys.length" class="actions">
             <button type="button" @click="download(devtools.actions.missingKeysPatch(), 'missing')">
-              export dictionary patch
+              {{ t('missing.exportPatch') }}
             </button>
             <button v-if="onDisk" type="button" @click="persist(devtools.actions.missingKeysPatch(), false)">
-              write stub to dictionaries
+              {{ t('missing.writeStub') }}
             </button>
             <span v-if="written" class="dim">{{ written }}</span>
           </div>
           <p v-if="!snapshot.missingKeys.length && !snapshot.fallbacks.length" class="empty">
-            no misses so far
+            {{ t('missing.empty') }}
           </p>
           <table v-else>
             <thead>
-              <tr><th>key</th><th>locale</th><th>kind</th><th>×</th></tr>
+              <tr>
+                <th>{{ t('missing.key') }}</th>
+                <th>{{ t('missing.locale') }}</th>
+                <th>{{ t('missing.kind') }}</th>
+                <th>{{ t('missing.count') }}</th>
+              </tr>
             </thead>
             <tbody>
               <tr v-for="miss in snapshot.missingKeys" :key="`m:${miss.locale}:${miss.key}`">
@@ -643,7 +661,7 @@ function exportReport() {
 {{ miss.key }}
 </td>
                 <td>{{ miss.locale }}</td>
-                <td><span class="chip bad">missing</span></td>
+                <td><span class="chip bad">{{ t('missing.missing') }}</span></td>
                 <td class="dim">
 {{ miss.count }}
 </td>
@@ -653,7 +671,7 @@ function exportReport() {
 {{ hit.key }}
 </td>
                 <td>{{ hit.locale }}</td>
-                <td><span class="chip warn">from {{ hit.fallbackLocale }}</span></td>
+                <td><span class="chip warn">{{ t('missing.from', { locale: hit.fallbackLocale }) }}</span></td>
                 <td class="dim">
 {{ hit.count }}
 </td>
@@ -663,9 +681,9 @@ function exportReport() {
         </template>
 
         <template v-else-if="tab === 'events'">
-          <input v-model="filter" type="search" placeholder="filter by type…">
+          <input v-model="filter" type="search" :placeholder="t('events.filter')">
           <p v-if="!visibleEvents.length" class="empty">
-            timeline is empty
+            {{ t('events.empty') }}
           </p>
           <div v-for="event in visibleEvents" v-else :key="event.id" class="event" :class="tone(event.type)">
             <span class="at">{{ time(event.at) }}</span>
@@ -676,11 +694,11 @@ function exportReport() {
 
         <template v-else-if="tab === 'metrics'">
           <p class="cost">
-            collecting — every <code>t()</code> costs about 17% more while this tab is open
+            {{ t('metrics.cost') }}
           </p>
 
           <div class="actions">
-            <span class="dim">sample</span>
+            <span class="dim">{{ t('metrics.sample') }}</span>
             <button
               v-for="rate in SAMPLING"
               :key="rate"
@@ -691,23 +709,23 @@ function exportReport() {
               1/{{ rate }}
             </button>
             <button type="button" @click="run(() => devtools.metrics.reset())">
-              reset
+              {{ t('metrics.reset') }}
             </button>
           </div>
 
           <dl v-if="metrics">
-            <dt>t() calls</dt>
-            <dd>{{ metrics.calls }}<span v-if="metrics.sampling > 1" class="dim"> (counted {{ metrics.counted }})</span></dd>
-            <dt>distinct keys</dt>
+            <dt>{{ t('metrics.calls') }}</dt>
+            <dd>{{ metrics.calls }}<span v-if="metrics.sampling > 1" class="dim"> ({{ t('metrics.counted', { counted: metrics.counted }) }})</span></dd>
+            <dt>{{ t('metrics.distinctKeys') }}</dt>
             <dd>{{ metrics.distinctKeys }}</dd>
-            <dt>compiled</dt>
+            <dt>{{ t('metrics.compiled') }}</dt>
             <dd>
               <template v-for="(count, locale) in metrics.compiled ?? {}" :key="locale">
                 {{ locale }}: {{ count }}&nbsp;
               </template>
-              <span v-if="!metrics.compiled">unavailable</span>
+              <span v-if="!metrics.compiled">{{ t('common.unavailable') }}</span>
             </dd>
-            <dt>dictionary</dt>
+            <dt>{{ t('metrics.dictionary') }}</dt>
             <dd>
               <template v-for="(chars, locale) in metrics.dictionaryChars" :key="locale">
                 {{ locale }}: {{ Math.round(chars / 1024) }}K&nbsp;
@@ -716,11 +734,11 @@ function exportReport() {
           </dl>
 
           <p v-if="!metrics?.topKeys.length" class="empty">
-            no translations yet — interact with the page
+            {{ t('metrics.empty') }}
           </p>
           <table v-else>
             <thead>
-              <tr><th>key</th><th>calls</th></tr>
+              <tr><th>{{ t('metrics.key') }}</th><th>{{ t('metrics.callsColumn') }}</th></tr>
             </thead>
             <tbody>
               <tr v-for="row in metrics.topKeys" :key="row.key">
@@ -736,7 +754,11 @@ function exportReport() {
 
           <table v-if="metrics?.slowestBlocks.length">
             <thead>
-              <tr><th>slowest block</th><th>locale</th><th>ms</th></tr>
+              <tr>
+                <th>{{ t('metrics.slowest') }}</th>
+                <th>{{ t('blocks.locale') }}</th>
+                <th>{{ t('blocks.ms') }}</th>
+              </tr>
             </thead>
             <tbody>
               <tr v-for="row in metrics.slowestBlocks" :key="`${row.locale}:${row.block}`">
@@ -755,36 +777,36 @@ function exportReport() {
         <template v-else>
           <div class="actions">
             <button type="button" @click="run(() => devtools.actions.clearCompiled())">
-              clear compiled
+              {{ t('caches.clearCompiled') }}
             </button>
             <button type="button" @click="run(() => devtools.actions.clearFormatterCache())">
-              clear Intl formatters
+              {{ t('caches.clearFormatters') }}
             </button>
             <button type="button" @click="run(() => devtools.actions.clearPluralCache())">
-              clear plural rules
+              {{ t('caches.clearPlural') }}
             </button>
           </div>
           <dl>
-            <dt>compiled</dt>
+            <dt>{{ t('caches.compiled') }}</dt>
             <dd>
               <template v-for="(count, locale) in snapshot.compiled ?? {}" :key="locale">
                 {{ locale }}: {{ count }}&nbsp;
               </template>
-              <span v-if="!snapshot.compiled">unavailable</span>
+              <span v-if="!snapshot.compiled">{{ t('common.unavailable') }}</span>
             </dd>
-            <dt>registered</dt>
-            <dd>{{ snapshot.registeredBlocks?.join(', ') ?? 'unavailable' }}</dd>
-            <dt>plugins</dt>
-            <dd>{{ snapshot.plugins?.join(', ') ?? 'unavailable' }}</dd>
+            <dt>{{ t('caches.registered') }}</dt>
+            <dd>{{ snapshot.registeredBlocks?.join(', ') ?? t('common.unavailable') }}</dd>
+            <dt>{{ t('caches.plugins') }}</dt>
+            <dd>{{ snapshot.plugins?.join(', ') ?? t('common.unavailable') }}</dd>
             <dt>preloadFallback</dt>
             <dd>{{ snapshot.options?.preloadFallback ?? '—' }}</dd>
             <dt>unloadUnused</dt>
             <dd>{{ snapshot.options?.unloadUnusedBlocks ?? '—' }}</dd>
             <dt>retry</dt>
-            <dd>{{ snapshot.options?.retry ? JSON.stringify(snapshot.options.retry) : 'off' }}</dd>
+            <dd>{{ snapshot.options?.retry ? JSON.stringify(snapshot.options.retry) : t('common.off') }}</dd>
           </dl>
           <p class="empty">
-            Intl and plural warnings stay in the console — their caches never reach an instance.
+            {{ t('caches.note') }}
           </p>
         </template>
       </div>

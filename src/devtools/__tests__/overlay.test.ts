@@ -42,7 +42,7 @@ describe('оверлей', () => {
       loaders: { en: { auth: async () => ({ login: 'Sign in' }) } },
     })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
 
     i18n.registerUsage('auth')
     i18n.registerUsage('auth')
@@ -62,7 +62,7 @@ describe('оверлей', () => {
     const devtools = createDevtools()
     createFintI18n({ locale: 'en', plugins: [devtools] })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
 
     const host = document.getElementById(HOST_ID)
     expect(host).not.toBeNull()
@@ -86,7 +86,7 @@ describe('оверлей', () => {
       return stop
     }
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     expect(stops).toHaveLength(1)
 
     unmount()
@@ -102,7 +102,7 @@ describe('оверлей', () => {
     const devtools = createDevtools()
     createFintI18n({ locale: 'en', plugins: [devtools] })
 
-    const unmount = await mountDevtoolsOverlay(devtools, { collapsed: true })
+    const unmount = await mountDevtoolsOverlay(devtools, { collapsed: true, locale: 'en' })
     await settle()
 
     expect(shadowText()).not.toContain('dictionary')
@@ -120,7 +120,7 @@ describe('оверлей', () => {
     const i18n = createFintI18n({ locale: 'ru', fallbackLocale: 'en', plugins: [devtools] })
     i18n.mergeMessages('en', 'common', { only: 'English only' })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
 
     i18n.t('common.only')
     i18n.t('common.only')
@@ -149,7 +149,7 @@ describe('оверлей', () => {
     const page = mount(Page, { global: { plugins: [{ install: (app: any) => installI18n(app, i18n) }] } })
     expect(page.text()).toBe('Hello')
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     await settle()
 
     clickButton(button => button.textContent?.trim() === 'keys')
@@ -172,7 +172,7 @@ describe('оверлей', () => {
     const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
     i18n.mergeMessages('en', 'common', { hello: 'Hello' })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     clickButton(button => button.textContent?.startsWith('dictionary') ?? false)
     await settle()
 
@@ -195,7 +195,7 @@ describe('оверлей', () => {
     const i18n = createFintI18n({ locale: 'en', plugins: [devtools], loaders: { en: { common: loader } } })
 
     await i18n.loadBlock('common')
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     await settle()
 
     payload = 'Reloaded'
@@ -214,7 +214,7 @@ describe('оверлей', () => {
     const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
     i18n.mergeMessages('en', 'common', { hello: 'Hello' })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     await settle()
 
     expect(i18n.hooks.has('onTranslate')).toBe(false)
@@ -245,7 +245,7 @@ describe('оверлей', () => {
     const devtools = createDevtools()
     const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     await settle()
     clickButton(button => button.textContent?.startsWith('metrics') ?? false)
     await settle()
@@ -264,7 +264,7 @@ describe('оверлей', () => {
       loaders: { en: { common: async () => ({ hello: 'Hello' }) } },
     })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     await settle()
 
     const shadow = document.getElementById(HOST_ID)!.shadowRoot!
@@ -299,7 +299,7 @@ describe('оверлей', () => {
     // Симуляцию включили мимо панели — например, из консоли или до её монтирования.
     devtools.simulator.start({ failureRate: 1 })
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     await settle()
 
     const stop = [...document.getElementById(HOST_ID)!.shadowRoot!.querySelectorAll('button')]
@@ -318,7 +318,7 @@ describe('оверлей', () => {
     // @ts-expect-error проверяем ветку для сервера
     delete globalThis.document
 
-    const unmount = await mountDevtoolsOverlay(devtools)
+    const unmount = await mountDevtoolsOverlay(devtools, { locale: 'en' })
     expect(() => unmount()).not.toThrow()
 
     globalThis.document = original

@@ -159,6 +159,34 @@ await mountDevtoolsOverlay(devtools, { storage: false })  // remember nothing
 The storage key is `fint-i18n-devtools:layout`. A corrupt or incomplete record
 is neither applied nor kept: the panel must not trip over it on every open.
 
+### The panel's own language
+
+The panel's labels are translated into English and Russian. By default it follows
+the application's locale: switch the language and the panel switches with it. A
+locale the panel does not have falls back to English (`ru-RU` still resolves to
+`ru`).
+
+```typescript
+await mountDevtoolsOverlay(devtools, { locale: 'ru' })  // pin it
+await mountDevtoolsOverlay(devtools)                    // follow the application
+```
+
+The translations live on a **separate** `FintI18n` instance rather than on the
+application's, and that is not caution. A shared instance would mean the panel
+shows up in its own observations: its block in the blocks table, its keys in the
+dictionary and in the metrics top list. Worse, in `keys` and `pseudo` mode the
+panel would translate **itself** — the tabs would read `tabs.blocks` or
+`[ƀļöçķš]` — and the diagnostic tool would break exactly when it is needed.
+
+A side benefit: this is a working demonstration of two independent instances in
+one runtime, and of an i18n library's panel localized with that same library,
+plural forms in its own messages included.
+
+Only what the panel writes itself is translated. Values that come from the
+runtime — block and locale names, event types, warning codes, error messages —
+stay as they are: they are looked up in the docs and in the source, not in a
+translation.
+
 ## Actions and modes
 
 `devtools.actions` — write operations, all through the instance's public API:

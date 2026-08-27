@@ -124,6 +124,11 @@ export interface OverlayOptions {
    * хранить. По умолчанию `localStorage`, если он доступен.
    */
   storage?: Storage | false
+  /**
+   * Язык подписей самой панели (`en`, `ru`; прочие — английский). Задан —
+   * фиксирует; не задан — панель следует за локалью приложения.
+   */
+  locale?: string
 }
 
 export interface DevtoolsOptions {

@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import type { FintI18nDevtools, OverlayOptions } from '../types'
 import DevtoolsOverlay from './DevtoolsOverlay.vue'
+import { createPanelI18n } from './i18n'
 import { OVERLAY_STYLES } from './styles'
 
 const HOST_ID = 'fint-i18n-devtools'
@@ -32,8 +33,20 @@ function parseHotkey(hotkey: string): Hotkey {
  * бы в его же Vue Devtools и в его счётчики `useI18nScope`, а без теневого
  * корня её разнесли бы стили приложения — в чужом проекте они любые.
  */
-export function mountOverlay(devtools: FintI18nDevtools, options: OverlayOptions = {}): () => void {
+export async function mountOverlay(devtools: FintI18nDevtools, options: OverlayOptions = {}): Promise<() => void> {
   if (typeof document === 'undefined') return () => {}
+
+  // Стартовая локаль берётся из приложения, чтобы панель не мигала английским
+  // и не перерисовывалась сразу после появления.
+  let appLocale: string | undefined
+  try {
+    appLocale = devtools.snapshot().locale
+  }
+  catch {
+    // Панель открыли на неподключённом devtools — начнём с английского.
+  }
+
+  const panelI18n = await createPanelI18n(options.locale ?? appLocale)
 
   const host = document.createElement('div')
   host.id = HOST_ID
@@ -52,6 +65,10 @@ export function mountOverlay(devtools: FintI18nDevtools, options: OverlayOptions
     position: options.position ?? 'bottom-right',
     collapsed: options.collapsed ?? false,
     storage: options.storage,
+    i18n: panelI18n,
+    // Явно заданная локаль панели фиксирует её: следовать за приложением тогда
+    // значило бы спорить с настройкой.
+    followLocale: options.locale === undefined,
   })
 
   const instance = app.mount(mountPoint) as unknown as { toggle: () => void }
@@ -77,5 +94,6 @@ export function mountOverlay(devtools: FintI18nDevtools, options: OverlayOptions
     if (onKeydown) window.removeEventListener('keydown', onKeydown)
     app.unmount()
     host.remove()
+    panelI18n.dispose()
   }
 }

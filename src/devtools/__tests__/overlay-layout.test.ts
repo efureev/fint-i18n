@@ -55,7 +55,7 @@ function resizeWindow(width: number, height: number) {
 async function mountPanel(storage: Storage | false) {
   const devtools = createDevtools()
   const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
-  const unmount = await mountDevtoolsOverlay(devtools, { storage })
+  const unmount = await mountDevtoolsOverlay(devtools, { storage, locale: 'en' })
   await settle()
 
   return { devtools, i18n, unmount }
@@ -300,7 +300,7 @@ describe('панель: обрезка словаря', () => {
     for (let i = 0; i < 1200; i++) messages[`key${i}`] = `value ${i}`
     i18n.mergeMessages('en', 'big', messages)
 
-    const unmount = await mountDevtoolsOverlay(devtools, { storage: false })
+    const unmount = await mountDevtoolsOverlay(devtools, { storage: false, locale: 'en' })
     await settle()
 
     const tab = [...shadow().querySelectorAll('.tabs button')]

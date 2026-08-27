@@ -121,6 +121,18 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `mountDevtoolsOverlay` chooses where that record lives, or `false` turns
   remembering off.
 
+- **The devtools panel speaks English and Russian, and follows the
+  application's locale.** Switch the language and the panel switches with it; a
+  locale it does not have falls back to English. `locale` in
+  `mountDevtoolsOverlay` pins it instead.
+
+  The translations live on a separate `FintI18n` instance, not the
+  application's. A shared one would put the panel into its own observations —
+  its block in the blocks table, its keys in the dictionary and in the metrics
+  top list — and in `keys` or `pseudo` mode the panel would translate itself,
+  breaking the diagnostic tool exactly when it is needed. Only what the panel
+  writes itself is translated; values from the runtime keep their original form.
+
 - **The dictionary tab now says how much of the list it is showing.** It caps
   the table (raised 300 → 1000, because thousands of inputs in a shadow tree
   stall the panel), and a silently truncated list is worse than a visibly
