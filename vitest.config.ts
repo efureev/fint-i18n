@@ -53,11 +53,24 @@ export default defineConfig({
       exclude: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/index.ts'],
       // Пороги стоят чуть ниже фактического покрытия: они запрещают падение,
       // а не требуют роста. Поднимать вместе с реальным улучшением.
+      //
+      // Спрос идёт послойно, и это не украшение. Глобальный порог считается по
+      // всем файлам сразу, включая попавшие под глобы, поэтому одно общее число
+      // на пакет означало бы среднее по рантайму и отладочной обвязке: просадка
+      // в ядре пряталась бы за массой devtools, а с ядра спрашивать столько же,
+      // сколько с панели, незачем — в прод она не попадает ни байтом
+      // (`yarn check:devtools`). Общее число оставлено полом, гарантию несут
+      // строки ниже.
       thresholds: {
-        statements: 97,
-        branches: 94,
-        functions: 96,
-        lines: 98,
+        statements: 95,
+        branches: 89,
+        functions: 95,
+        lines: 97,
+        'src/core/**': { statements: 99, branches: 96, functions: 97, lines: 99 },
+        'src/vue/**': { statements: 98, branches: 96, functions: 100, lines: 98 },
+        'src/plugins/**': { statements: 100, branches: 98, functions: 100, lines: 100 },
+        'src/vite/**': { statements: 97, branches: 92, functions: 100, lines: 98 },
+        'src/devtools/**': { statements: 90, branches: 79, functions: 92, lines: 93 },
       },
     },
   },
