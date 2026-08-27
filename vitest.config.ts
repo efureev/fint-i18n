@@ -1,9 +1,19 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
+const { version } = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
+)
+
 export default defineConfig({
   plugins: [vue()],
+  // Тот же токен, что в сборке: без него `createDevtools()` в тестах отдавал бы
+  // версию `unknown`, и контракт моста был бы непроверяемым.
+  define: {
+    __FINT_I18N_VERSION__: JSON.stringify(version),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

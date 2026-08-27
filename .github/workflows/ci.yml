@@ -94,6 +94,12 @@ jobs:
       - name: Check bundle size budget
         run: node scripts/check-size.mjs
 
+      # «Devtools — 0 байт в проде» держится только на том, что его entry не
+      # достижим из остальных. Проверяется по графу импортов собранного dist,
+      # потому что общие чанки сводит сборщик, а не автор.
+      - name: Check devtools isolation
+        run: node scripts/check-devtools-isolation.mjs
+
       # Информационно: числа бенчей на общих раннерах слишком шумные,
       # чтобы гейтить сборку, но регрессию в разы видно и по ним.
       - name: Benchmarks

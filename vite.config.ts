@@ -1,9 +1,14 @@
 import process from 'node:process'
+import {readFileSync} from 'node:fs'
 import {fileURLToPath, URL} from 'node:url'
 import {defineConfig, loadEnv, type PluginOption} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import {visualizer} from 'rollup-plugin-visualizer'
 import {codecovVitePlugin} from "@codecov/vite-plugin";
+
+const {version} = JSON.parse(
+    readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
+)
 
 export default defineConfig(({mode}) => {
     const env = loadEnv(mode, process.cwd(), '')
@@ -47,6 +52,11 @@ export default defineConfig(({mode}) => {
                 uploadToken: codecovToken,
             }),
         ],
+        // Токен встречается только в `src/devtools`, поэтому в остальные entry
+        // не попадает ни байтом.
+        define: {
+            __FINT_I18N_VERSION__: JSON.stringify(version),
+        },
         resolve: {
             alias: {
                 '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -62,6 +72,7 @@ export default defineConfig(({mode}) => {
                     vue: fileURLToPath(new URL('./src/vue/index.ts', import.meta.url)),
                     'vue-global-types': fileURLToPath(new URL('./src/vue/global-types.ts', import.meta.url)),
                     plugins: fileURLToPath(new URL('./src/plugins/index.ts', import.meta.url)),
+                    devtools: fileURLToPath(new URL('./src/devtools/index.ts', import.meta.url)),
                 },
                 formats: ['es'],
             },

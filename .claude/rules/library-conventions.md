@@ -24,6 +24,7 @@ paths:
 | `src/core` | только некомпонентные API `vue` — реактивность и утилиты над ref (`ref`, `shallowRef`, `computed`, `reactive`, `readonly`, `isRef`, `toRaw`) | всё, привязанное к жизненному циклу компонента (`onUnmounted`, `defineComponent`, директивы), `src/vue`, `src/plugins` |
 | `src/vue` | `vue` целиком, `src/core` | `src/plugins` |
 | `src/plugins` | `vue`, `src/core` | `src/vue` (плагины не знают о компонентах) |
+| `src/devtools` | `vue`, `src/core`, `src/vue` | попадание в любой другой слой или в `src/index.ts` — гейт `yarn check:devtools` падает |
 
 Баррели: `src/{core,vue,plugins}/index.ts` реэкспортят публичную поверхность
 слоя, `src/index.ts` — все три. Файл, не попавший в баррель, не публикуется.
@@ -42,6 +43,11 @@ paths:
 
 ⚠️ Более специфичный алиас ставится **перед** менее специфичным
 (`/vue/global-types` до `/vue`), иначе префикс проглотит его.
+
+Седьмая точка есть только у `devtools`: токен версии `__FINT_I18N_VERSION__`
+подставляется через `define` — в `vite.config.ts` для сборки и в
+`vitest.config.ts` для тестов. Токен встречается только в `src/devtools`,
+поэтому в остальные entry не попадает ни байтом.
 
 ## Модель блоков — центральная абстракция
 

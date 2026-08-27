@@ -21,6 +21,7 @@ export default defineConfig({
       // Более специфичный алиас — до менее специфичного.
       '@feugene/fint-i18n/vue/global-types': fileURLToPath(new URL('../src/vue/global-types.ts', import.meta.url)),
       '@feugene/fint-i18n/vue': fileURLToPath(new URL('../src/vue/index.ts', import.meta.url)),
+      '@feugene/fint-i18n/devtools': fileURLToPath(new URL('../src/devtools/index.ts', import.meta.url)),
       '@feugene/fint-i18n/plugins': fileURLToPath(new URL('../src/plugins/index.ts', import.meta.url)),
     },
   },

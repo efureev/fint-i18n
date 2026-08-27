@@ -53,6 +53,11 @@
       "import": "./dist/vue-global-types.js",
       "default": "./dist/vue-global-types.js"
     },
+    "./devtools": {
+      "types": "./dist/types/devtools/index.d.ts",
+      "import": "./dist/devtools.js",
+      "default": "./dist/devtools.js"
+    },
     "./plugins": {
       "types": "./dist/types/plugins/index.d.ts",
       "import": "./dist/plugins.js",
@@ -102,6 +107,7 @@
     "lint:fix": "eslint . --fix",
     "size": "yarn build && node scripts/check-size.mjs",
     "size:check": "node scripts/check-size.mjs",
+    "check:devtools": "node scripts/check-devtools-isolation.mjs",
     "codemod:plurals": "node scripts/codemod-plural-forms.mjs",
     "playground:ssr": "node playground-ssr/server.mjs",
     "playground:ssr:build": "vite build --config playground-ssr/vite.config.ts --outDir dist/client --ssrManifest && vite build --config playground-ssr/vite.config.ts --outDir dist/server --ssr src/entry-server.ts",

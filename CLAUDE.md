@@ -14,12 +14,14 @@ Vue 3: ленивые блоки переводов с лоадерами, JIT-�
 кэшем (без `new Function` — CSP-safe), система хуков как основа расширяемости.
 Единственная peer-зависимость — `vue`. Публикуется в npm и GitHub Packages.
 
-Репозиторий **одиночный, не монорепо**. Три слоя исходников, каждый со своим
+Репозиторий **одиночный, не монорепо**. Четыре слоя исходников, каждый со своим
 subpath-экспортом и своей vite-entry:
 
 - `src/core` — рантайм без Vue-компонентных API (только реактивность);
 - `src/vue` — plugin, директива `v-t`, `useI18nScope`, inject;
 - `src/plugins` — persistence, bridge к `vue-i18n`, hook-logger;
+- `src/devtools` — отладка рантайма; dev-only, в проде ноль байт, ядро о нём
+  не знает;
 - `playground/` — витрина на GitHub Pages, потребляет **исходники** через алиасы;
 - `playground-ssr/` — SSR-витрина (Vue 3 + `renderToString` + гидрация), тоже на исходниках;
 - `docs/{en,ru}` — двуязычная документация, 10 зеркальных разделов.
@@ -50,13 +52,15 @@ subpath-экспортом и своей vite-entry:
 
 1. **Yarn 1.22 Classic.** Не `npm`, не `pnpm`, не Yarn Berry — lockfile
    несовместим. Исключение: `npx --yes publint` / `@arethetypeswrong/cli`.
-2. **Слои однонаправлены: `core` ← `vue` ← `plugins`.** `core` не импортирует
+2. **Слои однонаправлены: `core` ← `vue` ← `plugins` ← `devtools`.** `core` не импортирует
    ничего из `vue/` и `plugins/`, а из `vue` тянет **только некомпонентные
    API** — реактивность и утилиты над ref (сейчас это `ref`, `shallowRef`,
    `computed`, `reactive`, `readonly`, `isRef`, `toRaw`; сверить —
    `grep -rn "from 'vue'" src/core/`). Всё, что привязано к жизненному циклу
    компонента (`onUnmounted`, `defineComponent`, директивы), — исключительно
-   в `src/vue`.
+   в `src/vue`. `src/devtools` — верхний слой: он импортирует всех, его не
+   импортирует никто, и попадание его в `src/index.ts` уничтожило бы «0 байт в
+   проде» одной строкой (гейт — `yarn check:devtools`).
 3. **Новый subpath-экспорт синхронизируется в ШЕСТИ местах** вручную —
    автогенерации нет, пропуск не даёт ошибки сборки:
    `package.json#exports`, `vite.config.ts → build.lib.entry`,

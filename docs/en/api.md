@@ -440,6 +440,21 @@ declare function on<K extends keyof FintI18nHooks>(name: K, fn: FintI18nHooks[K]
 
 ---
 
+## Devtools
+
+```typescript
+import { createDevtools } from '@feugene/fint-i18n/devtools'
+
+declare function createDevtools(i18n?: FintI18n, options?: DevtoolsOptions): FintI18nDevtools;
+```
+
+Runtime debugging: a state snapshot, an event timeline and a
+`window.__FINT_I18N_DEVTOOLS__` bridge for the console and for e2e. A separate
+subpath the core knows nothing about; zero bytes in production when wired
+through a dynamic import.
+
+The full picture is in [Devtools](./devtools.md).
+
 ## `v-t` Directive
 
 A Vue directive for high-performance translation output. Registered by `installI18n` (as `v-t` by default).

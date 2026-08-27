@@ -126,6 +126,7 @@ Everything is opt-in: what you do not import, you do not pay for.
 - 🔌 **[Plugins](./docs/en/plugins.md)** — the hook system and built-in plugins
 - 🖥️ **[Server-side rendering](./docs/en/ssr.md)** — snapshot and hydration
 - 🧰 **[Dictionary tooling](./docs/en/tooling.md)** — CI checks and the plural codemod
+- 🔍 **[Devtools](./docs/en/devtools.md)** — runtime state, event timeline, the window bridge
 - 🌐 **[Authoring localization packages](./docs/en/authoring-localization-packages.md)** — per-locale export contract
 - ⚡ **[Benchmarks and bundle analysis](./docs/en/bundle-analysis.md)** — how the numbers above are measured
 

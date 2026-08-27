@@ -26,6 +26,8 @@ yarn codemod:plurals <пути> [--write] [--locale=ru] [--positional]
                          # автоматически, остальное отдаётся человеку
 yarn size                # сборка + гейт бюджета размера (size-budget.json)
 yarn size:check          # только гейт, по уже собранному dist
+yarn check:devtools      # гейт: код devtools не достижим ни из одного прод-entry
+                         # (по графу импортов собранного dist)
 yarn lint                # eslint (playground/**, docs/** игнорируются)
 yarn lint:fix
 yarn type-check          # vue-tsc --noEmit: src, bench, корневые конфиги
@@ -73,6 +75,12 @@ src/
     persistence.ts        локаль в Storage + синхронизация вкладок
     bridge.ts             двусторонний мост к vue-i18n
     hook-logger.ts        логирование всех хуков
+  devtools/             отладка рантайма; dev-only, в проде ноль байт
+    index.ts              createDevtools() — плагин, снимок, лента, detach
+    state.ts              теневое состояние: блоки, промахи, фолбэки, предупреждения
+    timeline.ts           кольцевой буфер событий
+    internals.ts          единственное место, читающее приватные поля инстанса
+    bridge.ts             window.__FINT_I18N_DEVTOOLS__ — консоль и e2e
 bench/core.bench.ts     горячий путь: compileTemplate, t()
 playground/             витрина (GitHub Pages), алиасы на src/**
 playground-ssr/         SSR-витрина: renderToString → снимок → гидрация
@@ -84,9 +92,10 @@ scripts/                инструменты; check-messages и codemod пуб
                           @vue/compiler-sfc) грузятся динамически
   codemod-plural-forms.mjs  миграция плюрализации 0.4.0 → 0.5.0
   check-size.mjs          гейт бюджета размера, внутренний (не публикуется)
+  check-devtools-isolation.mjs  гейт «devtools не достижим из прод-entry»
   consumer-size.mjs       размер у потребителя (`yarn size:consumer`)
   __tests__/              тесты скриптов; идут в ПАКЕТНОМ прогоне vitest
-docs/{en,ru}/           10 зеркальных разделов
+docs/{en,ru}/           11 зеркальных разделов
 ```
 
 ## Публичный API — шпаргалка
@@ -135,6 +144,13 @@ docs/{en,ru}/           10 зеркальных разделов
 - `new BridgePlugin({ i18n, priority?: 'fint' | 'vue-i18n' })`
 - `new HookLoggerPlugin({ logger?, prefix? })`
 
+**Devtools** (`@feugene/fint-i18n/devtools`, только dev)
+
+- `createDevtools(i18n?, { name?, eventLimit?, bridge? })` → плагин со
+  `snapshot()`, `events`, `subscribe()`, `clearEvents()`, `detach()`
+- `window.__FINT_I18N_DEVTOOLS__`: `list()`, `snapshot(name?)`, `events(name?)`,
+  `waitFor(block, locale?, options?)`
+
 ## Subpath-экспорты
 
 | Subpath | Entry |
@@ -144,5 +160,6 @@ docs/{en,ru}/           10 зеркальных разделов
 | `@feugene/fint-i18n/vue` | `src/vue/index.ts` |
 | `@feugene/fint-i18n/vue/global-types` | `src/vue/global-types.ts` |
 | `@feugene/fint-i18n/plugins` | `src/plugins/index.ts` |
+| `@feugene/fint-i18n/devtools` | `src/devtools/index.ts` |
 
-Добавление шестого — шесть точек синхронизации, см. «Жёсткие правила» в `CLAUDE.md`.
+Добавление следующего — шесть точек синхронизации, см. «Жёсткие правила» в `CLAUDE.md`.

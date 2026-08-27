@@ -494,6 +494,20 @@ declare function on<K extends keyof FintI18nHooks>(name: K, fn: FintI18nHooks[K]
 
 ---
 
+## Devtools
+
+```typescript
+import { createDevtools } from '@feugene/fint-i18n/devtools'
+
+declare function createDevtools(i18n?: FintI18n, options?: DevtoolsOptions): FintI18nDevtools;
+```
+
+Отладка рантайма: снимок состояния, лента событий и мост в
+`window.__FINT_I18N_DEVTOOLS__` для консоли и e2e. Отдельный subpath, ядро о нём
+не знает, в проде — ноль байт при подключении динамическим импортом.
+
+Полностью — в разделе [Devtools](./devtools.md).
+
 ## Директива `v-t`
 
 Vue-директива для высокопроизводительного вывода переводов. Регистрируется через `installI18n` (по умолчанию как `v-t`).

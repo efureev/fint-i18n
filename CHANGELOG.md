@@ -5,6 +5,31 @@ All notable changes to `@feugene/fint-i18n` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`@feugene/fint-i18n/devtools`** — a runtime debugging tool behind its own
+  subpath: a state snapshot (blocks with their status, usage counters and load
+  durations, missing keys, fallback hits, warnings, instance options), an event
+  timeline with a ring buffer, and a `window.__FINT_I18N_DEVTOOLS__` bridge with
+  `waitFor(block, locale?)` for the console and for e2e.
+
+  The core knows nothing about it: everything is collected from the public API,
+  from the hooks and from wrappers over instance methods, so nothing was added
+  to `FintI18n` for it. It implements `FintI18nPlugin`, which means
+  `createFintI18n({ plugins: [createDevtools()] })` wires it before the first
+  load — and `dispose()` detaches it through `uninstall`.
+
+  Zero bytes in production, and that is gated rather than promised:
+  `scripts/check-devtools-isolation.mjs` walks the import graph of the built
+  `dist` and fails if devtools code is reachable from any production entry. Wire
+  it through a dynamic import behind a build condition — see
+  [Devtools](./docs/en/devtools.md).
+
+  `onTranslate` stays unsubscribed: it costs +17% per translation, and missing
+  keys and fallbacks are already covered by their own hooks for free.
+
 ## [0.8.0] — 2026-08-27
 
 ### Added

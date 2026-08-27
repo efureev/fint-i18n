@@ -13,13 +13,13 @@ paths:
 
 ## Зеркальность en/ru — жёсткий инвариант
 
-`docs/en/` и `docs/ru/` содержат **одни и те же 10 разделов** с одинаковой
+`docs/en/` и `docs/ru/` содержат **одни и те же 11 разделов** с одинаковой
 структурой заголовков (сверяется построчно по `^#`):
 
 ```
 api.md            defining-messages.md   installation.md   plugins.md
 blocks.md         bundle-analysis.md     usage.md          authoring-localization-packages.md
-ssr.md            tooling.md
+ssr.md            tooling.md             devtools.md
 ```
 
 Правка одного языка без второго — незавершённая работа. То же для пары
@@ -49,6 +49,7 @@ diff <(grep '^#' docs/en/blocks.md) <(grep '^#' docs/ru/blocks.md) | head
 | `bundle-analysis.md` | бенчмарки и анализ `dist` |
 | `ssr.md` | снимок состояния сервером, гидрация на клиенте, контракт и ограничения |
 | `tooling.md` | CLI-инструменты: проверка словарей (`check-messages`) и кодмод плюрализации |
+| `devtools.md` | отладка рантайма: снимок состояния, лента событий, мост в `window` |
 
 Новая публичная возможность → раздел в `api.md` (оба языка) **и** упоминание в
 профильном разделе. Новый файл документации → ссылка из обоих README в блоке
