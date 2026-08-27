@@ -73,6 +73,17 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   API, which extensions 7 and 8 support officially — in v8 it is literally the
   plugin API, `DevToolsPluginAPI = DevToolsV6PluginAPI`.
 
+- **`devtools.metrics`** — counters for `t()` calls with optional sampling, the
+  top keys, block load durations and dictionary sizes. Collection is off by
+  default and the overlay turns it on only while its `metrics` tab is open,
+  because it holds a subscriber on `onTranslate` and that costs about 17% per
+  translation — a price the panel states in its header rather than hiding.
+
+  One number is deliberately missing: the compilation-cache hit ratio. It is not
+  observable from outside, since `t()` does not report where a result came from.
+  Two honest numbers stand in its place — how many keys are compiled and how
+  many distinct keys were asked for.
+
 ### Changed
 
 - **The compilation-cache version is now read on every `t()`, not only on a

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, ref, shallowRef } from 'vue'
+import type { MetricsSnapshot } from '../metrics'
 import type { DevtoolsMode } from '../modes'
 import type { DevtoolsEvent, DevtoolsSnapshot, DictionaryEntry, FintI18nDevtools, OverlayOptions } from '../types'
 
@@ -9,7 +10,7 @@ const props = defineProps<{
   collapsed: boolean
 }>()
 
-const TABS = ['locales', 'blocks', 'dictionary', 'missing', 'events', 'caches'] as const
+const TABS = ['locales', 'blocks', 'dictionary', 'missing', 'events', 'metrics', 'caches'] as const
 type Tab = typeof TABS[number]
 
 const open = ref(!props.collapsed)
@@ -18,6 +19,15 @@ const filter = ref('')
 const snapshot = shallowRef<DevtoolsSnapshot | null>(null)
 const events = shallowRef<readonly DevtoolsEvent[]>([])
 const dictionary = shallowRef<DictionaryEntry[]>([])
+const metrics = shallowRef<MetricsSnapshot | null>(null)
+const SAMPLING = [1, 10, 100]
+/**
+ * Счётчики растут без единого события ленты, поэтому вкладка метрик — единственная,
+ * которую приходится опрашивать. Раз в полсекунды: чаще незачем, а подписываться
+ * на каждый перевод значило бы перерисовывать панель чаще, чем страницу.
+ */
+const METRICS_POLL_MS = 500
+let poll: ReturnType<typeof setInterval> | undefined
 
 /**
  * Снимок обходит словарь, поэтому пересчитывается не на каждое событие, а раз
@@ -37,6 +47,7 @@ function refresh() {
       snapshot.value = props.devtools.snapshot()
       events.value = props.devtools.events.slice().reverse()
       dictionary.value = tab.value === 'dictionary' ? props.devtools.dictionary() : []
+      metrics.value = tab.value === 'metrics' ? props.devtools.metrics.snapshot() : null
     }
     catch {
       // Инстанс освобождён — показываем последнее, что успели снять.
@@ -54,10 +65,39 @@ function toggle() {
   if (open.value) refresh()
 }
 
+/**
+ * Сбор метрик живёт ровно столько, сколько открыта вкладка: подписка на
+ * `onTranslate` стоит около 17 % к каждому переводу, и держать её «на всякий
+ * случай» — плата ни за что.
+ */
+function stopMetrics() {
+  clearInterval(poll)
+  poll = undefined
+  props.devtools.metrics.disable()
+}
+
 function select(next: Tab) {
+  if (next === 'metrics') {
+    props.devtools.metrics.enable()
+    poll ??= setInterval(refresh, METRICS_POLL_MS)
+  }
+  else if (tab.value === 'metrics') {
+    stopMetrics()
+  }
+
   tab.value = next
   refresh()
 }
+
+function sample(rate: number) {
+  props.devtools.metrics.disable()
+  props.devtools.metrics.enable({ sampling: rate })
+  refresh()
+}
+
+onScopeDispose(() => {
+  if (tab.value === 'metrics') stopMetrics()
+})
 
 defineExpose({ toggle })
 
@@ -67,6 +107,7 @@ const counts = computed(() => ({
   dictionary: dictionary.value.length,
   missing: (snapshot.value?.missingKeys.length ?? 0) + (snapshot.value?.fallbacks.length ?? 0),
   events: events.value.length,
+  metrics: metrics.value?.calls ?? 0,
   caches: Object.keys(snapshot.value?.compiled ?? {}).length,
 }))
 
@@ -341,6 +382,84 @@ function exportReport() {
             <span class="type">{{ event.type }}</span>
             <span class="payload">{{ short(event.payload) }}</span>
           </div>
+        </template>
+
+        <template v-else-if="tab === 'metrics'">
+          <p class="cost">
+            collecting — every <code>t()</code> costs about 17% more while this tab is open
+          </p>
+
+          <div class="actions">
+            <span class="dim">sample</span>
+            <button
+              v-for="rate in SAMPLING"
+              :key="rate"
+              type="button"
+              :class="{ on: metrics?.sampling === rate }"
+              @click="sample(rate)"
+            >
+              1/{{ rate }}
+            </button>
+            <button type="button" @click="run(() => devtools.metrics.reset())">
+              reset
+            </button>
+          </div>
+
+          <dl v-if="metrics">
+            <dt>t() calls</dt>
+            <dd>{{ metrics.calls }}<span v-if="metrics.sampling > 1" class="dim"> (counted {{ metrics.counted }})</span></dd>
+            <dt>distinct keys</dt>
+            <dd>{{ metrics.distinctKeys }}</dd>
+            <dt>compiled</dt>
+            <dd>
+              <template v-for="(count, locale) in metrics.compiled ?? {}" :key="locale">
+                {{ locale }}: {{ count }}&nbsp;
+              </template>
+              <span v-if="!metrics.compiled">unavailable</span>
+            </dd>
+            <dt>dictionary</dt>
+            <dd>
+              <template v-for="(chars, locale) in metrics.dictionaryChars" :key="locale">
+                {{ locale }}: {{ Math.round(chars / 1024) }}K&nbsp;
+              </template>
+            </dd>
+          </dl>
+
+          <p v-if="!metrics?.topKeys.length" class="empty">
+            no translations yet — interact with the page
+          </p>
+          <table v-else>
+            <thead>
+              <tr><th>key</th><th>calls</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in metrics.topKeys" :key="row.key">
+                <td class="key">
+{{ row.key }}
+</td>
+                <td class="dim">
+{{ row.calls }}
+</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table v-if="metrics?.slowestBlocks.length">
+            <thead>
+              <tr><th>slowest block</th><th>locale</th><th>ms</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in metrics.slowestBlocks" :key="`${row.locale}:${row.block}`">
+                <td class="key">
+{{ row.block }}
+</td>
+                <td>{{ row.locale }}</td>
+                <td class="dim">
+{{ row.duration }}
+</td>
+              </tr>
+            </tbody>
+          </table>
         </template>
 
         <template v-else>

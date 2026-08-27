@@ -209,6 +209,52 @@ describe('оверлей', () => {
     unmount()
   })
 
+  it('включает сбор метрик только на время открытой вкладки', async () => {
+    const devtools = createDevtools()
+    const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
+    i18n.mergeMessages('en', 'common', { hello: 'Hello' })
+
+    const unmount = await mountDevtoolsOverlay(devtools)
+    await settle()
+
+    expect(i18n.hooks.has('onTranslate')).toBe(false)
+
+    clickButton(button => button.textContent?.startsWith('metrics') ?? false)
+    await settle()
+
+    expect(i18n.hooks.has('onTranslate')).toBe(true)
+    expect(shadowText()).toContain('costs about 17%')
+
+    i18n.t('common.hello')
+    i18n.t('common.hello')
+
+    // Счётчики растут без событий ленты — панель их опрашивает, а не ждёт.
+    await new Promise(resolve => setTimeout(resolve, 700))
+    await settle()
+    expect(shadowText()).toContain('common.hello')
+
+    // Ушли с вкладки — подписка снимается сама.
+    clickButton(button => button.textContent?.startsWith('blocks') ?? false)
+    await settle()
+    expect(i18n.hooks.has('onTranslate')).toBe(false)
+
+    unmount()
+  })
+
+  it('размонтирование с открытой вкладкой метрик тоже снимает сбор', async () => {
+    const devtools = createDevtools()
+    const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
+
+    const unmount = await mountDevtoolsOverlay(devtools)
+    await settle()
+    clickButton(button => button.textContent?.startsWith('metrics') ?? false)
+    await settle()
+    expect(i18n.hooks.has('onTranslate')).toBe(true)
+
+    unmount()
+    expect(i18n.hooks.has('onTranslate')).toBe(false)
+  })
+
   it('без document возвращает пустое размонтирование', async () => {
     const devtools = createDevtools()
     createFintI18n({ locale: 'en', plugins: [devtools] })

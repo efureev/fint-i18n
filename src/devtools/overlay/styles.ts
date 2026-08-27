@@ -101,4 +101,10 @@ td input.edit:hover { border-color: #2b3040; }
 td input.edit:focus { outline: none; background: #171a21; border-color: #4b536b; }
 
 td.locale-cell { min-width: 120px; }
+
+.cost {
+  margin: 0 0 8px; padding: 5px 8px; border-radius: 6px;
+  background: #3a2410; border: 1px solid #6b4415; color: #f0b45f;
+}
+.cost code { color: inherit; }
 `

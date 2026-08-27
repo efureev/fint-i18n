@@ -208,6 +208,34 @@ Router are built on. Extensions 7 and 8 support it officially: "Since v7.3.0, we
 are fully compatible with the v6 plugin API". Note that in extension 7+ plugin
 timelines live in the plugin's own menu rather than in a shared Timeline tab.
 
+## Metrics
+
+Counters for `t()` calls, the top keys, load durations and dictionary sizes.
+Collection is **off by default**: it holds a subscriber on `onTranslate` — the
+one hook emitted on every translation — and that costs about 17% per call.
+
+```typescript
+devtools.metrics.enable({ sampling: 10 })  // count every tenth call
+devtools.metrics.snapshot()
+devtools.metrics.reset()
+devtools.metrics.disable()
+```
+
+In the **metrics** tab collection starts when the tab opens and stops the moment
+you switch away or close the panel. While the tab is open the panel states that
+cost right in the header — otherwise it is forgotten until the first performance
+measurement.
+
+`sampling: N` counts every Nth call and multiplies the result back in the
+snapshot: `calls` is an estimate, `counted` is what was actually tallied. It
+trades accuracy for the cost of the subscription, which is a fair trade on a hot
+page with thousands of calls.
+
+What the metrics do not and will not have: the **compilation-cache hit ratio**.
+It is not observable from the outside — `t()` does not report where the result
+came from. In its place there are two honest numbers side by side: how many keys
+are compiled and how many distinct keys were asked for.
+
 ## The window bridge
 
 On attach devtools publishes itself into `window.__FINT_I18N_DEVTOOLS__` — this

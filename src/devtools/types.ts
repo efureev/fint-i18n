@@ -1,5 +1,6 @@
 import type { FintI18nPlugin, Locale, WarningCode } from '../core'
 import type { DevtoolsActions } from './actions'
+import type { DevtoolsMetrics } from './metrics'
 import type { DevtoolsMode } from './modes'
 
 export type DevtoolsEventType =
@@ -152,6 +153,11 @@ export interface FintI18nDevtools extends FintI18nPlugin {
    */
   readonly mode: DevtoolsMode
   setMode: (mode: DevtoolsMode) => void
+  /**
+   * Счётчики вызовов `t()`. Сбор выключен по умолчанию и включается вручную:
+   * пока он идёт, у `onTranslate` есть подписчик, а это ~17 % к каждому переводу.
+   */
+  readonly metrics: DevtoolsMetrics
   /** Отцепиться, не трогая инстанс: снять подписки, вернуть обёрнутые методы. */
   detach: () => void
 }

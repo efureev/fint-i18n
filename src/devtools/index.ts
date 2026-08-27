@@ -3,6 +3,7 @@ import type { App } from 'vue'
 import type { FintI18n, FintI18nHooks, Locale } from '../core'
 import { createActions } from './actions'
 import { isNameTaken, publishToBridge } from './bridge'
+import { createMetrics, type DevtoolsMetrics } from './metrics'
 import { applyMode, type DevtoolsMode } from './modes'
 import { createShadowState } from './state'
 import { createTimeline } from './timeline'
@@ -11,6 +12,7 @@ import type { DevtoolsOptions, FintI18nDevtools, OverlayOptions } from './types'
 export * from './types'
 export { BRIDGE_KEY, type DevtoolsBridge } from './bridge'
 export { buildMissingKeysPatch, type DevtoolsActions } from './actions'
+export { type DevtoolsMetrics, type MetricsOptions, type MetricsSnapshot } from './metrics'
 export { type DevtoolsMode, pseudo } from './modes'
 
 declare const __FINT_I18N_VERSION__: string
@@ -131,6 +133,7 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
   let name = ''
   let mode: DevtoolsMode = 'off'
   let offMode: (() => void) | undefined
+  let metrics: DevtoolsMetrics | null = null
   const offHooks: (() => void)[] = []
   const originals = new Map<WrappedMethod, unknown>()
 
@@ -161,6 +164,9 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
     offMode?.()
     offMode = undefined
     mode = 'off'
+
+    metrics?.disable()
+    metrics = null
 
     for (const off of offHooks) off()
     offHooks.length = 0
@@ -274,6 +280,8 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
         timeline.push('dispose')
       })
 
+      metrics = createMetrics(instance, () => state.snapshot(instance, VERSION, name).blocks)
+
       if (options.bridge !== false) {
         unpublish = publishToBridge(name, devtools, VERSION)
       }
@@ -313,6 +321,12 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
 
     get mode() {
       return mode
+    },
+
+    get metrics() {
+      if (!metrics) throw new Error('[fint-i18n] devtools is not attached to an instance')
+
+      return metrics
     },
 
     setMode(next: DevtoolsMode) {
