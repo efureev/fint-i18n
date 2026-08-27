@@ -34,6 +34,7 @@ export const OVERLAY_STYLES = `
   background: #0f1116; border: 1px solid #2b3040; border-radius: 10px;
   box-shadow: 0 18px 48px rgb(0 0 0 / 45%); overflow: hidden;
   /* Ручка в правом нижнем углу — нативная. Своего кода на растягивание нет. */
+  position: relative;
   resize: both;
   min-width: 320px; min-height: 200px;
   max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
@@ -47,6 +48,23 @@ export const OVERLAY_STYLES = `
   cursor: move; user-select: none; touch-action: none;
 }
 .head button { cursor: pointer; }
+
+/*
+ * Нативная ручка растягивания на тёмном фоне почти не видна, поэтому угол
+ * обозначен своими штрихами. pointer-events: none обязателен: жест обслуживает
+ * ручка под этим слоем, и перехватывать его нельзя.
+ */
+.panel::after {
+  content: '';
+  position: absolute; right: 2px; bottom: 2px;
+  width: 14px; height: 14px;
+  pointer-events: none;
+  background: repeating-linear-gradient(-45deg, transparent 0 2px, #4b536b 2px 3px);
+}
+.panel:hover::after { background-image: repeating-linear-gradient(-45deg, transparent 0 2px, #8ab4ff 2px 3px); }
+
+/* В Chrome и Safari гасим саму ручку — иначе поверх штрихов проступает вторая. */
+.panel::-webkit-resizer { background: transparent; }
 
 /* Видно, что на отпускании панель прилипнет к краю. */
 .panel.snapping { border-color: #8ab4ff; }

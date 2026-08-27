@@ -133,8 +133,9 @@ bottom-right corner, and remembers where you left it.
   the panel settles 16 px away from it. There is deliberately no magnet during
   the drag: it tugs the panel under the cursor and makes precise placement
   harder. While a release would snap, the panel's border lights up.
-- **Size** — the native grabber in the bottom-right corner (`resize: both`),
-  from 320×200 and never larger than the window.
+- **Size** — the bottom-right corner: it is marked with hatching, the gesture
+  itself is native (`resize: both`). From 320×200 and never larger than the
+  window.
 - **Reset** — double-click the header: the panel returns to the corner from the
   options and to its original size, and the record is dropped.
 
