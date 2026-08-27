@@ -131,3 +131,101 @@ describe('плагин', () => {
     expect(plugin.apply).toBe('serve')
   })
 })
+
+/** Ручка эндпоинта, снятая с плагина: настоящего dev-сервера здесь нет. */
+function handler(root: string) {
+  const plugin = fintI18nDevtools({ locales: root })
+  const captured: ((req: FakeRequest, res: FakeResponse) => void)[] = []
+  const server = { middlewares: { use: (_: string, fn: (req: FakeRequest, res: FakeResponse) => void) => { captured.push(fn) } } }
+
+  ;(plugin.configureServer as (s: unknown) => void)(server)
+  const [handle] = captured
+  if (!handle) throw new Error('плагин не повесил обработчик')
+
+  return handle
+}
+
+interface FakeRequest {
+  method: string
+  on: (event: string, fn: (chunk?: string) => void) => void
+}
+
+interface FakeResponse {
+  statusCode: number
+  setHeader: (name: string, value: string) => void
+  end: (body?: string) => void
+}
+
+function call(root: string, method: string, body?: string) {
+  const listeners: Record<string, ((chunk?: string) => void)[]> = {}
+  const res = { statusCode: 200, headers: {} as Record<string, string>, body: '' }
+  const response: FakeResponse = {
+    get statusCode() { return res.statusCode },
+    set statusCode(value: number) { res.statusCode = value },
+    setHeader: (name, value) => { res.headers[name] = value },
+    end: (payload) => { res.body = payload ?? '' },
+  }
+
+  handler(root)({ method, on: (event, fn) => { (listeners[event] ??= []).push(fn) } }, response)
+
+  if (body !== undefined) {
+    listeners.data?.forEach(fn => fn(body))
+    listeners.end?.forEach(fn => fn())
+  }
+
+  return { ...res, json: () => JSON.parse(res.body) }
+}
+
+describe('эндпоинт плагина', () => {
+  it('на GET отвечает каталогом локалей', () => {
+    const root = fixture({ 'en/common.json': { hello: 'Hello' } })
+    const res = call(root, 'GET')
+
+    expect(res.headers['content-type']).toBe('application/json')
+    expect(res.json()).toEqual({ ok: true, locales: root })
+  })
+
+  it('прочие методы отклоняет', () => {
+    expect(call(fixture({}), 'DELETE').statusCode).toBe(405)
+  })
+
+  it('на POST пишет патч и называет тронутые файлы', () => {
+    const root = fixture({ 'en/common.json': { hello: 'Hello' } })
+    const res = call(root, 'POST', JSON.stringify({ patch: { en: { common: { bye: 'Bye' } } } }))
+
+    expect(res.json().ok).toBe(true)
+    expect(res.json().written).toEqual([join(root, 'en/common.json')])
+    expect(read(root, 'en/common.json')).toEqual({ hello: 'Hello', bye: 'Bye' })
+  })
+
+  it('пустое тело — не ошибка, просто писать нечего', () => {
+    expect(call(fixture({}), 'POST', '').json()).toEqual({ ok: true, written: [] })
+  })
+
+  it('на битом теле отвечает 400 и текстом ошибки, а не падает', () => {
+    const res = call(fixture({}), 'POST', '{ это не json')
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().ok).toBe(false)
+    expect(res.json().error).toBeTypeOf('string')
+  })
+
+  it('путь с выходом вверх отклоняется, и отказ доезжает до клиента', () => {
+    const root = fixture({})
+    const res = call(root, 'POST', JSON.stringify({ patch: { en: { '../../escape': { key: 'x' } } } }))
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toContain('unsafe key path')
+  })
+
+  it('нечитаемый словарь называется по имени', () => {
+    const root = fixture({})
+    mkdirSync(join(root, 'en'), { recursive: true })
+    writeFileSync(join(root, 'en/common.json'), '{ сломано')
+
+    const res = call(root, 'POST', JSON.stringify({ patch: { en: { common: { key: 'x' } } } }))
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toContain('cannot parse')
+  })
+})
