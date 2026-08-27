@@ -193,16 +193,6 @@
     "ready": "Ready",
     "loaded": "Loaded"
   },
-  "debug": {
-    "title": "Runtime debug",
-    "loadedMessages": "Loaded messages",
-    "runtimeHooks": "Runtime hooks",
-    "empty": "No hooks emitted yet",
-    "clear": "Clear",
-    "blocks": "blocks",
-    "keys": "keys",
-    "probe": "Probe onTranslate"
-  },
   "footer": {
     "capabilities": {
       "lazy": "Lazy blocks",

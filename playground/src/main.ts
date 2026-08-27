@@ -89,3 +89,14 @@ const app = createApp(App)
 // the global `$t`/`$i18n` properties and the `v-t` directive.
 app.use(createFintI18nPlugin(i18n))
 app.mount('#app')
+
+// Панель отладки. В приложении её подключают под `import.meta.env.DEV`, иначе
+// динамический импорт ничего не спасёт — сборщик увидит его безусловно. Витрина
+// показывает панель всегда намеренно: она и есть предмет показа.
+//
+// Инстанс здесь передаётся готовым, а не через `plugins`, только потому, что
+// `createFintI18n` выше — часть демонстрации API. В своём коде лучше через
+// `plugins`: тогда `install` отработает в конструкторе и история будет полной.
+void import('@feugene/fint-i18n/devtools').then(({ createDevtools, mountDevtoolsOverlay }) => {
+  return mountDevtoolsOverlay(createDevtools(i18n), { hotkey: 'alt+i' })
+})

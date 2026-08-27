@@ -193,16 +193,6 @@
     "ready": "Готово",
     "loaded": "Загружено"
   },
-  "debug": {
-    "title": "Runtime-отладка",
-    "loadedMessages": "Загруженные сообщения",
-    "runtimeHooks": "Runtime-хуки",
-    "empty": "Хуки ещё не срабатывали",
-    "clear": "Очистить",
-    "blocks": "блоков",
-    "keys": "ключей",
-    "probe": "Проверить onTranslate"
-  },
   "footer": {
     "capabilities": {
       "lazy": "Ленивые блоки",

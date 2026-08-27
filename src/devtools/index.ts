@@ -3,7 +3,7 @@ import type { FintI18n, FintI18nHooks, Locale } from '../core'
 import { isNameTaken, publishToBridge } from './bridge'
 import { createShadowState } from './state'
 import { createTimeline } from './timeline'
-import type { DevtoolsOptions, FintI18nDevtools } from './types'
+import type { DevtoolsOptions, FintI18nDevtools, OverlayOptions } from './types'
 
 export * from './types'
 export { BRIDGE_KEY, type DevtoolsBridge } from './bridge'
@@ -16,6 +16,32 @@ declare const __FINT_I18N_VERSION__: string
  * `Symbol.for('FintI18n')`, то есть глобальный, и такие копии его делят.
  */
 const VERSION = typeof __FINT_I18N_VERSION__ === 'string' ? __FINT_I18N_VERSION__ : 'unknown'
+
+/**
+ * Панель внутри приложения — канал, не требующий ни расширения, ни чего-либо
+ * ещё: работает в SSR-приложении после гидрации, на мобильном, в Storybook.
+ *
+ * Тело панели грузится динамическим `import()`, поэтому eager-часть subpath'а
+ * остаётся маленькой, а приложение, которому нужен только снимок в консоли,
+ * не платит за UI.
+ *
+ * ```ts
+ * const devtools = createDevtools()
+ * const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
+ *
+ * const unmount = await mountDevtoolsOverlay(devtools)
+ * ```
+ *
+ * Без `document` (сервер) возвращает функцию, которая ничего не делает.
+ */
+export async function mountDevtoolsOverlay(
+  devtools: FintI18nDevtools,
+  options: OverlayOptions = {},
+): Promise<() => void> {
+  const { mountOverlay } = await import('./overlay/mount')
+
+  return mountOverlay(devtools, options)
+}
 
 /** Методы-стрелки, которые оборачиваются: событий на них хук-система не даёт. */
 type WrappedMethod =
@@ -231,6 +257,12 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
 
     get events() {
       return timeline.events
+    },
+
+    dictionary() {
+      if (!target) throw new Error('[fint-i18n] devtools is not attached to an instance')
+
+      return state.dictionary(target)
     },
 
     subscribe: timeline.subscribe,

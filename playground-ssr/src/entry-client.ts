@@ -42,3 +42,10 @@ app.provide(APP_CONTEXT, {
   acceptLanguage: state.app.acceptLanguage,
 })
 app.mount('#app')
+
+// Панель отладки — только на клиенте и только после гидрации: на сервере
+// `document` нет, а до гидрации снимок показал бы состояние, которого у
+// приложения ещё нет. Это же и есть проверка того, что оверлей переживает SSR.
+void import('@feugene/fint-i18n/devtools').then(({ createDevtools, mountDevtoolsOverlay }) => {
+  return mountDevtoolsOverlay(createDevtools(i18n), { position: 'bottom-left' })
+})

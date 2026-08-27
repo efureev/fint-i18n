@@ -96,6 +96,20 @@ export interface DevtoolsSnapshot {
   warnings: WarningState[]
 }
 
+export interface DictionaryEntry {
+  key: string
+  /** Значение по локалям; отсутствие ключа в локали — отсутствие поля. */
+  values: Record<Locale, string>
+}
+
+export interface OverlayOptions {
+  /** Горячая клавиша показать/скрыть. По умолчанию `alt+i`. */
+  hotkey?: string | false
+  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  /** Начинать свёрнутым — значком вместо панели. */
+  collapsed?: boolean
+}
+
 export interface DevtoolsOptions {
   /** Имя инстанса в мосте и в панели. По умолчанию `i18n`, при совпадении — с индексом. */
   name?: string
@@ -112,6 +126,11 @@ export interface FintI18nDevtools extends FintI18nPlugin {
   readonly events: readonly DevtoolsEvent[]
   subscribe: (listener: (event: DevtoolsEvent) => void) => () => void
   clearEvents: () => void
+  /**
+   * Плоский словарь: ключ и его значения по локалям. Отдельно от снимка,
+   * потому что на большом приложении это десятки тысяч строк.
+   */
+  dictionary: () => DictionaryEntry[]
   /** Отцепиться, не трогая инстанс: снять подписки, вернуть обёрнутые методы. */
   detach: () => void
 }

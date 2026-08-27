@@ -39,7 +39,10 @@ function reachable(entry) {
       continue
     }
 
-    for (const match of source.matchAll(/(?:from|import)\s*["']([^"']+)["']/g)) {
+    // Скобка в шаблоне обязательна: без неё обход не идёт по динамическим
+    // `import("./chunk.js")`, а панель грузится именно так — и прод-entry,
+    // утянувший devtools динамически, прошёл бы гейт незамеченным.
+    for (const match of source.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)) {
       const specifier = match[1]
       if (!specifier.startsWith('.')) continue
 

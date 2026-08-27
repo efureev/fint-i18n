@@ -29,6 +29,22 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
   `onTranslate` stays unsubscribed: it costs +17% per translation, and missing
   keys and fallbacks are already covered by their own hooks for free.
+- **`mountDevtoolsOverlay(devtools, options?)`** — the panel inside the
+  application, with tabs for locales, blocks, the dictionary, misses, the
+  timeline and the caches, plus a one-click JSON export of snapshot and
+  timeline. It needs neither a browser extension nor a CSS import, which makes
+  it the only channel that works in an SSR application after hydration, on a
+  phone and in Storybook.
+
+  It runs in its own Vue application inside a Shadow DOM rather than in the
+  host's tree: there it would appear in the host's own Vue Devtools and in its
+  `useI18nScope` counters, and without a shadow root the host's styles would
+  tear it apart. The body is loaded through a dynamic `import()`, so an
+  application that only wants the snapshot in the console pays nothing for the
+  UI.
+
+  The showcase's hand-rolled debug panel is gone — the overlay replaced it, in
+  both the static and the SSR playground.
 
 ## [0.8.0] — 2026-08-27
 

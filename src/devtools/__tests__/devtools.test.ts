@@ -108,6 +108,22 @@ describe('createDevtools: теневое состояние и лента', () =
     expect(devtools.events.map(event => event.type)).toContain('error')
   })
 
+  it('показывает блоки, загруженные до подключения — это случай гидрации', async () => {
+    const i18n = createFintI18n({
+      locale: 'en',
+      loaders: { en: { common: async () => ({ hello: 'Hello' }) } },
+    })
+    await i18n.loadBlock('common')
+
+    const devtools = createDevtools(i18n, { bridge: false })
+    const snapshot = devtools.snapshot()
+
+    // Длительности у такого блока нет и взяться ей неоткуда: загрузка прошла
+    // мимо devtools. Но в таблице он обязан быть, иначе панель врёт.
+    expect(snapshot.blocks).toEqual([{ block: 'common', locale: 'en', status: 'loaded' }])
+    expect(snapshot.messages).toEqual({ en: { common: 1 } })
+  })
+
   it('дедуплицирует промахи и фолбэки: в ленте первый, в снимке счётчик', () => {
     const devtools = createDevtools()
     const i18n = createFintI18n({ locale: 'ru', fallbackLocale: 'en', plugins: [devtools] })

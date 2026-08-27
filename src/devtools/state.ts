@@ -1,4 +1,5 @@
 import { toRaw } from 'vue'
+import { isPluralForms } from '../core'
 import type { FintI18n, Locale, MessageSchema } from '../core'
 import {
   readCompiledCounts,
@@ -11,6 +12,7 @@ import {
 import type {
   BlockState,
   DevtoolsSnapshot,
+  DictionaryEntry,
   FallbackState,
   MissingKeyState,
   WarningState,
@@ -30,6 +32,27 @@ function countLeaves(value: unknown): number {
   return total
 }
 
+/** Как показать лист словаря одной строкой. */
+function describe(value: unknown): string {
+  if (typeof value === 'function') return '[function]'
+  if (isPluralForms(value)) {
+    return Object.entries(value).map(([form, text]) => `${form}: ${text}`).join(' | ')
+  }
+
+  return String(value)
+}
+
+function collectLeaves(value: unknown, path: string, into: Map<string, unknown>): void {
+  if (!value || typeof value !== 'object' || isPluralForms(value)) {
+    into.set(path, value)
+    return
+  }
+
+  for (const key in value as Record<string, unknown>) {
+    collectLeaves((value as Record<string, unknown>)[key], path ? `${path}.${key}` : key, into)
+  }
+}
+
 export interface ShadowState {
   blockLoadStarted: (block: string, locale: Locale) => void
   blockLoadFinished: (block: string, locale: Locale, resolvedAs: string) => void
@@ -41,6 +64,7 @@ export interface ShadowState {
   fallbackSeen: (key: string, locale: Locale, fallbackLocale: Locale) => boolean
   warningSeen: (code: string, message: string, context?: Record<string, unknown>) => boolean
   snapshot: (instance: FintI18n, version: string, name: string) => DevtoolsSnapshot
+  dictionary: (instance: FintI18n) => DictionaryEntry[]
 }
 
 export function createShadowState(): ShadowState {
@@ -172,6 +196,30 @@ export function createShadowState(): ShadowState {
         messages[locale] = perBlock
       }
 
+      // Блоки, загруженные до подключения devtools, теневому учёту неизвестны —
+      // их видно только через публичный `getLoadedBlocks()`. Без этого при
+      // подключении к готовому инстансу (гидрация на клиенте) таблица блоков
+      // была бы пуста при полном словаре. Длительности у таких блоков нет и
+      // взяться ей неоткуда: загрузка прошла мимо.
+      const loaded = instance.getLoadedBlocks()
+      const known = new Map(blocks)
+
+      // Загруженным помечается фактически отработавший блок, поэтому у
+      // запрошенного `pages.articles` в `getLoadedBlocks()` стоит `pages`.
+      // Оба в таблице — это один блок дважды, поэтому уже покрытые пропускаем.
+      const covered = new Set<string>()
+      for (const state of blocks.values()) {
+        covered.add(blockKey(state.locale, state.block))
+        if (state.resolvedAs) covered.add(blockKey(state.locale, state.resolvedAs))
+      }
+
+      for (const locale in loaded) {
+        for (const block of loaded[locale]) {
+          const key = blockKey(locale, block)
+          if (!covered.has(key)) known.set(key, { block, locale, status: 'loaded' })
+        }
+      }
+
       // Счётчики из инстанса точнее собственных: они видны и за то время,
       // пока devtools ещё не был подключён.
       const counters = readUsageCounters(instance)
@@ -189,8 +237,8 @@ export function createShadowState(): ShadowState {
         registeredBlocks: readRegisteredBlocks(instance),
         options: readOptions(instance),
         plugins: readPluginNames(instance),
-        loadedBlocks: instance.getLoadedBlocks(),
-        blocks: [...blocks.values()],
+        loadedBlocks: loaded,
+        blocks: [...known.values()],
         usage: usageSnapshot,
         compiled: readCompiledCounts(instance),
         messages,
@@ -198,6 +246,26 @@ export function createShadowState(): ShadowState {
         fallbacks: [...fallbacks.values()],
         warnings: [...warnings.values()],
       }
+    },
+
+    dictionary(instance) {
+      const raw = toRaw(instance.messages) as Record<Locale, MessageSchema>
+      const byKey = new Map<string, Record<Locale, string>>()
+
+      for (const locale in raw) {
+        const leaves = new Map<string, unknown>()
+        collectLeaves(raw[locale], '', leaves)
+
+        for (const [key, value] of leaves) {
+          const entry = byKey.get(key) ?? {}
+          entry[locale] = describe(value)
+          byKey.set(key, entry)
+        }
+      }
+
+      return [...byKey.entries()]
+        .map(([key, values]) => ({ key, values }))
+        .sort((a, b) => (a.key < b.key ? -1 : 1))
     },
   }
 }

@@ -62,15 +62,6 @@ describe('Playground', () => {
     expect(eyebrows).toEqual(Array.from({ length: 15 }, (_, i) => String(i + 1)))
   })
 
-  it('renders runtime debug panel as part of page flow without viewport-locked scrolling', async () => {
-    const { wrapper } = await mountPlayground()
-
-    const debugPanel = wrapper.get('aside')
-
-    expect(debugPanel.classes()).not.toContain('max-h-screen')
-    expect(debugPanel.classes()).not.toContain('overflow-y-auto')
-  })
-
   it('switches locale across the UI and keeps v-t.once static', async () => {
     const { wrapper } = await mountPlayground()
 
@@ -106,7 +97,7 @@ describe('Playground', () => {
     expect(wrapper.get('[data-test="locale-es"]').attributes('title')).toBe('español')
   })
 
-  it('loads lazy and nested blocks and records runtime hooks', async () => {
+  it('loads lazy and nested blocks', async () => {
     const { wrapper } = await mountPlayground()
 
     // The auth block loads lazily, so it is not present until requested.
@@ -117,8 +108,6 @@ describe('Playground', () => {
 
     expect(wrapper.text()).toContain('Auth Block')
     expect(wrapper.text()).toContain('Lazy loaded')
-    expect(wrapper.text()).toContain('beforeLoadBlock')
-    expect(wrapper.text()).toContain('afterLoadBlock')
 
     await wrapper.get('[data-test="load-articles"]').trigger('click')
     await settleUi()

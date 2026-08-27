@@ -193,16 +193,6 @@
     "ready": "Listo",
     "loaded": "Cargado"
   },
-  "debug": {
-    "title": "Depuración en tiempo real",
-    "loadedMessages": "Mensajes cargados",
-    "runtimeHooks": "Hooks en tiempo de ejecución",
-    "empty": "Todavía no se ha emitido ningún hook",
-    "clear": "Limpiar",
-    "blocks": "bloques",
-    "keys": "claves",
-    "probe": "Probar onTranslate"
-  },
   "footer": {
     "capabilities": {
       "lazy": "Bloques diferidos",

@@ -89,6 +89,38 @@ Removes the subscriptions and restores the original references of the wrapped
 methods without touching the instance. Needed when the panel closes while the
 application keeps running.
 
+## The in-app panel
+
+`mountDevtoolsOverlay(devtools, options?)` mounts the panel and returns an
+unmount function. The panel body is loaded through a dynamic `import()`, so an
+application that only needs the snapshot in the console pays nothing for the UI.
+
+```typescript
+const devtools = createDevtools()
+const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
+
+const unmount = await mountDevtoolsOverlay(devtools, {
+  position: 'bottom-right',  // and the three other corners
+  hotkey: 'alt+i',           // false — do not install a handler at all
+  collapsed: false,          // true — start as a badge
+})
+```
+
+Tabs: **locales**, **blocks**, **dictionary**, **missing**, **events**,
+**caches**. The `↓` button in the header exports the snapshot and the timeline
+as one JSON — handy to attach to a bug report.
+
+The panel lives in its own Vue application and in a Shadow DOM rather than in
+the application's tree. There are two reasons and neither has another fix: in
+the host tree it would show up in the host's own Vue Devtools and in its
+`useI18nScope` counters, and without a shadow root the application's styles
+would tear it apart. No CSS import is needed — the styles travel inside.
+
+Without a `document` (the server) `mountDevtoolsOverlay` returns a function that
+does nothing, so the call is safe in universal code. In an SSR application mount
+the panel **after hydration** — before it the snapshot would show a state the
+application does not have yet.
+
 ## The window bridge
 
 On attach devtools publishes itself into `window.__FINT_I18N_DEVTOOLS__` — this
