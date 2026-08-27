@@ -42,6 +42,13 @@ async function settle() {
   await nextTick()
 }
 
+function clickButton(match: (button: HTMLButtonElement) => boolean) {
+  const target = [...shadow().querySelectorAll('button')].find(button => match(button))
+
+  if (!target) throw new Error('кнопка не найдена в панели')
+  target.click()
+}
+
 function pointer(type: string, x: number, y: number, target: EventTarget) {
   target.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, bubbles: true, cancelable: true }))
 }
@@ -286,6 +293,64 @@ describe('панель: восстановление, край и сброс', (
 
     // Панель двигается, но ничего не запоминает.
     expect(el('.root').style.left).toBe('300px')
+
+    unmount()
+  })
+})
+
+describe('свёрнутый значок', () => {
+  it('садится в угол и не тащит за собой положение панели', async () => {
+    const { storage } = fakeStorage({
+      [KEY]: JSON.stringify({ anchor: { edgeX: 'right', edgeY: 'bottom', dx: 16, dy: 16 } }),
+    })
+    const { unmount } = await mountPanel(storage)
+    expect(el('.root').style.left).not.toBe('')
+
+    // Свернули: у значка нет размера панели, и её привязка увела бы его под
+    // нижний край — оттуда его было бы уже не достать.
+    clickButton(button => button.getAttribute('title')?.includes('Hide') ?? false)
+    await settle()
+
+    expect(el('.root').style.left).toBe('')
+    expect(el('.root').style.top).toBe('')
+    expect(el('.root').className).toContain('bottom-right')
+    expect(shadow().querySelector('.badge')).not.toBeNull()
+
+    unmount()
+  })
+
+  it('не следует за размером окна, пока свёрнут', async () => {
+    const { storage } = fakeStorage({
+      [KEY]: JSON.stringify({ anchor: { edgeX: 'right', edgeY: 'bottom', dx: 16, dy: 16 } }),
+    })
+    const { unmount } = await mountPanel(storage)
+
+    clickButton(button => button.getAttribute('title')?.includes('Hide') ?? false)
+    await settle()
+
+    resizeWindow(500, 400)
+    await settle()
+
+    expect(el('.root').style.top).toBe('')
+
+    unmount()
+  })
+
+  it('разворачивается обратно на сохранённое место', async () => {
+    const { storage } = fakeStorage({
+      [KEY]: JSON.stringify({ anchor: { edgeX: 'left', edgeY: 'top', dx: 40, dy: 50 } }),
+    })
+    const { unmount } = await mountPanel(storage)
+
+    clickButton(button => button.getAttribute('title')?.includes('Hide') ?? false)
+    await settle()
+    expect(el('.root').style.left).toBe('')
+
+    ;(shadow().querySelector('.badge') as HTMLElement).click()
+    await settle()
+
+    expect(el('.root').style.left).toBe('40px')
+    expect(el('.root').style.top).toBe('50px')
 
     unmount()
   })

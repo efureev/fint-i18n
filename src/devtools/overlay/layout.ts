@@ -29,6 +29,9 @@ const KEY = 'fint-i18n-devtools:layout'
 export const SNAP_THRESHOLD = 24
 /** Отступ прилипшей панели: вплотную к краю она выглядит обрезанной. */
 export const SNAP_MARGIN = 16
+/** Сколько держать видимым, когда размер элемента неизвестен. */
+const KEEP_X = 64
+const KEEP_Y = 32
 
 const EDGES_X: EdgeX[] = ['left', 'right']
 const EDGES_Y: EdgeY[] = ['top', 'bottom']
@@ -118,9 +121,15 @@ export function clearLayout(storage: Storage | null): void {
  * улетевшая целиком.
  */
 export function clampPosition(x: number, y: number, size: Size, viewport: Viewport): { x: number, y: number } {
+  // Размер бывает неизвестен (элемент не измерен), и тогда «панель целиком»
+  // выродилось бы в «можно к самому краю» — то есть за экран. Держим видимым
+  // хотя бы уголок.
+  const w = size.w || KEEP_X
+  const h = size.h || KEEP_Y
+
   return {
-    x: Math.max(0, Math.min(x, Math.max(0, viewport.width - size.w))),
-    y: Math.max(0, Math.min(y, Math.max(0, viewport.height - size.h))),
+    x: Math.max(0, Math.min(x, Math.max(0, viewport.width - w))),
+    y: Math.max(0, Math.min(y, Math.max(0, viewport.height - h))),
   }
 }
 

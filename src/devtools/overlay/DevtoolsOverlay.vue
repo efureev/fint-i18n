@@ -172,17 +172,24 @@ function rememberSize() {
   })
 }
 
-function resetLayout() {
+/** Снять инлайновое положение — дальше место определяет угловой класс. */
+function unpin() {
   if (root.value) {
     root.value.style.left = ''
     root.value.style.top = ''
   }
+
+  pinned.value = false
+}
+
+function resetLayout() {
+  unpin()
+
   if (panel.value) {
     panel.value.style.width = ''
     panel.value.style.height = ''
   }
 
-  pinned.value = false
   lastSize = ''
   clearLayout(storage)
 }
@@ -221,7 +228,14 @@ onScopeDispose(() => {
 
 // Восстановление ждёт появления панели в DOM: до него измерять и красить нечего.
 watch(open, (isOpen) => {
-  if (!isOpen) return
+  // Свёрнутый значок садится в угол из опций и хранимое положение игнорирует.
+  // Оно посчитано для панели: у привязки к нижнему или правому краю координата
+  // выводится из её размера, которого у значка нет, — и он уезжал под край
+  // окна, откуда его было уже не достать.
+  if (!isOpen) {
+    unpin()
+    return
+  }
 
   void nextTick(() => {
     const stored = applyStored()

@@ -138,6 +138,9 @@ bottom-right corner, and remembers where you left it.
   window.
 - **Reset** — double-click the header: the panel returns to the corner from the
   options and to its original size, and the record is dropped.
+- **The collapsed badge** always sits in the corner from the options and does
+  not track the window: the stored position is computed for the panel, the badge
+  has no such size, and following it would send the badge past the window edge.
 
 The position is stored as **an edge plus an offset**, not as coordinates. Hence
 the main property: when a window edge moves, the panel travels with it — one
