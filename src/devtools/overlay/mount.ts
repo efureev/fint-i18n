@@ -51,6 +51,7 @@ export function mountOverlay(devtools: FintI18nDevtools, options: OverlayOptions
     devtools,
     position: options.position ?? 'bottom-right',
     collapsed: options.collapsed ?? false,
+    storage: options.storage,
   })
 
   const instance = app.mount(mountPoint) as unknown as { toggle: () => void }

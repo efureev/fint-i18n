@@ -108,6 +108,24 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   confined to the configured directory. The plugin declares `apply: 'serve'`, so
   in a production build the endpoint does not exist at all.
 
+- **The devtools panel can be moved and resized, and remembers where you left
+  it.** It is dragged by the header, resized by the native grabber in its
+  bottom-right corner, snaps to a window edge when released near one, and
+  returns to its default on a double-click of the header.
+
+  The position is stored as an edge plus an offset rather than as coordinates,
+  which is what makes the panel travel with a window edge when that edge moves —
+  one pinned to the right stays pinned on a narrow screen. On restore both
+  position and size are clamped against the current window, so a record made on
+  a large monitor cannot leave the panel off screen. `storage` in
+  `mountDevtoolsOverlay` chooses where that record lives, or `false` turns
+  remembering off.
+
+- **The dictionary tab now says how much of the list it is showing.** It caps
+  the table (raised 300 → 1000, because thousands of inputs in a shadow tree
+  stall the panel), and a silently truncated list is worse than a visibly
+  truncated one.
+
 ### Changed
 
 - **The compilation-cache version is now read on every `t()`, not only on a

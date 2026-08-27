@@ -121,6 +121,43 @@ does nothing, so the call is safe in universal code. In an SSR application mount
 the panel **after hydration** — before it the snapshot would show a state the
 application does not have yet.
 
+### The panel's position and size
+
+The panel is dragged by its header (anywhere without buttons), resized by its
+bottom-right corner, and remembers where you left it.
+
+- **Dragging** — by the header. The panel is never let out of the window as a
+  whole, not merely "keeping a corner visible": a panel half over the edge is
+  as useless as one that flew away entirely.
+- **Edge snapping** — automatic, on release. Closer than 24 px to an edge and
+  the panel settles 16 px away from it. There is deliberately no magnet during
+  the drag: it tugs the panel under the cursor and makes precise placement
+  harder. While a release would snap, the panel's border lights up.
+- **Size** — the native grabber in the bottom-right corner (`resize: both`),
+  from 320×200 and never larger than the window.
+- **Reset** — double-click the header: the panel returns to the corner from the
+  options and to its original size, and the record is dropped.
+
+The position is stored as **an edge plus an offset**, not as coordinates. Hence
+the main property: when a window edge moves, the panel travels with it — one
+pinned to the right edge stays pinned on a narrow screen too. For the same
+reason the record carries over between screens of different sizes.
+
+On restore both position and size are put through a clamp against the current
+window. Without it a record made on a large monitor would leave the panel off
+screen, with no way to reach it.
+
+```typescript
+await mountDevtoolsOverlay(devtools, {
+  storage: sessionStorage,  // localStorage by default
+})
+
+await mountDevtoolsOverlay(devtools, { storage: false })  // remember nothing
+```
+
+The storage key is `fint-i18n-devtools:layout`. A corrupt or incomplete record
+is neither applied nor kept: the panel must not trip over it on every open.
+
 ## Actions and modes
 
 `devtools.actions` — write operations, all through the instance's public API:

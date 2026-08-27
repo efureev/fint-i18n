@@ -119,6 +119,11 @@ export interface OverlayOptions {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
   /** Начинать свёрнутым — значком вместо панели. */
   collapsed?: boolean
+  /**
+   * Где хранить положение и размер панели между перезагрузками. `false` — не
+   * хранить. По умолчанию `localStorage`, если он доступен.
+   */
+  storage?: Storage | false
 }
 
 export interface DevtoolsOptions {

@@ -33,12 +33,23 @@ export const OVERLAY_STYLES = `
   height: min(460px, calc(100vh - 32px));
   background: #0f1116; border: 1px solid #2b3040; border-radius: 10px;
   box-shadow: 0 18px 48px rgb(0 0 0 / 45%); overflow: hidden;
+  /* Ручка в правом нижнем углу — нативная. Своего кода на растягивание нет. */
+  resize: both;
+  min-width: 320px; min-height: 200px;
+  max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
 }
 
 .head {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px; background: #171a21; border-bottom: 1px solid #2b3040;
+  /* Шапка — ручка перетаскивания. touch-action обязателен: без него тач-жест
+     уедет в скролл страницы, а не в перетаскивание. */
+  cursor: move; user-select: none; touch-action: none;
 }
+.head button { cursor: pointer; }
+
+/* Видно, что на отпускании панель прилипнет к краю. */
+.panel.snapping { border-color: #8ab4ff; }
 .head .title { color: #8ab4ff; font-weight: 600; }
 .head .meta { color: #6b7280; }
 .head .spacer { flex: 1; }

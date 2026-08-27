@@ -1,5 +1,18 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, ref, shallowRef } from 'vue'
+import { computed, nextTick, onScopeDispose, ref, shallowRef, watch } from 'vue'
+import {
+  anchorFrom,
+  clampPosition,
+  clampSize,
+  clearLayout,
+  readLayout,
+  resolveStorage,
+  toPosition,
+  willSnap,
+  writeLayout,
+  type Anchor,
+  type Size,
+} from './layout'
 import type { MetricsSnapshot } from '../metrics'
 import type { DevtoolsMode } from '../modes'
 import type { DevtoolsEvent, DevtoolsSnapshot, DictionaryEntry, FintI18nDevtools, OverlayOptions } from '../types'
@@ -8,6 +21,7 @@ const props = defineProps<{
   devtools: FintI18nDevtools
   position: NonNullable<OverlayOptions['position']>
   collapsed: boolean
+  storage?: Storage | false
 }>()
 
 const TABS = ['locales', 'blocks', 'dictionary', 'missing', 'events', 'metrics', 'caches'] as const
@@ -22,11 +36,194 @@ const dictionary = shallowRef<DictionaryEntry[]>([])
 const metrics = shallowRef<MetricsSnapshot | null>(null)
 const SAMPLING = [1, 10, 100]
 /**
+ * Потолок строк в таблице словаря. Он нужен: тысячи полей ввода в теневом дереве
+ * кладут панель. Но молча обрезанный список хуже обрезанного явно, поэтому
+ * рядом всегда видно полное число.
+ */
+const DICTIONARY_LIMIT = 1000
+/**
  * Счётчики растут без единого события ленты, поэтому вкладка метрик — единственная,
  * которую приходится опрашивать. Раз в полсекунды: чаще незачем, а подписываться
  * на каждый перевод значило бы перерисовывать панель чаще, чем страницу.
  */
 const METRICS_POLL_MS = 500
+
+const root = ref<HTMLElement | null>(null)
+const panel = ref<HTMLElement | null>(null)
+const storage = resolveStorage(props.storage)
+/** Пока `false`, панель держится за угол из опций; после — за свои `left`/`top`. */
+const pinned = ref(false)
+/** Подсветка на время перетаскивания: показывает, что на отпускании прилипнет. */
+const snapping = ref(false)
+
+const viewport = () => ({ width: window.innerWidth, height: window.innerHeight })
+
+const sizeOf = (): Size => {
+  const rect = panel.value?.getBoundingClientRect()
+
+  return { w: rect?.width ?? 0, h: rect?.height ?? 0 }
+}
+
+/** Единственное место, которое двигает панель: и перетаскивание, и восстановление. */
+function place(x: number, y: number) {
+  if (!root.value) return
+
+  const safe = clampPosition(x, y, sizeOf(), viewport())
+
+  root.value.style.left = `${safe.x}px`
+  root.value.style.top = `${safe.y}px`
+  pinned.value = true
+}
+
+/**
+ * Пришпиливание к `left`/`top` по измеренному месту. Без него нативный `resize`
+ * у прижатой к правому нижнему углу панели растил бы её влево, а ручка стояла бы
+ * на месте. В окружении без раскладки (прогон тестов) измерение даёт нули —
+ * тогда остаёмся на угловом классе.
+ */
+function pin() {
+  if (pinned.value || !root.value || !panel.value) return
+
+  const rect = panel.value.getBoundingClientRect()
+  if (rect.width === 0) return
+
+  place(rect.left, rect.top)
+}
+
+function currentPosition(): { x: number, y: number } {
+  const rect = root.value?.getBoundingClientRect()
+
+  return {
+    x: Number.parseFloat(root.value?.style.left ?? '') || rect?.left || 0,
+    y: Number.parseFloat(root.value?.style.top ?? '') || rect?.top || 0,
+  }
+}
+
+function applyAnchor(anchor: Anchor) {
+  const { x, y } = toPosition(anchor, sizeOf(), viewport())
+
+  place(x, y)
+}
+
+let dragging: { pointerX: number, pointerY: number, x: number, y: number } | null = null
+
+function onPointerMove(event: PointerEvent) {
+  if (!dragging) return
+
+  const x = dragging.x + event.clientX - dragging.pointerX
+  const y = dragging.y + event.clientY - dragging.pointerY
+
+  place(x, y)
+  snapping.value = willSnap(x, y, sizeOf(), viewport())
+}
+
+function onPointerUp() {
+  if (!dragging) return
+
+  dragging = null
+  snapping.value = false
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+
+  // Прилипание — здесь, а не на каждом шаге: магнит под курсором мешает ставить
+  // панель точно, а на отпускании он ощущается как помощь.
+  const { x, y } = currentPosition()
+  const anchor = anchorFrom(x, y, sizeOf(), viewport())
+
+  applyAnchor(anchor)
+  writeLayout(storage, { anchor })
+}
+
+function startDrag(event: PointerEvent) {
+  // В шапке живут кнопки режимов, экспорт и закрытие — по ним таскать нельзя.
+  if ((event.target as HTMLElement).closest('button, input')) return
+  if (!root.value) return
+
+  pin()
+
+  const position = currentPosition()
+  dragging = { pointerX: event.clientX, pointerY: event.clientY, x: position.x, y: position.y }
+
+  event.preventDefault()
+  // Слушаем окно, а не элемент: `setPointerCapture` есть не везде, а указатель
+  // при быстром движении уходит за пределы шапки.
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp)
+}
+
+/** Нативный `resize` не даёт события — снимаем размер там, где жест кончается. */
+let lastSize = ''
+
+function rememberSize() {
+  if (!panel.value?.style.width) return
+
+  const signature = `${panel.value.style.width}|${panel.value.style.height}`
+  if (signature === lastSize) return
+
+  lastSize = signature
+  writeLayout(storage, {
+    size: { w: Number.parseFloat(panel.value.style.width), h: Number.parseFloat(panel.value.style.height) },
+  })
+}
+
+function resetLayout() {
+  if (root.value) {
+    root.value.style.left = ''
+    root.value.style.top = ''
+  }
+  if (panel.value) {
+    panel.value.style.width = ''
+    panel.value.style.height = ''
+  }
+
+  pinned.value = false
+  lastSize = ''
+  clearLayout(storage)
+}
+
+function applyStored() {
+  const stored = readLayout(storage)
+
+  if (stored?.size && panel.value) {
+    const size = clampSize(stored.size, viewport())
+
+    panel.value.style.width = `${size.w}px`
+    panel.value.style.height = `${size.h}px`
+  }
+
+  return stored
+}
+
+/**
+ * Окно изменилось — панель идёт за своим краем. Ради этого положение и хранится
+ * привязкой, а не координатами: у прижатой к правому краю отступ до него
+ * постоянен, и она едет вместе с ним.
+ */
+function followViewport() {
+  if (!pinned.value) return
+
+  const stored = applyStored()
+  if (stored?.anchor) applyAnchor(stored.anchor)
+}
+
+window.addEventListener('resize', followViewport)
+onScopeDispose(() => {
+  window.removeEventListener('resize', followViewport)
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+})
+
+// Восстановление ждёт появления панели в DOM: до него измерять и красить нечего.
+watch(open, (isOpen) => {
+  if (!isOpen) return
+
+  void nextTick(() => {
+    const stored = applyStored()
+
+    if (stored?.anchor) applyAnchor(stored.anchor)
+    else pin()
+  })
+}, { immediate: true })
 
 const simulation = ref({ delay: 0, failPercent: 0, failAttempts: 0 })
 const simulating = ref(false)
@@ -158,7 +355,16 @@ const visibleDictionary = computed(() => {
     ? dictionary.value.filter(entry => entry.key.toLowerCase().includes(needle))
     : dictionary.value
 
-  return rows.slice(0, 300)
+  return rows.slice(0, DICTIONARY_LIMIT)
+})
+
+/** Полное число строк — чтобы обрезка была видна, а не угадывалась. */
+const dictionaryTotal = computed(() => {
+  const needle = filter.value.trim().toLowerCase()
+
+  return needle
+    ? dictionary.value.filter(entry => entry.key.toLowerCase().includes(needle)).length
+    : dictionary.value.length
 })
 
 const visibleEvents = computed(() => {
@@ -240,15 +446,20 @@ function exportReport() {
 </script>
 
 <template>
-  <div class="root" :class="position">
+  <div ref="root" class="root" :class="{ [position]: !pinned }">
     <button v-if="!open" class="badge" type="button" @click="toggle">
       <b>i18n</b>
       <span v-if="snapshot">{{ snapshot.locale }}</span>
       <span v-if="failing" class="chip bad">{{ failing }}</span>
     </button>
 
-    <div v-else class="panel">
-      <div class="head">
+    <div v-else ref="panel" class="panel" :class="{ snapping }" @pointerup="rememberSize">
+      <div
+        class="head"
+        title="drag to move · double-click to reset"
+        @pointerdown="startDrag"
+        @dblclick="resetLayout"
+      >
         <span class="title">fint-i18n</span>
         <span class="chip">{{ snapshot?.locale ?? '—' }}</span>
         <span v-if="snapshot?.disposed" class="chip bad">disposed</span>
@@ -373,6 +584,9 @@ function exportReport() {
 
         <template v-else-if="tab === 'dictionary'">
           <input v-model="filter" type="search" placeholder="filter keys…">
+          <p v-if="dictionaryTotal > visibleDictionary.length" class="dim">
+            showing {{ visibleDictionary.length }} of {{ dictionaryTotal }} — refine the filter
+          </p>
           <p v-if="!visibleDictionary.length" class="empty">
             nothing loaded yet
           </p>
