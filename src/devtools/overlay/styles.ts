@@ -87,4 +87,18 @@ input[type="search"]:focus { outline: none; border-color: #4b536b; }
 .event.bad .type { color: #f08a8a; }
 .event.warn .type { color: #f0b45f; }
 .event .payload { flex: 1; color: #9aa4b8; word-break: break-all; }
+
+.modes { display: flex; gap: 3px; }
+.modes button { padding: 2px 6px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+
+td input.edit {
+  width: 100%; font: inherit; padding: 1px 4px;
+  color: #d5d9e0; background: transparent; border: 1px solid transparent; border-radius: 4px;
+}
+td input.edit:hover { border-color: #2b3040; }
+td input.edit:focus { outline: none; background: #171a21; border-color: #4b536b; }
+
+td.locale-cell { min-width: 120px; }
 `

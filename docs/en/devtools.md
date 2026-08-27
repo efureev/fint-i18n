@@ -121,6 +121,53 @@ does nothing, so the call is safe in universal code. In an SSR application mount
 the panel **after hydration** — before it the snapshot would show a state the
 application does not have yet.
 
+## Actions and modes
+
+`devtools.actions` — write operations, all through the instance's public API:
+
+| Action | What it does |
+| :--- | :--- |
+| `setLocale(locale)` | switch the locale |
+| `loadBlock(block, locale?)` | load a block |
+| `unloadBlock(block, locale?)` | drop it from memory |
+| `reloadBlock(block, locale?)` | unload and load again — the loader runs once more |
+| `patchMessage(locale, key, value)` | edit a translation live; the key is dotted, as in `t()` |
+| `clearCompiled(locale?)` | invalidate the compilation cache |
+| `clearFormatterCache()` / `clearPluralCache()` | drop the `Intl` caches |
+| `missingKeysPatch()` | a dictionary stub built from the misses — a ready JSON patch per locale |
+
+`reloadBlock` deals with upward resolution itself: if `pages.articles` was
+loaded by the `pages` loader, `pages` is what gets unloaded — otherwise the
+second load would do nothing.
+
+`patchMessage` goes through `mergeMessages`, so an edit re-renders **everything**
+showing that message, including components that got it from the compilation
+cache.
+
+### The `t()` output mode
+
+```typescript
+devtools.setMode('keys')    // t() returns the key
+devtools.setMode('pseudo')  // [Ĥéļļö, Åļéx!·····]
+devtools.setMode('off')     // back to normal, byte for byte
+```
+
+**`keys`** answers "where did this string come from": the screen shows keys, and
+finding the right one in the dictionary takes no guessing.
+
+**`pseudo`** answers two questions at once: which string never went through
+`t()` — it stays unaccented — and what a translation longer than English does to
+the layout. Strings grow by roughly 30%, the way German and Finnish do.
+
+The `onTranslate` subscriber lives exactly as long as the mode is on: every
+translation costs about 17% more with it. A miss stays a miss — `t()` still
+returns the key and `onMissingKey` still fires.
+
+Switching a mode re-renders the whole page: it changes no dictionary, so
+devtools invalidates the compilation cache, whose version `t()` reads on every
+call. The one thing this does not reach is a component showing a key that does
+not exist: its last render never touched the cache.
+
 ## The window bridge
 
 On attach devtools publishes itself into `window.__FINT_I18N_DEVTOOLS__` — this

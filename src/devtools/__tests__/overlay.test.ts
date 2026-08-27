@@ -2,14 +2,24 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { mount } from '@vue/test-utils'
+import { defineComponent, h, nextTick } from 'vue'
 import { createFintI18n } from '../../core'
+import { installI18n } from '../../vue'
 import { BRIDGE_KEY, createDevtools, mountDevtoolsOverlay } from '../index'
 
 const HOST_ID = 'fint-i18n-devtools'
 
 function shadowText(): string {
   return document.getElementById(HOST_ID)?.shadowRoot?.textContent ?? ''
+}
+
+function clickButton(match: (button: HTMLButtonElement) => boolean): void {
+  const buttons = [...document.getElementById(HOST_ID)!.shadowRoot!.querySelectorAll('button')]
+  const target = buttons.find(button => match(button))
+
+  if (!target) throw new Error('кнопка не найдена в панели')
+  target.click()
 }
 
 /** Панель пересчитывается в микрозадаче, поэтому ждём её, а не только рендер. */
@@ -126,6 +136,75 @@ describe('оверлей', () => {
     expect(text).toContain('common.only')
     expect(text).toContain('from en')
     expect(text).toContain('common.gone')
+
+    unmount()
+  })
+
+  it('переключает режим кнопкой в шапке и перерисовывает страницу', async () => {
+    const devtools = createDevtools()
+    const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
+    i18n.mergeMessages('en', 'common', { hello: 'Hello' })
+
+    const Page = defineComponent({ setup: () => () => h('span', i18n.t('common.hello')) })
+    const page = mount(Page, { global: { plugins: [{ install: (app: any) => installI18n(app, i18n) }] } })
+    expect(page.text()).toBe('Hello')
+
+    const unmount = await mountDevtoolsOverlay(devtools)
+    await settle()
+
+    clickButton(button => button.textContent?.trim() === 'keys')
+    await settle()
+
+    expect(page.text()).toBe('common.hello')
+    expect(devtools.mode).toBe('keys')
+
+    clickButton(button => button.textContent?.trim() === 'off')
+    await settle()
+
+    expect(page.text()).toBe('Hello')
+
+    unmount()
+    page.unmount()
+  })
+
+  it('правит перевод прямо в таблице словаря', async () => {
+    const devtools = createDevtools()
+    const i18n = createFintI18n({ locale: 'en', plugins: [devtools] })
+    i18n.mergeMessages('en', 'common', { hello: 'Hello' })
+
+    const unmount = await mountDevtoolsOverlay(devtools)
+    clickButton(button => button.textContent?.startsWith('dictionary') ?? false)
+    await settle()
+
+    const input = document.getElementById(HOST_ID)!.shadowRoot!.querySelector('input.edit') as HTMLInputElement
+    expect(input.value).toBe('Hello')
+
+    input.value = 'Edited'
+    input.dispatchEvent(new Event('change'))
+    await settle()
+
+    expect(i18n.t('common.hello')).toBe('Edited')
+
+    unmount()
+  })
+
+  it('перезагружает блок кнопкой в строке', async () => {
+    let payload = 'Hello'
+    const loader = vi.fn(async () => ({ hello: payload }))
+    const devtools = createDevtools()
+    const i18n = createFintI18n({ locale: 'en', plugins: [devtools], loaders: { en: { common: loader } } })
+
+    await i18n.loadBlock('common')
+    const unmount = await mountDevtoolsOverlay(devtools)
+    await settle()
+
+    payload = 'Reloaded'
+    clickButton(button => button.getAttribute('title') === 'Reload')
+    await settle()
+    await settle()
+
+    expect(loader).toHaveBeenCalledTimes(2)
+    expect(i18n.t('common.hello')).toBe('Reloaded')
 
     unmount()
   })

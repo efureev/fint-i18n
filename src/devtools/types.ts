@@ -1,4 +1,6 @@
 import type { FintI18nPlugin, Locale, WarningCode } from '../core'
+import type { DevtoolsActions } from './actions'
+import type { DevtoolsMode } from './modes'
 
 export type DevtoolsEventType =
   | 'init'
@@ -15,6 +17,7 @@ export type DevtoolsEventType =
   | 'retry'
   | 'error'
   | 'warning'
+  | 'mode'
   | 'dispose'
 
 export interface DevtoolsEvent {
@@ -100,6 +103,11 @@ export interface DictionaryEntry {
   key: string
   /** Значение по локалям; отсутствие ключа в локали — отсутствие поля. */
   values: Record<Locale, string>
+  /**
+   * Можно ли править значение строкой. Набор плюральных форм и сообщение-функция
+   * — нельзя: строка заменила бы их целиком.
+   */
+  editable: boolean
 }
 
 export interface OverlayOptions {
@@ -131,6 +139,14 @@ export interface FintI18nDevtools extends FintI18nPlugin {
    * потому что на большом приложении это десятки тысяч строк.
    */
   dictionary: () => DictionaryEntry[]
+  /** Write-операции: всё через публичный API инстанса. */
+  readonly actions: DevtoolsActions
+  /**
+   * Режим вывода `t()`. Пока он не `off`, у `onTranslate` есть подписчик, и
+   * каждый перевод стоит на ~17 % дороже — поэтому по умолчанию режима нет.
+   */
+  readonly mode: DevtoolsMode
+  setMode: (mode: DevtoolsMode) => void
   /** Отцепиться, не трогая инстанс: снять подписки, вернуть обёрнутые методы. */
   detach: () => void
 }

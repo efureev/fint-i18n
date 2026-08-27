@@ -109,6 +109,25 @@ describe('реактивность при попадании в кэш комп�
     expect(wrapper.text()).toBe('false')
   })
 
+  it('вторая подряд инвалидация тоже доходит — после промаха эффект не теряет подписку', async () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    i18n.mergeMessages('en', 'common', { hello: 'Hello' })
+    i18n.t('common.hello')
+
+    const { wrapper, renders } = mountWithI18n(i18n)
+    const before = renders.count
+
+    // Пустой merge данных не меняет, но кэш компиляции чистит: следующий рендер
+    // придётся на промах. Версия читается и там, поэтому подписка сохраняется.
+    i18n.mergeMessages('en', 'common', {})
+    await nextTick()
+    expect(renders.count).toBe(before + 1)
+
+    i18n.mergeMessages('en', 'common', { hello: 'edited' })
+    await nextTick()
+    expect(wrapper.text()).toBe('edited')
+  })
+
   it('загрузка постороннего блока не перерисовывает то, чего она не касается', async () => {
     const i18n = createFintI18n({
       locale: 'en',

@@ -1,12 +1,16 @@
 import { getCurrentInstance } from 'vue'
 import type { FintI18n, FintI18nHooks, Locale } from '../core'
+import { createActions } from './actions'
 import { isNameTaken, publishToBridge } from './bridge'
+import { applyMode, type DevtoolsMode } from './modes'
 import { createShadowState } from './state'
 import { createTimeline } from './timeline'
 import type { DevtoolsOptions, FintI18nDevtools, OverlayOptions } from './types'
 
 export * from './types'
 export { BRIDGE_KEY, type DevtoolsBridge } from './bridge'
+export { buildMissingKeysPatch, type DevtoolsActions } from './actions'
+export { type DevtoolsMode, pseudo } from './modes'
 
 declare const __FINT_I18N_VERSION__: string
 
@@ -100,6 +104,8 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
   let target: FintI18n | null = null
   let unpublish: (() => void) | undefined
   let name = ''
+  let mode: DevtoolsMode = 'off'
+  let offMode: (() => void) | undefined
   const offHooks: (() => void)[] = []
   const originals = new Map<WrappedMethod, unknown>()
 
@@ -126,6 +132,10 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
 
     unpublish?.()
     unpublish = undefined
+
+    offMode?.()
+    offMode = undefined
+    mode = 'off'
 
     for (const off of offHooks) off()
     offHooks.length = 0
@@ -263,6 +273,42 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
       if (!target) throw new Error('[fint-i18n] devtools is not attached to an instance')
 
       return state.dictionary(target)
+    },
+
+    get actions() {
+      if (!target) throw new Error('[fint-i18n] devtools is not attached to an instance')
+
+      return createActions(target, () => state.snapshot(target!, VERSION, name).missingKeys)
+    },
+
+    get mode() {
+      return mode
+    },
+
+    setMode(next: DevtoolsMode) {
+      if (!target || next === mode) return
+
+      offMode?.()
+      offMode = undefined
+      mode = next
+
+      if (next !== 'off') {
+        offMode = target.hooks.on('onTranslate', (data) => {
+          // Промах остаётся промахом: `t()` и без нас вернёт сам ключ, а
+          // подмена `undefined` увела бы вызов мимо `onMissingKey`.
+          if (data.result === undefined) return data
+
+          return { ...data, result: applyMode(next, data.key, data.result) }
+        })
+      }
+
+      // Переключение режима не трогает ни словарь, ни данные — перерисовать
+      // приложение нечем, кроме инвалидации кэша компиляции. Её версию `t()`
+      // читает на попадании в кэш (ядро, роадмап #12), поэтому собственный
+      // сигнал devtools не нужен.
+      createActions(target, () => []).clearCompiled()
+
+      timeline.push('mode', { mode: next })
     },
 
     subscribe: timeline.subscribe,

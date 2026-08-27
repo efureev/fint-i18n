@@ -250,22 +250,23 @@ export function createShadowState(): ShadowState {
 
     dictionary(instance) {
       const raw = toRaw(instance.messages) as Record<Locale, MessageSchema>
-      const byKey = new Map<string, Record<Locale, string>>()
+      const byKey = new Map<string, DictionaryEntry>()
 
       for (const locale in raw) {
         const leaves = new Map<string, unknown>()
         collectLeaves(raw[locale], '', leaves)
 
         for (const [key, value] of leaves) {
-          const entry = byKey.get(key) ?? {}
-          entry[locale] = describe(value)
+          const entry = byKey.get(key) ?? { key, values: {}, editable: true }
+
+          entry.values[locale] = describe(value)
+          if (typeof value === 'function' || isPluralForms(value)) entry.editable = false
+
           byKey.set(key, entry)
         }
       }
 
-      return [...byKey.entries()]
-        .map(([key, values]) => ({ key, values }))
-        .sort((a, b) => (a.key < b.key ? -1 : 1))
+      return [...byKey.values()].sort((a, b) => (a.key < b.key ? -1 : 1))
     },
   }
 }

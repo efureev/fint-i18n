@@ -240,10 +240,9 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
    * с `resolve()`, иначе `te()` и `t()` разошлись бы в ответах.
    */
   private hasMessage = (locale: Locale, key: string): boolean => {
-    if (this.compiledMessages[locale]?.[key]) {
-      void this.compiledVersion.value
-      return true
-    }
+    void this.compiledVersion.value
+
+    if (this.compiledMessages[locale]?.[key]) return true
 
     const messages = this.messagesStore[locale]
     if (!messages) return false
@@ -309,9 +308,14 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   }
 
   private resolve = (locale: Locale, key: string, params?: Record<string, any>): string | undefined => {
+    // Версия читается до ветвления, а не только на попадании в кэш. Иначе
+    // эффект, чей последний рендер пришёлся на промах, подписан на стор, но не
+    // на инвалидацию, — и следующая инвалидация до него не доходит. На горячем
+    // пути это ничего не добавляет: попадание читало версию и раньше.
+    void this.compiledVersion.value
+
     const compiled = this.compiledMessages[locale]?.[key]
     if (compiled) {
-      void this.compiledVersion.value
       return compiled(params)
     }
 

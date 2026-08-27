@@ -45,6 +45,30 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
   The showcase's hand-rolled debug panel is gone — the overlay replaced it, in
   both the static and the SSR playground.
+- **`devtools.actions`** — write operations built entirely on the instance's
+  public API: `setLocale`, `loadBlock`, `unloadBlock`, `reloadBlock`,
+  `patchMessage`, `clearCompiled`, the two `Intl` cache resets, and
+  `missingKeysPatch()`, which turns the collected misses into a dictionary stub
+  ready to drop into the locale files. `reloadBlock` resolves the upward case
+  itself: a block loaded through a parent loader is unloaded under the parent's
+  name, which is the only name `unloadBlock` acts on.
+- **`devtools.setMode('keys' | 'pseudo' | 'off')`** — `keys` answers "where did
+  this string come from" by rendering keys instead of translations; `pseudo`
+  answers two questions at once, showing which strings never went through `t()`
+  (they stay unaccented) and what a translation ~30% longer does to the layout.
+  The `onTranslate` subscriber exists only while a mode is on, since it costs
+  about 17% per translation. A miss stays a miss: `t()` still returns the key
+  and `onMissingKey` still fires.
+
+### Changed
+
+- **The compilation-cache version is now read on every `t()`, not only on a
+  cache hit.** An effect whose last render fell on a cache miss tracked the
+  dictionary but not the invalidation, so the next invalidation never reached
+  it — visible as a page that switched into a devtools mode but would not
+  switch back. The hot path is unchanged: a cache hit read the version before
+  as well (bench 15.25–15.39 against 15.0–15.5 M ops/s), and a consumer of
+  `core + t()` grew by 4 bytes.
 
 ## [0.8.0] — 2026-08-27
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, ref, shallowRef } from 'vue'
+import type { DevtoolsMode } from '../modes'
 import type { DevtoolsEvent, DevtoolsSnapshot, DictionaryEntry, FintI18nDevtools, OverlayOptions } from '../types'
 
 const props = defineProps<{
@@ -103,18 +104,40 @@ function tone(type: string): string {
   return ''
 }
 
-function exportReport() {
-  if (!snapshot.value) return
+const MODES: DevtoolsMode[] = ['off', 'keys', 'pseudo']
+const mode = ref<DevtoolsMode>(props.devtools.mode)
 
-  const report = { snapshot: snapshot.value, events: props.devtools.events }
-  const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }))
+function setMode(next: DevtoolsMode) {
+  props.devtools.setMode(next)
+  mode.value = props.devtools.mode
+  refresh()
+}
+
+/** Действие бывает асинхронным, поэтому снимок обновляется после него. */
+function run(action: () => unknown) {
+  void Promise.resolve(action()).then(refresh)
+}
+
+function patch(key: string, locale: string, event: Event) {
+  props.devtools.actions.patchMessage(locale, key, (event.target as HTMLInputElement).value)
+  refresh()
+}
+
+function download(payload: unknown, suffix: string) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
   const link = document.createElement('a')
 
   link.href = url
-  link.download = `fint-i18n-${snapshot.value.name}.json`
+  link.download = `fint-i18n-${snapshot.value?.name ?? 'i18n'}-${suffix}.json`
   link.click()
 
   URL.revokeObjectURL(url)
+}
+
+function exportReport() {
+  if (!snapshot.value) return
+
+  download({ snapshot: snapshot.value, events: props.devtools.events }, 'report')
 }
 </script>
 
@@ -131,6 +154,18 @@ function exportReport() {
         <span class="title">fint-i18n</span>
         <span class="chip">{{ snapshot?.locale ?? '—' }}</span>
         <span v-if="snapshot?.disposed" class="chip bad">disposed</span>
+        <span class="modes">
+          <button
+            v-for="name in MODES"
+            :key="name"
+            type="button"
+            :class="{ on: mode === name }"
+            :title="`t() output mode: ${name}`"
+            @click="setMode(name)"
+          >
+            {{ name }}
+          </button>
+        </span>
         <span class="spacer" />
         <span class="meta">{{ snapshot?.name }} · v{{ snapshot?.version }}</span>
         <button type="button" title="Export report" @click="exportReport">
@@ -161,6 +196,17 @@ function exportReport() {
         </template>
 
         <template v-else-if="tab === 'locales'">
+          <div class="actions">
+            <button
+              v-for="locale in locales"
+              :key="locale"
+              type="button"
+              :class="{ on: locale === snapshot.locale }"
+              @click="run(() => devtools.actions.setLocale(locale))"
+            >
+              {{ locale }}
+            </button>
+          </div>
           <dl>
             <dt>current</dt><dd>{{ snapshot.locale }}</dd>
             <dt>fallback</dt><dd>{{ snapshot.fallbackLocale || '—' }}</dd>
@@ -175,7 +221,7 @@ function exportReport() {
           </p>
           <table v-else>
             <thead>
-              <tr><th>block</th><th>locale</th><th>status</th><th>ms</th><th>uses</th></tr>
+              <tr><th>block</th><th>locale</th><th>status</th><th>ms</th><th>uses</th><th /></tr>
             </thead>
             <tbody>
               <tr v-for="block in snapshot.blocks" :key="`${block.locale}:${block.block}`">
@@ -199,6 +245,14 @@ function exportReport() {
                 <td class="dim">
 {{ snapshot.usage[block.block] ?? 0 }}
 </td>
+                <td>
+                  <button type="button" title="Reload" @click="run(() => devtools.actions.reloadBlock(block.block, block.locale))">
+                    ↻
+                  </button>
+                  <button type="button" title="Unload" @click="run(() => devtools.actions.unloadBlock(block.resolvedAs ?? block.block, block.locale))">
+                    ⌫
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -222,8 +276,17 @@ function exportReport() {
                 <td class="key">
 {{ entry.key }}
 </td>
-                <td v-for="locale in locales" :key="locale" :class="{ dim: !entry.values[locale] }">
-                  {{ entry.values[locale] ?? '—' }}
+                <td v-for="locale in locales" :key="locale" class="locale-cell" :class="{ dim: !entry.values[locale] }">
+                  <input
+                    v-if="entry.editable"
+                    class="edit"
+                    :value="entry.values[locale] ?? ''"
+                    :placeholder="`add to ${locale}`"
+                    @change="patch(entry.key, locale, $event)"
+                  >
+                  <template v-else>
+                    {{ entry.values[locale] ?? '—' }}
+                  </template>
                 </td>
               </tr>
             </tbody>
@@ -231,6 +294,11 @@ function exportReport() {
         </template>
 
         <template v-else-if="tab === 'missing'">
+          <div v-if="snapshot.missingKeys.length" class="actions">
+            <button type="button" @click="download(devtools.actions.missingKeysPatch(), 'missing')">
+              export dictionary patch
+            </button>
+          </div>
           <p v-if="!snapshot.missingKeys.length && !snapshot.fallbacks.length" class="empty">
             no misses so far
           </p>
@@ -276,6 +344,17 @@ function exportReport() {
         </template>
 
         <template v-else>
+          <div class="actions">
+            <button type="button" @click="run(() => devtools.actions.clearCompiled())">
+              clear compiled
+            </button>
+            <button type="button" @click="run(() => devtools.actions.clearFormatterCache())">
+              clear Intl formatters
+            </button>
+            <button type="button" @click="run(() => devtools.actions.clearPluralCache())">
+              clear plural rules
+            </button>
+          </div>
           <dl>
             <dt>compiled</dt>
             <dd>
