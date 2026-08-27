@@ -18,8 +18,22 @@
 
 ```bash
 yarn lint && yarn type-check && yarn check:messages \
-  && yarn test:run && yarn build \
+  && yarn test:coverage && yarn build \
+  && node scripts/check-size.mjs && node scripts/check-devtools-isolation.mjs \
   && yarn playground:build && yarn playground:ssr:build
+```
+
+Именно `test:coverage`, а не `test:run`: пороги покрытия — блокирующий гейт, и
+он единственный, который проходит мимо обычного прогона. Зелёный `test:run` при
+красном `test:coverage:package` — рабочее состояние, а не аномалия: новый слой с
+покрытием ниже своего порога роняет CI, тестов не сломав. Пороги заданы
+послойно (`vitest.config.ts`), и просевший слой назван в тексте ошибки.
+
+Правка `package.json#exports` добавляет сюда ещё один шаг — он тоже
+блокирующий, но сетевой, поэтому в общую цепочку не вписан:
+
+```bash
+npx --yes publint --pack npm
 ```
 
 Ветка по умолчанию — `main`, `git user: fureev`.
@@ -40,16 +54,23 @@ Job **`build-and-test`**, матрица Node **22 и 24** (совпадает �
 7. сводка покрытия в `GITHUB_STEP_SUMMARY`;
 8. `yarn build`;
 9. `node scripts/check-size.mjs` — бюджет размера (**блокирующий**);
-10. только на Node 24: `publint --pack npm` (**блокирующий**),
+10. `node scripts/check-devtools-isolation.mjs` (**блокирующий**) — обходит граф
+    импортов собранного `dist` и валит прогон, если код devtools достижим из
+    любой прод-точки входа;
+11. только на Node 24: `publint --pack npm` (**блокирующий**),
     `arethetypeswrong --pack` и `yarn bench` (**информационные**,
     `continue-on-error` — числа бенчей на общих раннерах слишком шумны для гейта);
-11. `yarn playground:build`;
-12. `yarn playground:ssr:build` (**блокирующий**) — единственный гейт типов
+12. `yarn playground:build`;
+13. `yarn playground:ssr:build` (**блокирующий**) — единственный гейт типов
     SSR-витрины;
-13. артефакты `dist` и `playground-dist` (только Node 24).
+14. артефакты `dist` и `playground-dist` (только Node 24).
 
-Шаги 4 и 12 в матрицу-исключения не вынесены: гоняются на обеих версиях Node
+Шаги 4 и 13 в матрицу-исключения не вынесены: гоняются на обеих версиях Node
 и валят прогон целиком.
+
+Шаги 5 и 6 роняют прогон не только упавшим тестом, но и покрытием ниже порога —
+это отдельный отказ с текстом `does not meet ... threshold`, и локально он ловится
+только `yarn test:coverage`.
 
 Job **`deploy-playground`** — push в `main`: `playground-dist` → GitHub Pages.
 
@@ -92,6 +113,7 @@ package version`, который валит `publish` до любой публи
 | `playground:build` упал, а `type-check` прошёл | ошибка типов в `playground/**`: он вне `tsconfig#include` |
 | `playground:ssr:build` упал, а `playground:build` прошёл | новый subpath не прописан в `playground-ssr/vite.config.ts` — у SSR-витрины своя карта алиасов |
 | `check:messages` упал | ключ добавлен не во все словари (`en`/`ru`/`es`) или неполон набор форм CLDR. Локально ловится только этой же командой — `lint`/`type-check`/`test` его не видят |
+| шаг `Test` красный, а тесты все прошли | покрытие слоя ниже его порога (`vitest.config.ts`). Локально ловится только `yarn test:coverage`; просевший слой назван в тексте ошибки |
 | lint прошёл, а проблема в playground | `playground/**` в `ignores` ESLint |
 
 Подробности по каждому — `.claude/docs/gotchas.md`.
