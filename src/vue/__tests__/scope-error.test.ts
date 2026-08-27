@@ -84,3 +84,27 @@ describe('useI18nScopeSync failure handling', () => {
     expect(scope.t('good.k')).toBe('value')
   })
 })
+
+/**
+ * Все пути загрузки блока сходятся в `onError`, а не только смена локали.
+ * Отказ при монтировании скоупа — самый частый из них, и он обязан быть виден
+ * внешнему сборщику ошибок, а не только в консоли.
+ */
+describe('отказ загрузки блока и хук onError', () => {
+  it('отказ внутри useI18nScopeSync доходит до onError', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const i18n = createFintI18n({
+      locale: 'en',
+      loaders: { en: { bad: async () => { throw new Error('boom') } } },
+    })
+
+    const onError = vi.fn()
+    i18n.hooks.on('onError', onError)
+
+    mountScope(i18n, ['bad'])
+    await settle()
+    error.mockRestore()
+
+    expect(onError).toHaveBeenCalledTimes(1)
+  })
+})

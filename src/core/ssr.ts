@@ -1,4 +1,5 @@
 import { toRaw } from 'vue'
+import { warn } from './hooks'
 import type { FintI18n } from './instance'
 import type { Locale, MessageSchema } from './types'
 
@@ -65,9 +66,12 @@ export function getSSRState(i18n: FintI18n, options: SSRStateOptions = {}): Fint
   }
 
   if (functionPaths.length > 0) {
-    console.warn(
-      `[fint-i18n] SSR state contains message functions, which JSON cannot carry: ${functionPaths.join(', ')}. `
+    warn(
+      i18n.hooks,
+      'ssr-function-messages',
+      `SSR state contains message functions, which JSON cannot carry: ${functionPaths.join(', ')}. `
       + 'Use plain strings in blocks that are hydrated, or exclude those locales from the snapshot.',
+      { paths: functionPaths },
     )
   }
 

@@ -127,7 +127,7 @@ await i18n.setLocale('fr')
 
 // Консоль:
 // [demo-i18n] "afterInit" called undefined
-// [demo-i18n] "beforeLoadBlock" called common
+// [demo-i18n] "beforeLoadBlock" called { block: 'common', locale: 'en' }
 // [demo-i18n] "afterLoadBlock" called { block: 'common', locale: 'en', messages: { ... } }
 // [demo-i18n] "onTranslate" called { key: 'common.greeting', params: { name: 'John' }, result: 'Hello John' }
 // [demo-i18n] "onLocaleChange" called { locale: 'fr', previous: 'en' }
@@ -143,7 +143,7 @@ interface HookLoggerPluginOptions {
 ```
 
 #### Особенности
-- **Логирует все встроенные хуки**: `beforeInit`, `afterInit`, `onLocaleChange`, `beforeLoadBlock`, `afterLoadBlock`, `onMissingKey`, `onTranslate`.
+- **Логирует все встроенные хуки**: `afterInit`, `onLocaleChange`, `beforeLoadBlock`, `afterLoadBlock`, `onMissingKey`, `onTranslate`, `onFallback`, `onRetry`, `onError`, `onWarning`.
 - **Не влияет на поток данных**: Плагин возвращает исходный payload каждого хука и подходит для безопасной отладки.
 - **Настраиваемый вывод**: Можно передать собственный `logger` и изменить `prefix`.
 
@@ -177,6 +177,47 @@ export class MyLoggerPlugin implements FintI18nPlugin {
 | `afterInit` | Вызывается после инициализации инстанса | `void` |
 | `onLocaleChange` | Вызывается при смене языка | `{ locale: Locale, previous: Locale }` |
 | `onTranslate` (Sync) | Вызывается в момент перевода (в `t()`) | `{ key: string, params?: Record<string, any>, result: string }` |
-| `beforeLoadBlock` | Перед началом загрузки блока | `string` (имя блока) |
-| `afterLoadBlock` | После успешной загрузки блока | `{ block: string, messages: any }` |
+| `beforeLoadBlock` | Перед началом загрузки блока | `{ block: string, locale: Locale }` |
+| `afterLoadBlock` | После успешной загрузки блока | `{ block: string, locale: Locale, messages: any }` |
 | `onMissingKey` | Если ключ не найден в текущей локали | `{ locale: Locale, key: string }` |
+| `onFallback` (Sync) | Перевод дала запасная локаль: в текущей ключа нет | `{ key: string, locale: Locale, fallbackLocale: Locale }` |
+| `onRetry` (Sync) | Отказ лоадера, после которого будет ещё попытка | `{ block: string, locale: Locale, attempt: number, error: unknown }` |
+| `onError` | Отказ загрузки блока — любым путём. Без подписчиков — `console.error` | `{ error: unknown, block?: string, locale?: Locale }` |
+| `onWarning` (Sync) | Проблема конфигурации. Без подписчиков — `console.warn` | `{ code: WarningCode, message: string, context?: Record<string, unknown> }` |
+
+### Предупреждения: `onWarning`
+
+Блок без лоадера, wildcard, не совпавший ни с одним блоком, сохранённая локаль,
+которой не существует, — это ошибки конфигурации, и без подписчика они видны
+только тому, кто открыл консоль. Подписчик получает их структурно и может
+отправить куда угодно; пока подписчика нет, всё идёт в `console.warn`.
+
+```typescript
+i18n.hooks.on('onWarning', ({ code, message, context }) => {
+  if (code === 'no-loader') reportToSentry(message, context)
+})
+```
+
+| Код | Когда |
+| :--- | :--- |
+| `no-loader` | Для блока нет лоадера в этой локали |
+| `pattern-no-match` | Wildcard не совпал ни с одним зарегистрированным блоком |
+| `scope-prefix-ignored` | `prefix: true` со списком блоков или с паттерном |
+| `persisted-locale-unknown` | `PersistencePlugin` не смог подтвердить сохранённую локаль |
+| `ssr-function-messages` | В SSR-снимке есть сообщения-функции, которых не переживёт JSON |
+| `deprecated-locale-setter` | Запись в `locale.value` вместо `setLocale()` |
+
+Код существует затем, чтобы различать случаи машинно, а не разбором текста.
+Произвольная строка тоже допустима — плагин шлёт в этот же канал свои
+предупреждения со своими кодами:
+
+```typescript
+import { warn } from '@feugene/fint-i18n/core'
+
+warn(i18n.hooks, 'my-plugin:stale-cache', 'Кэш устарел', { age: 3600 })
+```
+
+**Чего канал не покрывает.** Предупреждения `Intl` — невалидный тег локали,
+невалидные опции форматирования, невалидная дата — и предупреждение о неполном
+наборе плюральных форм остаются только в консоли: их кэши модульные, до инстанса
+оттуда не дотянуться.

@@ -1,6 +1,6 @@
-import { computed, reactive, readonly, ref, type Ref, type WritableComputedRef } from 'vue'
+import { computed, reactive, readonly, ref, shallowRef, type Ref, type ShallowRef, type WritableComputedRef } from 'vue'
 import { compileTemplate, type MessageFunction } from './compiler'
-import { HookManager } from './hooks'
+import { HookManager, warn } from './hooks'
 import { isBlockPattern, LocaleLoaderRegistry } from './loader-registry'
 import { deepMerge, getMessageValue, isMessageObject, mergeMessageValues } from './message-utils'
 import { compilePluralForms, isPluralForms } from './plural'
@@ -56,10 +56,23 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   private readonly unloadUnusedBlocks: boolean
   private readonly retry?: RetryOptions
   private compiledMessages: Record<Locale, Record<string, MessageFunction>> = Object.create(null)
+  /**
+   * Версия кэша компиляции. Сам кэш — обычный объект, поэтому эффект, чей
+   * первый рендер попал в прогретый кэш, не подписывается ни на одно сообщение:
+   * до реактивного стора чтение просто не доходит. Версия и есть та
+   * зависимость, которую такому эффекту нечем больше заменить.
+   */
+  private readonly compiledVersion: ShallowRef<number> = shallowRef(0)
   // Индекс «локаль → корневой блок → его скомпилированные ключи».
   // Существует только ради адресной инвалидации, на чтение перевода не влияет.
   private compiledKeysByRoot: Map<Locale, Map<string, Set<string>>> = new Map()
   private readonly loaderRegistry: LocaleLoaderRegistry
+  /**
+   * Локали реестра лоадеров, вынесенные в реактивную ссылку. Сам реестр —
+   * обычный объект, поэтому без неё `addLoaders()` не пересчитывал бы
+   * `computed` над списком локалей.
+   */
+  private readonly knownLocalesRef: ShallowRef<readonly Locale[]>
   private loadingBlocks: Map<string, Promise<void>> = new Map()
   private loadedBlocks: Map<Locale, Set<string>> = new Map()
   private blockUsageCounters: Map<string, number> = new Map()
@@ -84,7 +97,11 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
       set: (value: Locale) => {
         if (!this.localeSetterWarned) {
           this.localeSetterWarned = true
-          console.warn('[fint-i18n] Direct assignment to `locale.value` is deprecated, use `setLocale()` instead')
+          warn(
+            this.hooks,
+            'deprecated-locale-setter',
+            'Direct assignment to `locale.value` is deprecated, use `setLocale()` instead',
+          )
         }
         void this.setLocale(value)
       },
@@ -94,6 +111,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     this.unloadUnusedBlocks = options.unloadUnusedBlocks ?? false
     this.retry = options.retry
     this.loaderRegistry = new LocaleLoaderRegistry(options.loaders)
+    this.knownLocalesRef = shallowRef(this.loaderRegistry.getKnownLocales())
 
     if (options.plugins) {
       options.plugins.forEach((p) => {
@@ -147,10 +165,11 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   public addLoaders = (source: LocaleLoaderSource): void => {
     this.loaderRegistry.add(source)
     this.patternExpansionCache.clear()
+    this.knownLocalesRef.value = this.loaderRegistry.getKnownLocales()
   }
 
-  /** Локали, известные из зарегистрированных лоадеров. */
-  public getKnownLocales = (): readonly Locale[] => this.loaderRegistry.getKnownLocales()
+  /** Локали, известные из зарегистрированных лоадеров. Чтение реактивно. */
+  public getKnownLocales = (): readonly Locale[] => this.knownLocalesRef.value
 
   /**
    * Локали, на которые вообще можно переключиться: объединение
@@ -162,7 +181,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
    * появится новая локаль.
    */
   public getAvailableLocales = (): Locale[] => {
-    const locales = new Set<Locale>(this.loaderRegistry.getKnownLocales())
+    const locales = new Set<Locale>(this.knownLocalesRef.value)
 
     for (const locale in this.messagesStore) locales.add(locale)
 
@@ -221,7 +240,10 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
    * с `resolve()`, иначе `te()` и `t()` разошлись бы в ответах.
    */
   private hasMessage = (locale: Locale, key: string): boolean => {
-    if (this.compiledMessages[locale]?.[key]) return true
+    if (this.compiledMessages[locale]?.[key]) {
+      void this.compiledVersion.value
+      return true
+    }
 
     const messages = this.messagesStore[locale]
     if (!messages) return false
@@ -244,6 +266,10 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
       const fallbackLocale = options?.fallbackLocale || this.fallbackLocale
       if (fallbackLocale && fallbackLocale !== locale) {
         resolved = this.resolve(fallbackLocale, key, cleanParams)
+
+        if (resolved !== undefined) {
+          this.hooks.emitSync('onFallback', { key, locale, fallbackLocale })
+        }
       }
     }
 
@@ -285,6 +311,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
   private resolve = (locale: Locale, key: string, params?: Record<string, any>): string | undefined => {
     const compiled = this.compiledMessages[locale]?.[key]
     if (compiled) {
+      void this.compiledVersion.value
       return compiled(params)
     }
 
@@ -357,12 +384,19 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     if (!keys) return
 
     const prefix = `${blockName}.`
+    let removed = false
     for (const key of keys) {
       if (key === blockName || key.startsWith(prefix)) {
         delete compiled[key]
         keys.delete(key)
+        removed = true
       }
     }
+
+    // Инкремент только при реальном удалении. Первая загрузка блока
+    // компилировать ещё нечего не успела, и перерисовывать по ней всё
+    // приложение было бы платой ни за что.
+    if (removed) this.compiledVersion.value++
   }
 
   /**
@@ -388,8 +422,11 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     if (isBlockPattern(blockName)) {
       const expanded = this.expandPattern(blockName)
       if (expanded.length === 0) {
-        console.warn(
-          `[fint-i18n] Pattern "${blockName}" did not match any registered block (locale "${targetLocale}")`,
+        warn(
+          this.hooks,
+          'pattern-no-match',
+          `Pattern "${blockName}" did not match any registered block (locale "${targetLocale}")`,
+          { pattern: blockName, locale: targetLocale },
         )
         return
       }
@@ -413,7 +450,7 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
    * не меняется. Иначе конкурентные `loadBlock` разъехались бы по разным
    * попыткам и дедупликация сломалась бы.
    */
-  private runLoader = async (loader: LocaleBlockLoader) => {
+  private runLoader = async (loader: LocaleBlockLoader, block: string, locale: Locale) => {
     const retry = this.retry
     const attempts = Math.max(1, retry ? retry.attempts ?? DEFAULT_RETRY_ATTEMPTS : 1)
     let lastError: unknown
@@ -428,6 +465,8 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
       catch (error) {
         lastError = error
         if (attempt === attempts) break
+
+        this.hooks.emitSync('onRetry', { block, locale, attempt, error })
         await wait((retry?.backoff ?? defaultBackoff)(attempt))
       }
     }
@@ -447,19 +486,24 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
 
     const promise = (async () => {
       try {
-        await this.hooks.emit('beforeLoadBlock', blockName)
+        await this.hooks.emit('beforeLoadBlock', { block: blockName, locale: targetLocale })
 
         const resolvedLoaders = this.loaderRegistry.resolve(targetLocale, blockName)
 
         if (!resolvedLoaders) {
-          console.warn(`[fint-i18n] No loader for block "${blockName}" in locale "${targetLocale}"`)
+          warn(
+            this.hooks,
+            'no-loader',
+            `No loader for block "${blockName}" in locale "${targetLocale}"`,
+            { block: blockName, locale: targetLocale },
+          )
           return
         }
 
         let loadedMessages: MessageValue | undefined
 
         for (const loader of resolvedLoaders.loaders) {
-          const module = await this.runLoader(loader)
+          const module = await this.runLoader(loader, blockName, targetLocale)
 
           // Инстанс освободили, пока лоадер отрабатывал: домерживать некуда,
           // иначе `dispose()` оставлял бы после себя воскресший словарь.
@@ -484,6 +528,12 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
           locale: targetLocale,
           messages: loadedMessages,
         })
+      }
+      catch (error) {
+        // Единственная воронка отказов загрузки: сюда сходятся все пути, каким
+        // бы вызовом загрузка ни была начата. Репорт в вызывающих дал бы дубль.
+        this.reportError(error, { block: blockName, locale: targetLocale })
+        throw error
       }
       finally {
         this.loadingBlocks.delete(loadKey)
@@ -606,15 +656,11 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
       if (snapshot === previousSnapshot) return
       previousSnapshot = snapshot
 
-      // Ошибка одного блока не должна отменять загрузку остальных:
-      // собираем все результаты и репортим отказы через onError.
+      // Ошибка одного блока не должна отменять загрузку остальных. Репортить
+      // её здесь не нужно: это уже сделал `loadConcreteBlock`, а второй репорт
+      // приходил бы подписчику `onError` дублем.
       const loadPromise = (async () => {
-        const results = await Promise.allSettled(blocks.map(blockName => this.loadBlock(blockName, locale)))
-        results.forEach((result, i) => {
-          if (result.status === 'rejected') {
-            this.reportError(result.reason, { block: blocks[i], locale })
-          }
-        })
+        await Promise.allSettled(blocks.map(blockName => this.loadBlock(blockName, locale)))
       })()
 
       this.pendingUsedBlockLoads.set(locale, loadPromise)
@@ -666,7 +712,12 @@ export class FintI18n<Schema extends MessageSchemaConstraint = any> {
     if (isBlockPattern(blockName)) {
       const expanded = this.expandPattern(blockName)
       if (expanded.length === 0) {
-        console.warn(`[fint-i18n] Pattern "${blockName}" did not match any registered block`)
+        warn(
+          this.hooks,
+          'pattern-no-match',
+          `Pattern "${blockName}" did not match any registered block`,
+          { pattern: blockName },
+        )
         return
       }
       for (let i = 0; i < expanded.length; i++) {

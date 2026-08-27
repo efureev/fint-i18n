@@ -127,7 +127,7 @@ await i18n.setLocale('fr')
 
 // Console:
 // [demo-i18n] "afterInit" called undefined
-// [demo-i18n] "beforeLoadBlock" called common
+// [demo-i18n] "beforeLoadBlock" called { block: 'common', locale: 'en' }
 // [demo-i18n] "afterLoadBlock" called { block: 'common', locale: 'en', messages: { ... } }
 // [demo-i18n] "onTranslate" called { key: 'common.greeting', params: { name: 'John' }, result: 'Hello John' }
 // [demo-i18n] "onLocaleChange" called { locale: 'fr', previous: 'en' }
@@ -143,7 +143,7 @@ interface HookLoggerPluginOptions {
 ```
 
 #### Features
-- **Logs all built-in hooks**: `beforeInit`, `afterInit`, `onLocaleChange`, `beforeLoadBlock`, `afterLoadBlock`, `onMissingKey`, `onTranslate`.
+- **Logs all built-in hooks**: `afterInit`, `onLocaleChange`, `beforeLoadBlock`, `afterLoadBlock`, `onMissingKey`, `onTranslate`, `onFallback`, `onRetry`, `onError`, `onWarning`.
 - **No data flow interference**: The plugin returns the original payload for each hook, making it safe for debugging.
 - **Configurable Output**: You can pass a custom `logger` and change the `prefix`.
 
@@ -177,6 +177,48 @@ export class MyLoggerPlugin implements FintI18nPlugin {
 | `afterInit` | Called after instance initialization | `void` |
 | `onLocaleChange` | Called when the language changes | `{ locale: Locale, previous: Locale }` |
 | `onTranslate` (Sync) | Called at the moment of translation (in `t()`) | `{ key: string, params?: Record<string, any>, result: string }` |
-| `beforeLoadBlock` | Before starting to load a block | `string` (block name) |
-| `afterLoadBlock` | After a block is successfully loaded | `{ block: string, messages: any }` |
+| `beforeLoadBlock` | Before starting to load a block | `{ block: string, locale: Locale }` |
+| `afterLoadBlock` | After a block is successfully loaded | `{ block: string, locale: Locale, messages: any }` |
 | `onMissingKey` | If a key is not found in the current locale | `{ locale: Locale, key: string }` |
+| `onFallback` (Sync) | The fallback locale produced the translation; the current one has no such key | `{ key: string, locale: Locale, fallbackLocale: Locale }` |
+| `onRetry` (Sync) | A loader failed and another attempt follows | `{ block: string, locale: Locale, attempt: number, error: unknown }` |
+| `onError` | A block failed to load, by any path. With no subscriber — `console.error` | `{ error: unknown, block?: string, locale?: Locale }` |
+| `onWarning` (Sync) | A configuration problem. With no subscriber — `console.warn` | `{ code: WarningCode, message: string, context?: Record<string, unknown> }` |
+
+### Warnings: `onWarning`
+
+A block with no loader, a wildcard that matched nothing, a stored locale that
+does not exist — these are configuration mistakes, and without a subscriber they
+are visible only to whoever has the console open. A subscriber receives them
+structurally and can forward them anywhere; with no subscriber everything goes to
+`console.warn`.
+
+```typescript
+i18n.hooks.on('onWarning', ({ code, message, context }) => {
+  if (code === 'no-loader') reportToSentry(message, context)
+})
+```
+
+| Code | When |
+| :--- | :--- |
+| `no-loader` | No loader is registered for the block in this locale |
+| `pattern-no-match` | A wildcard matched none of the registered blocks |
+| `scope-prefix-ignored` | `prefix: true` with a list of blocks or with a pattern |
+| `persisted-locale-unknown` | `PersistencePlugin` could not confirm the stored locale |
+| `ssr-function-messages` | The SSR snapshot holds message functions that JSON cannot carry |
+| `deprecated-locale-setter` | Writing to `locale.value` instead of `setLocale()` |
+
+The code exists so that cases can be told apart by machine rather than by parsing
+text. An arbitrary string is allowed too — a plugin sends its own warnings through
+the same channel under its own codes:
+
+```typescript
+import { warn } from '@feugene/fint-i18n/core'
+
+warn(i18n.hooks, 'my-plugin:stale-cache', 'Cache is stale', { age: 3600 })
+```
+
+**What the channel does not cover.** `Intl` warnings — an invalid locale tag,
+invalid formatting options, an invalid date — and the warning about an incomplete
+set of plural forms stay console-only: their caches are module-level and cannot
+reach an instance.

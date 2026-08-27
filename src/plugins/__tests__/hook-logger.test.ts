@@ -26,7 +26,10 @@ describe('HookLoggerPlugin', () => {
     i18n.t('common.missing')
     await i18n.setLocale('fr')
 
-    expect(logger).toHaveBeenCalledWith('[fint-i18n] Hook "beforeLoadBlock" called', 'common')
+    expect(logger).toHaveBeenCalledWith(
+      '[fint-i18n] Hook "beforeLoadBlock" called',
+      { block: 'common', locale: 'en' }
+    )
     expect(logger).toHaveBeenCalledWith(
       '[fint-i18n] Hook "afterLoadBlock" called',
       { block: 'common', locale: 'en', messages: { greeting: 'Hello {name}' } }

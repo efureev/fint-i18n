@@ -1,3 +1,4 @@
+import { computed } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { createFintI18n } from '../instance'
 
@@ -82,5 +83,24 @@ describe('addLoaders for a child of an already-loaded parent', () => {
 
     expect(i18n.isBlockLoaded('pages.articles', 'en')).toBe(true)
     expect(i18n.isBlockLoaded('pages.articles', 'ru')).toBe(false)
+  })
+})
+
+/**
+ * Реестр лоадеров — обычный объект, поэтому реактивность списка локалей держится
+ * на отдельной ссылке, которую обновляет `addLoaders()`. Без неё переключатель
+ * локалей не показывал бы локаль, зарегистрированную микрофронтендом.
+ */
+describe('реактивность getAvailableLocales', () => {
+  it('новая локаль из addLoaders попадает в вычисленный список', () => {
+    const i18n = createFintI18n({ locale: 'en', loaders: { en: { common: async () => ({ a: 'A' }) } } })
+    const available = computed(() => i18n.getAvailableLocales())
+
+    expect(available.value).toEqual(['en'])
+
+    i18n.addLoaders({ de: { common: async () => ({ a: 'D' }) } })
+
+    expect(i18n.getAvailableLocales()).toEqual(['en', 'de'])
+    expect(available.value).toEqual(['en', 'de'])
   })
 })

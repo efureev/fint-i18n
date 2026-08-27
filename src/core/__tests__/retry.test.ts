@@ -1,5 +1,13 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFintI18n } from '../instance'
+
+// Файл целиком построен на падающих лоадерах, а отказ загрузки уходит в
+// `onError` и — при отсутствии подписчика — в консоль. Глушим здесь, чтобы
+// ожидаемый лог не выглядел в прогоне как настоящая поломка.
+let errorLog: ReturnType<typeof vi.spyOn>
+
+beforeEach(() => { errorLog = vi.spyOn(console, 'error').mockImplementation(() => {}) })
+afterEach(() => { errorLog.mockRestore() })
 
 /** Лоадер, падающий первые `failures` раз. */
 function flakyLoader(failures: number, value: Record<string, string> = { k: 'v' }) {
@@ -247,7 +255,8 @@ describe('retry: interaction with the rest of the runtime', () => {
     i18n.registerUsage('a')
     await i18n.loadUsedBlocks('ru')
 
-    // Хук получает только итоговый отказ, а не каждую попытку.
+    // В `onError` приходит только итоговый отказ, и ровно один раз: попытки
+    // идут отдельным каналом `onRetry`.
     expect(errors).toHaveLength(1)
     expect(loader).toHaveBeenCalledTimes(2)
   })
@@ -264,5 +273,80 @@ describe('retry: interaction with the rest of the runtime', () => {
     await i18n.loadBlock('a')
 
     expect(i18n.t('a.k')).toBe('v')
+  })
+})
+
+/**
+ * Промежуточные отказы иначе не видны вовсе: наружу выходит только итоговый,
+ * и «блок грузится со второй попытки» неотличимо от «загрузился сразу».
+ */
+describe('onRetry', () => {
+  it('даёт событие на каждый отказ, после которого будет ещё попытка', async () => {
+    const loader = flakyLoader(2)
+    const events: { block: string, locale: string, attempt: number }[] = []
+    const afterLoadBlock = vi.fn()
+
+    const i18n = createFintI18n({
+      locale: 'en',
+      retry: { attempts: 3, backoff: noBackoff },
+      loaders: { en: { a: loader } },
+    })
+    i18n.hooks.on('onRetry', ({ block, locale, attempt }) => { events.push({ block, locale, attempt }) })
+    i18n.hooks.on('afterLoadBlock', afterLoadBlock)
+
+    await i18n.loadBlock('a')
+
+    expect(events).toEqual([
+      { block: 'a', locale: 'en', attempt: 1 },
+      { block: 'a', locale: 'en', attempt: 2 },
+    ])
+    expect(afterLoadBlock).toHaveBeenCalledTimes(1)
+    expect(i18n.t('a.k')).toBe('v')
+  })
+
+  it('несёт причину отказа попытки', async () => {
+    const errors: unknown[] = []
+    const i18n = createFintI18n({
+      locale: 'en',
+      retry: { attempts: 2, backoff: noBackoff },
+      loaders: { en: { a: flakyLoader(1) } },
+    })
+    i18n.hooks.on('onRetry', ({ error }) => { errors.push(error) })
+
+    await i18n.loadBlock('a')
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toBeInstanceOf(Error)
+    expect((errors[0] as Error).message).toBe('boom 1')
+  })
+
+  it('не эмитится на последней попытке — она уходит в onError', async () => {
+    const onRetry = vi.fn()
+    const onError = vi.fn()
+    const i18n = createFintI18n({
+      locale: 'en',
+      retry: { attempts: 2, backoff: noBackoff },
+      loaders: { en: { a: flakyLoader(10) } },
+    })
+    i18n.hooks.on('onRetry', onRetry)
+    i18n.hooks.on('onError', onError)
+
+    await expect(i18n.loadBlock('a')).rejects.toThrow('boom 2')
+
+    expect(onRetry).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenCalledTimes(1)
+  })
+
+  it('молчит, когда повторы выключены', async () => {
+    const onRetry = vi.fn()
+    const onError = vi.fn()
+    const i18n = createFintI18n({ locale: 'en', loaders: { en: { a: flakyLoader(1) } } })
+    i18n.hooks.on('onRetry', onRetry)
+    i18n.hooks.on('onError', onError)
+
+    await expect(i18n.loadBlock('a')).rejects.toThrow('boom 1')
+
+    expect(onRetry).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledTimes(1)
   })
 })

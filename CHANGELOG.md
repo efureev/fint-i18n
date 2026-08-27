@@ -5,6 +5,63 @@ All notable changes to `@feugene/fint-i18n` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`onWarning`** — one channel for the configuration problems that used to
+  reach the console and nowhere else: a block with no loader, a wildcard that
+  matched nothing, a stored locale `PersistencePlugin` could not confirm,
+  message functions in an SSR snapshot, a write to `locale.value`. The payload
+  carries a `code`, so cases are told apart by machine rather than by parsing
+  text; with no subscriber the same text still goes to `console.warn`.
+  `warn(hooks, code, message, context?)` is exported so plugins can use the same
+  channel under their own codes.
+
+  `Intl` warnings — invalid locale tag, invalid formatting options, invalid date
+  — and the incomplete-plural-forms warning stay console-only: their caches are
+  module-level and cannot reach an instance.
+- **`onFallback`** — the fallback locale produced the translation, meaning the
+  current locale has no such key. This is the only signal for untranslated
+  content that still renders: `onMissingKey` stays silent, because a translation
+  was found.
+- **`onRetry`** — a loader failed and another attempt follows. Only the final
+  failure used to surface, so "loads on the second attempt" was
+  indistinguishable from "loads at once".
+
+### Changed
+
+- **BREAKING: `beforeLoadBlock` receives `{ block, locale }` instead of the
+  block name.** With `preloadFallback` one `loadBlock()` starts two loads of the
+  same name, and the old payload made them indistinguishable — leaving no way to
+  measure a load or to show which locale is loading.
+- **`getKnownLocales()` and `getAvailableLocales()` now react to
+  `addLoaders()`.** The loader registry is a plain object, so a locale
+  registered at runtime never reached a `computed` built on those calls: a
+  locale switcher would not show a micro-frontend's locale until something else
+  touched the dictionary.
+- `useI18nScopeSync` no longer logs the failure itself. The same failure now
+  reaches `onError` along with the block name and the locale, and the console
+  fallback lives there.
+
+### Fixed
+
+- **Overwriting a message now re-renders every component showing it.** The
+  compilation cache is a plain object, so a component whose first render hit an
+  already warm cache subscribed to nothing at all: invalidating the cache
+  removed the stale value but had no effect to restart, and two components on
+  one key could end up showing different text after `mergeMessages()`. The same
+  applied to `unloadBlock()`, where a component kept displaying a message that
+  was no longer in the store. Invalidation now also bumps a version that
+  `t()` and `te()` read on the cache-hit path — and only when something was
+  actually removed, so an ordinary first load of a block still re-renders
+  nothing. Measured cost: +1.5 ns per `t()` call, about 2–3 %.
+- **A block that fails to load reaches `onError` on every path.** `reportError`
+  ran only from `loadUsedBlocks`, that is on a locale switch; a failure while a
+  scope was mounting reached nothing but `console.error`. Applications with an
+  `onError` subscriber will start receiving failures they were never told about
+  — that is the fix, not a regression.
+
 ## [0.7.0] — 2026-08-21
 
 ### Added

@@ -17,15 +17,15 @@ describe('HookManager', () => {
     const manager = new HookManager()
     const handler = vi.fn().mockImplementation(async (payload) => {
       return new Promise((resolve) => {
-        setTimeout(resolve, 10, `${payload  }_async`)
+        setTimeout(resolve, 10, { ...payload, block: `${payload.block}_async` })
       })
     })
 
     manager.on('beforeLoadBlock', handler)
-    const result = await manager.emit('beforeLoadBlock', 'auth')
+    const result = await manager.emit('beforeLoadBlock', { block: 'auth', locale: 'en' })
 
-    expect(handler).toHaveBeenCalledWith('auth')
-    expect(result).toBe('auth_async')
+    expect(handler).toHaveBeenCalledWith({ block: 'auth', locale: 'en' })
+    expect(result).toEqual({ block: 'auth_async', locale: 'en' })
   })
 
   it('should chain hooks and pass payloads', () => {
@@ -97,4 +97,5 @@ describe('HookManager', () => {
     expect(secondResult.result).toBe('123')
     expect(lateHandler).toHaveBeenCalledTimes(1)
   })
+
 })

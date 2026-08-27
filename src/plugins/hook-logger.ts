@@ -16,7 +16,10 @@ const hookNames: HookName[] = [
   'afterLoadBlock',
   'onMissingKey',
   'onTranslate',
-  'onError'
+  'onFallback',
+  'onRetry',
+  'onError',
+  'onWarning'
 ]
 
 export class HookLoggerPlugin implements FintI18nPlugin {

@@ -350,6 +350,13 @@ declare function mergeMessages(locale: Locale, blockName: string, messages: Mess
 - **`blockName`** (string): Block name (may be dotted, e.g. `pages.articles`).
 - **`messages`** (object | string | function): Messages to merge for that block.
 
+Overwriting a message that is already on screen re-renders **everything** showing
+it — including components that never read it from the dictionary and got it from
+the compilation cache instead. The same holds for `unloadBlock()`. The signal is a
+shared one: whatever the overwrite did not concern re-renders too. A block's first
+load is not affected — nothing had been compiled from it yet, so it triggers no
+re-render.
+
 ### `isBlockLoaded(blockName, locale?)`
 
 Returns whether a block (or any of its parents) is already loaded for the given locale.
@@ -422,11 +429,14 @@ declare function on<K extends keyof FintI18nHooks>(name: K, fn: FintI18nHooks[K]
 | --- | --- | --- |
 | `afterInit` | `void` | Emitted synchronously at the end of the constructor (only plugins can subscribe in time). |
 | `onLocaleChange` | `{ locale, previous }` | After the active locale changes. |
-| `beforeLoadBlock` | `string` (block name) | Before a block's loaders run. |
+| `beforeLoadBlock` | `{ block, locale }` | Before a block's loaders run. |
 | `afterLoadBlock` | `{ block, locale, messages }` | After a block finished loading. |
 | `onMissingKey` | `{ key, locale }` | A key could not be resolved (deduped per `locale:key`). |
 | `onTranslate` | `{ key, params?, result }` | On every `t()` call; a handler may rewrite `result`. |
-| `onError` | `{ error, block?, locale? }` | Async block-loading failures. With no subscriber, errors go to `console.error`. |
+| `onFallback` | `{ key, locale, fallbackLocale }` | The fallback locale produced the translation; the current one has no such key. |
+| `onRetry` | `{ block, locale, attempt, error }` | A loader failed and another attempt follows. |
+| `onError` | `{ error, block?, locale? }` | A block failed to load, by any path. With no subscriber, errors go to `console.error`. |
+| `onWarning` | `{ code, message, context? }` | A configuration problem. With no subscriber, warnings go to `console.warn`. |
 
 ---
 

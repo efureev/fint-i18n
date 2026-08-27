@@ -1,5 +1,5 @@
 import type { FintI18n, FintI18nPlugin, Locale } from '../core'
-import { negotiateLocale } from '../core'
+import { negotiateLocale, warn } from '../core'
 
 export interface PersistenceOptions {
   key?: string
@@ -65,7 +65,11 @@ export class PersistencePlugin implements FintI18nPlugin {
       if (!known) {
         if (!this.unknownLocalesWarned) {
           this.unknownLocalesWarned = true
-          console.warn('[fint-i18n] PersistencePlugin cannot tell which locales exist; stored locale ignored. Pass `allowedLocales`.')
+          warn(
+            i18n.hooks,
+            'persisted-locale-unknown',
+            'PersistencePlugin cannot tell which locales exist; stored locale ignored. Pass `allowedLocales`.',
+          )
         }
         return null
       }

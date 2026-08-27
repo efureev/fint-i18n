@@ -1,5 +1,6 @@
 import { computed, onUnmounted, ref, type ComputedRef, type Ref } from 'vue'
 import type { Locale } from '../core'
+import { warn } from '../core'
 import { isBlockPattern } from '../core/loader-registry'
 import { useFintI18n } from './inject'
 
@@ -47,7 +48,12 @@ function setupScope(blocks: string | string[], options: UseI18nScopeOptions) {
       prefix = `${normalizedBlocks[0]}.`
     }
     else {
-      console.warn('[fint-i18n] `prefix` option is ignored: it requires a single concrete block name')
+      warn(
+        i18n.hooks,
+        'scope-prefix-ignored',
+        '`prefix` option is ignored: it requires a single concrete block name',
+        { blocks: normalizedBlocks },
+      )
     }
   }
 
@@ -83,9 +89,10 @@ export function useI18nScopeSync(blocks: string | string[], options: UseI18nScop
   void Promise.allSettled(loads).then((results) => {
     const failed = results.find(result => result.status === 'rejected')
 
+    // Отказ уже ушёл в `onError` из `loadConcreteBlock` — вместе с именем
+    // блока и локалью. Второй лог отсюда был бы дублем без новых сведений.
     if (failed) {
       error.value = failed.reason
-      console.error('[fint-i18n] Failed to load scope blocks:', failed.reason)
     }
 
     ready.value = true

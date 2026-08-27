@@ -395,6 +395,12 @@ declare function mergeMessages(locale: Locale, blockName: string, messages: Mess
 - **`blockName`** (string): Имя блока (может быть с точками, например `pages.articles`).
 - **`messages`** (object | string | function): Сообщения для merge в этот блок.
 
+Перезапись уже показанного сообщения перерисовывает **всё**, что его выводит, —
+включая компоненты, которые ни разу не читали его из словаря, а получили из кэша
+компиляции. То же касается `unloadBlock()`. Сигнал при этом общий: перерисуется и
+то, чего перезапись не касалась. Первая загрузка блока сюда не попадает —
+компилировать в нём было ещё нечего, и перерисовки она не вызывает.
+
 ### `isBlockLoaded(blockName, locale?)`
 
 Возвращает, загружен ли блок (или любой из его родителей) для указанной локали.
@@ -477,11 +483,14 @@ declare function on<K extends keyof FintI18nHooks>(name: K, fn: FintI18nHooks[K]
 |-------------------|-------------------------------|--------------------------------------------------------------------------------|
 | `afterInit`       | `void`                        | Эмитится синхронно в конце конструктора (успевают подписаться только плагины). |
 | `onLocaleChange`  | `{ locale, previous }`        | После смены активной локали.                                                   |
-| `beforeLoadBlock` | `string` (имя блока)          | Перед запуском loaders блока.                                                  |
+| `beforeLoadBlock` | `{ block, locale }`           | Перед запуском loaders блока.                                                  |
 | `afterLoadBlock`  | `{ block, locale, messages }` | После завершения загрузки блока.                                               |
 | `onMissingKey`    | `{ key, locale }`             | Ключ не удалось разрешить (дедуп по `locale:key`).                             |
 | `onTranslate`     | `{ key, params?, result }`    | На каждый вызов `t()`; обработчик может переписать `result`.                   |
-| `onError`         | `{ error, block?, locale? }`  | Ошибки асинхронной загрузки блоков. Без подписчиков — `console.error`.         |
+| `onFallback`      | `{ key, locale, fallbackLocale }` | Перевод дала запасная локаль: в текущей ключа нет.                         |
+| `onRetry`         | `{ block, locale, attempt, error }` | Отказ лоадера, после которого будет ещё попытка.                         |
+| `onError`         | `{ error, block?, locale? }`  | Отказ загрузки блока — любым путём. Без подписчиков — `console.error`.         |
+| `onWarning`       | `{ code, message, context? }` | Проблема конфигурации. Без подписчиков — `console.warn`.                       |
 
 ---
 

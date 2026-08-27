@@ -133,3 +133,27 @@ describe('preloadFallback', () => {
     expect(i18n.t('auth.login')).toBe('Войти')
   })
 })
+
+/**
+ * `preloadFallback` — единственный случай, когда один `loadBlock` порождает две
+ * загрузки одного имени. Без локали в payload они неразличимы, а значит
+ * недостижимы и замер длительности, и индикация «грузится ru».
+ */
+describe('payload beforeLoadBlock', () => {
+  it('несёт локаль, под которую идёт загрузка', async () => {
+    const i18n = createFintI18n({
+      locale: 'ru',
+      fallbackLocale: 'en',
+      preloadFallback: true,
+      loaders: loaders(),
+    })
+
+    const seen: { block: string, locale: string }[] = []
+    i18n.hooks.on('beforeLoadBlock', (payload) => { seen.push(payload) })
+
+    await i18n.loadBlock('auth')
+
+    expect(seen).toHaveLength(2)
+    expect(seen.map(payload => payload.locale).sort()).toEqual(['en', 'ru'])
+  })
+})

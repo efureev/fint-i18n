@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { warn } from '../hooks'
 import { createFintI18n } from '../instance'
 import { negotiateLocale, parseAcceptLanguage } from '../negotiate'
 
@@ -116,5 +117,35 @@ describe('docs: api → locale negotiation', () => {
 
   it('applies the fallback when nothing matches', () => {
     expect(negotiateLocale(['pt-BR'], ['en', 'ru'], 'en')).toBe('en')
+  })
+})
+
+describe('docs: plugins → onWarning', () => {
+  it('runs the subscriber example as written', async () => {
+    const i18n = createFintI18n({ locale: 'en', loaders: { en: {} } })
+    const reportToSentry = vi.fn()
+
+    i18n.hooks.on('onWarning', ({ code, message, context }) => {
+      if (code === 'no-loader') reportToSentry(message, context)
+    })
+
+    await i18n.loadBlock('nope')
+
+    expect(reportToSentry).toHaveBeenCalledWith(
+      'No loader for block "nope" in locale "en"',
+      { block: 'nope', locale: 'en' },
+    )
+  })
+
+  it('runs the plugin-side warn() example as written', () => {
+    const i18n = createFintI18n({ locale: 'en' })
+    const seen: unknown[] = []
+    i18n.hooks.on('onWarning', payload => { seen.push(payload) })
+
+    warn(i18n.hooks, 'my-plugin:stale-cache', 'Кэш устарел', { age: 3600 })
+
+    expect(seen).toEqual([
+      { code: 'my-plugin:stale-cache', message: 'Кэш устарел', context: { age: 3600 } },
+    ])
   })
 })

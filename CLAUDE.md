@@ -52,8 +52,8 @@ subpath-экспортом и своей vite-entry:
    несовместим. Исключение: `npx --yes publint` / `@arethetypeswrong/cli`.
 2. **Слои однонаправлены: `core` ← `vue` ← `plugins`.** `core` не импортирует
    ничего из `vue/` и `plugins/`, а из `vue` тянет **только некомпонентные
-   API** — реактивность и утилиты над ref (сейчас это `ref`, `computed`,
-   `reactive`, `readonly`, `isRef`, `toRaw`; сверить —
+   API** — реактивность и утилиты над ref (сейчас это `ref`, `shallowRef`,
+   `computed`, `reactive`, `readonly`, `isRef`, `toRaw`; сверить —
    `grep -rn "from 'vue'" src/core/`). Всё, что привязано к жизненному циклу
    компонента (`onUnmounted`, `defineComponent`, директивы), — исключительно
    в `src/vue`.
