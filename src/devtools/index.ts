@@ -5,6 +5,7 @@ import { createActions } from './actions'
 import { isNameTaken, publishToBridge } from './bridge'
 import { createMetrics, type DevtoolsMetrics } from './metrics'
 import { applyMode, type DevtoolsMode } from './modes'
+import { createSimulator, type DevtoolsSimulator } from './simulator'
 import { createShadowState } from './state'
 import { createTimeline } from './timeline'
 import type { DevtoolsOptions, FintI18nDevtools, OverlayOptions } from './types'
@@ -13,6 +14,7 @@ export * from './types'
 export { BRIDGE_KEY, type DevtoolsBridge } from './bridge'
 export { buildMissingKeysPatch, type DevtoolsActions } from './actions'
 export { type DevtoolsMetrics, type MetricsOptions, type MetricsSnapshot } from './metrics'
+export { type DevtoolsSimulator, type SimulationOptions } from './simulator'
 export { type DevtoolsMode, pseudo } from './modes'
 
 declare const __FINT_I18N_VERSION__: string
@@ -134,6 +136,7 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
   let mode: DevtoolsMode = 'off'
   let offMode: (() => void) | undefined
   let metrics: DevtoolsMetrics | null = null
+  let simulator: DevtoolsSimulator | null = null
   const offHooks: (() => void)[] = []
   const originals = new Map<WrappedMethod, unknown>()
 
@@ -167,6 +170,11 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
 
     metrics?.disable()
     metrics = null
+
+    // Лоадер-пустышка остаётся зарегистрированным — снять его публичным API
+    // нельзя. Выключенная симуляция делает его безвредным.
+    simulator?.stop()
+    simulator = null
 
     for (const off of offHooks) off()
     offHooks.length = 0
@@ -281,6 +289,7 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
       })
 
       metrics = createMetrics(instance, () => state.snapshot(instance, VERSION, name).blocks)
+      simulator = createSimulator(instance)
 
       if (options.bridge !== false) {
         unpublish = publishToBridge(name, devtools, VERSION)
@@ -327,6 +336,12 @@ export function createDevtools(i18n?: FintI18n, options: DevtoolsOptions = {}): 
       if (!metrics) throw new Error('[fint-i18n] devtools is not attached to an instance')
 
       return metrics
+    },
+
+    get simulator() {
+      if (!simulator) throw new Error('[fint-i18n] devtools is not attached to an instance')
+
+      return simulator
     },
 
     setMode(next: DevtoolsMode) {

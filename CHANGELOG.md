@@ -84,6 +84,15 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Two honest numbers stand in its place — how many keys are compiled and how
   many distinct keys were asked for.
 
+- **`devtools.simulator`** — deliberate loader failures and delays, so the
+  failure paths (`ready`/`error` in `useI18nScopeSync`, retries, how
+  `preloadFallback` behaves) can be walked in a live application rather than
+  only in unit tests. It substitutes nothing: an extra loader is registered
+  through the public `addLoaders()`, so the failure travels the real path —
+  retries, `onError`, the scope's error ref — and the messages survive
+  untouched. `failAttempts` only shows on an instance created with `retry`,
+  since without it the first failure is final.
+
 ### Changed
 
 - **The compilation-cache version is now read on every `t()`, not only on a

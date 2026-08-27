@@ -255,6 +255,61 @@ describe('оверлей', () => {
     expect(i18n.hooks.has('onTranslate')).toBe(false)
   })
 
+  it('запускает и останавливает симуляцию кнопкой', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const devtools = createDevtools()
+    const i18n = createFintI18n({
+      locale: 'en',
+      plugins: [devtools],
+      loaders: { en: { common: async () => ({ hello: 'Hello' }) } },
+    })
+
+    const unmount = await mountDevtoolsOverlay(devtools)
+    await settle()
+
+    const shadow = document.getElementById(HOST_ID)!.shadowRoot!
+    const fail = [...shadow.querySelectorAll('input.num')][1] as HTMLInputElement
+    fail.value = '100'
+    fail.dispatchEvent(new Event('input'))
+    await settle()
+
+    clickButton(button => button.textContent?.trim() === 'start')
+    await settle()
+
+    expect(devtools.simulator.active).toBe(true)
+    expect(shadowText()).toContain('on purpose')
+    await expect(i18n.loadBlock('common')).rejects.toThrow('simulated failure')
+
+    clickButton(button => button.textContent?.trim() === 'stop')
+    await settle()
+
+    expect(devtools.simulator.active).toBe(false)
+    expect(shadowText()).not.toContain('on purpose')
+    await i18n.loadBlock('common')
+    expect(i18n.t('common.hello')).toBe('Hello')
+
+    error.mockRestore()
+    unmount()
+  })
+
+  it('кнопка симуляции показывает состояние симулятора, а не своё', async () => {
+    const devtools = createDevtools()
+    createFintI18n({ locale: 'en', plugins: [devtools], loaders: { en: { common: async () => ({ k: 'v' }) } } })
+
+    // Симуляцию включили мимо панели — например, из консоли или до её монтирования.
+    devtools.simulator.start({ failureRate: 1 })
+
+    const unmount = await mountDevtoolsOverlay(devtools)
+    await settle()
+
+    const stop = [...document.getElementById(HOST_ID)!.shadowRoot!.querySelectorAll('button')]
+      .find(button => button.textContent?.trim() === 'stop')
+    expect(stop).toBeDefined()
+
+    devtools.simulator.stop()
+    unmount()
+  })
+
   it('без document возвращает пустое размонтирование', async () => {
     const devtools = createDevtools()
     createFintI18n({ locale: 'en', plugins: [devtools] })

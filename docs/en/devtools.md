@@ -236,6 +236,41 @@ It is not observable from the outside — `t()` does not report where the result
 came from. In its place there are two honest numbers side by side: how many keys
 are compiled and how many distinct keys were asked for.
 
+## The loader simulator
+
+The failure paths — `ready`/`error` in `useI18nScopeSync`, retries, how
+`preloadFallback` behaves — are otherwise only reachable from unit tests: in a
+live application a loader cannot be made to fail.
+
+```typescript
+devtools.simulator.start({
+  delay: 400,         // delay before the loader answers, ms
+  failureRate: 1,     // share of failures, 0..1
+  failAttempts: 2,    // fail the first two attempts, then let it through
+  blocks: ['auth'],   // every registered block by default
+})
+
+devtools.simulator.stop()
+```
+
+The **blocks** tab has the same three fields and a button. While a simulation is
+running the panel says so plainly — a minute later it otherwise looks like a
+real breakage.
+
+The simulator substitutes nothing. It registers an **additional** loader for
+each block through the public `addLoaders()`: an empty object merges into
+nothing, while the failure and the delay travel the real path — through retries,
+`onError` and the scope's `ready`/`error`. That is also why the messages survive:
+stop the simulation, load the block, and everything is as it was.
+
+Two limits worth knowing up front:
+
+- **`failAttempts` shows only on an instance created with the `retry` option.**
+  Without it the first failure is final, and there are no retries to watch.
+- **A registered loader cannot be removed through the public API**, so a stopped
+  simulation makes it inert rather than dropping it: one extra call returning an
+  empty object per block load, for the lifetime of the instance.
+
 ## The window bridge
 
 On attach devtools publishes itself into `window.__FINT_I18N_DEVTOOLS__` — this

@@ -27,6 +27,24 @@ const SAMPLING = [1, 10, 100]
  * на каждый перевод значило бы перерисовывать панель чаще, чем страницу.
  */
 const METRICS_POLL_MS = 500
+
+const simulation = ref({ delay: 0, failPercent: 0, failAttempts: 0 })
+const simulating = ref(false)
+
+function toggleSimulation() {
+  if (simulating.value) {
+    props.devtools.simulator.stop()
+  }
+  else {
+    props.devtools.simulator.start({
+      delay: simulation.value.delay || undefined,
+      failureRate: simulation.value.failPercent ? simulation.value.failPercent / 100 : undefined,
+      failAttempts: simulation.value.failAttempts || undefined,
+    })
+  }
+
+  refresh()
+}
 let poll: ReturnType<typeof setInterval> | undefined
 
 /**
@@ -48,6 +66,10 @@ function refresh() {
       events.value = props.devtools.events.slice().reverse()
       dictionary.value = tab.value === 'dictionary' ? props.devtools.dictionary() : []
       metrics.value = tab.value === 'metrics' ? props.devtools.metrics.snapshot() : null
+      // Симулятор живёт на devtools, а не на панели: перемонтирование панели
+      // (HMR, повторный вызов `mountDevtoolsOverlay`) его не выключает, и
+      // кнопка обязана показывать его состояние, а не своё.
+      simulating.value = props.devtools.simulator.active
     }
     catch {
       // Инстанс освобождён — показываем последнее, что успели снять.
@@ -257,6 +279,20 @@ function exportReport() {
         </template>
 
         <template v-else-if="tab === 'blocks'">
+          <div class="actions">
+            <span class="dim">simulate</span>
+            <label>delay <input v-model.number="simulation.delay" class="num" type="number" min="0" step="100"></label>
+            <label>fail % <input v-model.number="simulation.failPercent" class="num" type="number" min="0" max="100" step="10"></label>
+            <label>first <input v-model.number="simulation.failAttempts" class="num" type="number" min="0" max="9"></label>
+            <button type="button" :class="{ on: simulating }" @click="toggleSimulation">
+              {{ simulating ? 'stop' : 'start' }}
+            </button>
+          </div>
+          <p v-if="simulating" class="cost">
+            loaders are being failed and delayed on purpose — <code>first</code> needs the instance's own
+            <code>retry</code> option to show anything
+          </p>
+
           <p v-if="!snapshot.blocks.length" class="empty">
             no blocks touched yet
           </p>

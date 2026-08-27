@@ -2,6 +2,7 @@ import type { FintI18nPlugin, Locale, WarningCode } from '../core'
 import type { DevtoolsActions } from './actions'
 import type { DevtoolsMetrics } from './metrics'
 import type { DevtoolsMode } from './modes'
+import type { DevtoolsSimulator } from './simulator'
 
 export type DevtoolsEventType =
   | 'init'
@@ -158,6 +159,11 @@ export interface FintI18nDevtools extends FintI18nPlugin {
    * пока он идёт, у `onTranslate` есть подписчик, а это ~17 % к каждому переводу.
    */
   readonly metrics: DevtoolsMetrics
+  /**
+   * Симулятор отказов и задержек лоадеров: единственный способ увидеть пути
+   * `ready`/`error` и повторы в живом приложении, а не в юнит-тесте.
+   */
+  readonly simulator: DevtoolsSimulator
   /** Отцепиться, не трогая инстанс: снять подписки, вернуть обёрнутые методы. */
   detach: () => void
 }

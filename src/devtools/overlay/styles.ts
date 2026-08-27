@@ -107,4 +107,11 @@ td.locale-cell { min-width: 120px; }
   background: #3a2410; border: 1px solid #6b4415; color: #f0b45f;
 }
 .cost code { color: inherit; }
+
+.actions label { display: inline-flex; align-items: center; gap: 4px; color: #6b7280; }
+input.num {
+  width: 56px; font: inherit; padding: 2px 4px;
+  color: #d5d9e0; background: #171a21; border: 1px solid #2b3040; border-radius: 4px;
+}
+input.num:focus { outline: none; border-color: #4b536b; }
 `

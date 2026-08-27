@@ -72,6 +72,27 @@ export function readUsageCounters(instance: FintI18n): Record<string, number> | 
   return result
 }
 
+/**
+ * Пары «локаль → зарегистрированные в ней блоки». Публичного пути к ним нет:
+ * `getKnownBlockNames()` даёт объединение по всем локалям, а симулятору нужно
+ * знать, где лоадер действительно есть, — регистрируя свой там, где его нет,
+ * он превратил бы «нет лоадера» в «пустой блок».
+ */
+export function readLoaderMap(instance: FintI18n): Record<Locale, string[]> | null {
+  const registry = read<{ loaders?: Record<string, Record<string, unknown>> }>(
+    instance,
+    'loaderRegistry',
+    value => isObject(value) && isObject((value as any).loaders),
+  )
+
+  if (!registry?.loaders) return null
+
+  const result: Record<Locale, string[]> = {}
+  for (const locale in registry.loaders) result[locale] = Object.keys(registry.loaders[locale])
+
+  return result
+}
+
 /** Сколько ключей лежит в кэше компиляции, по локалям. */
 export function readCompiledCounts(instance: FintI18n): Record<Locale, number> | null {
   const compiled = read<Record<string, Record<string, unknown>>>(instance, 'compiledMessages', isObject)
