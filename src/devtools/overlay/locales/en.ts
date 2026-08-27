@@ -14,6 +14,9 @@ export default {
     hide: 'Hide',
     released: 'instance released',
   },
+  grip: {
+    hint: 'drag to resize',
+  },
   tabs: {
     locales: 'locales',
     blocks: 'blocks',

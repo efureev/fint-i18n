@@ -33,6 +33,14 @@ export const SNAP_MARGIN = 16
 const KEEP_X = 64
 const KEEP_Y = 32
 
+/**
+ * Наименьший размер панели. Эти же числа подставляются в `min-*` в `styles.ts`:
+ * жест упирается в них, а CSS их же и держит. Разъехавшись, они дадут панель,
+ * которая рисуется крупнее запрошенного и на часть жеста не отзывается.
+ */
+export const MIN_W = 320
+export const MIN_H = 200
+
 const EDGES_X: EdgeX[] = ['left', 'right']
 const EDGES_Y: EdgeY[] = ['top', 'bottom']
 
@@ -182,8 +190,18 @@ export function toPosition(anchor: Anchor, size: Size, viewport: Viewport): { x:
 
 /** Размер не должен превышать окно: запись могла приехать с монитора побольше. */
 export function clampSize(size: Size, viewport: Viewport): Size {
+  // Верхняя граница не опускается ниже минимума: в окне уже минимума панель
+  // всё равно рисуется по `min-*`, и запрашивать меньше — значит разойтись с ним.
   return {
-    w: Math.min(size.w, Math.max(0, viewport.width - SNAP_MARGIN)),
-    h: Math.min(size.h, Math.max(0, viewport.height - SNAP_MARGIN)),
+    w: Math.min(Math.max(size.w, MIN_W), Math.max(MIN_W, viewport.width - SNAP_MARGIN)),
+    h: Math.min(Math.max(size.h, MIN_H), Math.max(MIN_H, viewport.height - SNAP_MARGIN)),
   }
+}
+
+/**
+ * Годится ли окно для пересчёта. Свёрнутое окно отдаёт нули, и считать по ним
+ * значит записать в панель размеры и координаты, которых не бывает.
+ */
+export function isUsableViewport(viewport: Viewport): boolean {
+  return viewport.width > 0 && viewport.height > 0
 }

@@ -10,6 +10,9 @@ export default {
     hide: 'Свернуть',
     released: 'инстанс освобождён',
   },
+  grip: {
+    hint: 'потяните, чтобы изменить размер',
+  },
   tabs: {
     locales: 'локали',
     blocks: 'блоки',

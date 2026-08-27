@@ -6,10 +6,13 @@ import { nextTick } from 'vue'
 import { createFintI18n } from '../../core'
 import { BRIDGE_KEY, createDevtools, mountDevtoolsOverlay } from '../index'
 import {
+  MIN_H,
+  MIN_W,
   SNAP_MARGIN,
   anchorFrom,
   clampPosition,
   clampSize,
+  isUsableViewport,
   readLayout,
   toPosition,
   willSnap,
@@ -112,6 +115,23 @@ describe('координаты и края', () => {
 
   it('размер не превышает окно: запись могла приехать с монитора побольше', () => {
     expect(clampSize({ w: 5000, h: 5000 }, VIEWPORT)).toEqual({ w: 984, h: 784 })
+  })
+
+  it('и никогда не опускается ниже минимума панели', () => {
+    // Иначе записанный размер окажется меньше отрисованного: коробку держит
+    // `min-*`, инлайн уходит вниз, и ручка перестаёт отзываться.
+    // Окно уже минимума по ширине — ширина встаёт на минимум, высота ужимается честно.
+    expect(clampSize({ w: 520, h: 420 }, { width: 300, height: 250 })).toEqual({ w: MIN_W, h: 234 })
+    // Окно меньше минимума по обеим осям — обе на минимуме, а не в нуле.
+    expect(clampSize({ w: 520, h: 420 }, { width: 100, height: 100 })).toEqual({ w: MIN_W, h: MIN_H })
+    // Свёрнутое окно: нули не должны просочиться в размер.
+    expect(clampSize({ w: 520, h: 420 }, { width: 0, height: 0 })).toEqual({ w: MIN_W, h: MIN_H })
+    expect(clampSize({ w: 100, h: 100 }, VIEWPORT)).toEqual({ w: MIN_W, h: MIN_H })
+  })
+
+  it('свёрнутое окно считается непригодным для пересчёта', () => {
+    expect(isUsableViewport({ width: 0, height: 0 })).toBe(false)
+    expect(isUsableViewport(VIEWPORT)).toBe(true)
   })
 })
 
@@ -299,27 +319,137 @@ describe('панель: восстановление, край и сброс', (
 })
 
 describe('панель: растягивание', () => {
-  it('после перебега за минимум возвращает инлайну фактический размер', async () => {
+  /** В этом окружении измерения нет, поэтому размер читается из инлайна. */
+  function stub(panel: HTMLElement, w: number, h: number) {
+    panel.style.width = `${w}px`
+    panel.style.height = `${h}px`
+    panel.getBoundingClientRect = () => ({
+      width: w, height: h, left: 0, top: 0, right: w, bottom: h, x: 0, y: 0, toJSON: () => ({}),
+    })
+  }
+
+  it('тянет размер за ручкой и запоминает его', async () => {
     const { storage, spies } = fakeStorage()
     const { unmount } = await mountPanel(storage)
 
-    const panel = el('.panel')
-
-    // Так ведёт себя браузер: коробка встала на `min-*`, а инлайновый размер он
-    // продолжает уменьшать. Расхождение превращается в мёртвый ход — следующее
-    // растягивание не отзывается ровно на величину перебега.
-    panel.style.width = '195px'
-    panel.style.height = '143px'
-    panel.getBoundingClientRect = () => ({
-      width: 320, height: 200, left: 0, top: 0, right: 320, bottom: 200, x: 0, y: 0, toJSON: () => ({}),
-    })
-
-    panel.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    stub(el('.panel'), 520, 420)
+    pointer('pointerdown', 520, 420, el('.grip'))
+    pointer('pointermove', 440, 360, window)
+    pointer('pointerup', 440, 360, window)
     await settle()
 
-    expect(panel.style.width).toBe('320px')
-    expect(panel.style.height).toBe('200px')
-    expect(stored(spies).size).toEqual({ w: 320, h: 200 })
+    expect(el('.panel').style.width).toBe('440px')
+    expect(el('.panel').style.height).toBe('360px')
+    expect(stored(spies).size).toEqual({ w: 440, h: 360 })
+
+    unmount()
+  })
+
+  it('перебег за минимум не оставляет мёртвого хода', async () => {
+    const { storage } = fakeStorage()
+    const { unmount } = await mountPanel(storage)
+
+    stub(el('.panel'), 400, 300)
+    pointer('pointerdown', 400, 300, el('.grip'))
+
+    // Уехали на 240px ниже минимума. Нативная ручка досчитала бы инлайн до 80px,
+    // и обратный ход был бы мёртв ровно на эти 240px.
+    pointer('pointermove', 160, 60, window)
+    expect(el('.panel').style.width).toBe(`${MIN_W}px`)
+
+    // Один шаг назад — панель обязана отозваться сразу, а не через 240px.
+    pointer('pointermove', 170, 70, window)
+    expect(el('.panel').style.width).toBe(`${MIN_W + 10}px`)
+    expect(el('.panel').style.height).toBe(`${MIN_H + 10}px`)
+
+    pointer('pointerup', 170, 70, window)
+    await settle()
+
+    unmount()
+  })
+
+  it('перебег за верхний предел тоже отпускает сразу', async () => {
+    const { storage } = fakeStorage()
+    const { unmount } = await mountPanel(storage)
+
+    resizeWindow(VIEWPORT.width, VIEWPORT.height)
+    await settle()
+
+    const max = { w: VIEWPORT.width - SNAP_MARGIN, h: VIEWPORT.height - SNAP_MARGIN }
+    stub(el('.panel'), 400, 300)
+    pointer('pointerdown', 400, 300, el('.grip'))
+    pointer('pointermove', 4000, 3000, window)
+    expect(el('.panel').style.width).toBe(`${max.w}px`)
+
+    pointer('pointermove', 3990, 2990, window)
+    expect(el('.panel').style.width).toBe(`${max.w - 10}px`)
+
+    pointer('pointerup', 3990, 2990, window)
+    await settle()
+
+    unmount()
+  })
+
+  it('запоминает размер, даже когда жест кончился за пределами панели', async () => {
+    const { storage, spies } = fakeStorage({ [KEY]: JSON.stringify({ size: { w: 400, h: 300 } }) })
+    const { unmount } = await mountPanel(storage)
+
+    stub(el('.panel'), 400, 300)
+    pointer('pointerdown', 400, 300, el('.grip'))
+    pointer('pointermove', 520, 420, window)
+    // Курсор ушёл за нижний край окна: до панели отпускание не дойдёт.
+    pointer('pointerup', 900, 900, window)
+    await settle()
+
+    expect(stored(spies).size).toEqual({ w: 520, h: 420 })
+
+    unmount()
+  })
+
+  it('не даёт панели вырасти за нижний край — иначе ручка уходит за экран', async () => {
+    const { storage } = fakeStorage()
+    const { unmount } = await mountPanel(storage)
+
+    resizeWindow(1000, 500)
+    await settle()
+
+    pointer('pointerdown', 20, 20, el('.head'))
+    pointer('pointermove', 120, 320, window)
+    pointer('pointerup', 120, 320, window)
+    await settle()
+
+    stub(el('.panel'), 460, 460)
+    pointer('pointerdown', 460, 460, el('.grip'))
+    pointer('pointermove', 460, 460, window)
+    pointer('pointerup', 460, 460, window)
+    await settle()
+
+    // Панель высотой 460 в окне 500: ниже 40 её верх опуститься не может,
+    // иначе правый нижний угол — вместе с ручкой — оказывается за краем.
+    expect(el('.root').style.top).toBe('40px')
+
+    unmount()
+  })
+})
+
+describe('панель и свёрнутое окно браузера', () => {
+  it('не переписывает размер и положение по нулевому окну', async () => {
+    const { storage } = fakeStorage({
+      [KEY]: JSON.stringify({
+        anchor: { edgeX: 'right', edgeY: 'bottom', dx: 16, dy: 16 },
+        size: { w: 520, h: 420 },
+      }),
+    })
+    const { unmount } = await mountPanel(storage)
+
+    const before = { left: el('.root').style.left, width: el('.panel').style.width }
+
+    // Свёрнутое окно отдаёт нули — пересчитывать по ним нечего.
+    resizeWindow(0, 0)
+    await settle()
+
+    expect(el('.root').style.left).toBe(before.left)
+    expect(el('.panel').style.width).toBe(before.width)
 
     unmount()
   })

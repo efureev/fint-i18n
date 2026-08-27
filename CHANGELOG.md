@@ -109,9 +109,17 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   in a production build the endpoint does not exist at all.
 
 - **The devtools panel can be moved and resized, and remembers where you left
-  it.** It is dragged by the header, resized by the native grabber in its
+  it.** It is dragged by the header, resized by the hatched grabber in its
   bottom-right corner, snaps to a window edge when released near one, and
   returns to its default on a double-click of the header.
+
+  The resize gesture is implemented rather than delegated to CSS `resize`. The
+  native one derives the size from "size at gesture start plus total pointer
+  travel", so at the minimum it keeps driving the inline value past the limit:
+  overshoot by 240 px and the way back is dead for exactly those 240 px, which
+  reads as the grabber having stopped working. Correcting the inline value
+  mid-gesture does not help — the next move recomputes from the start size and
+  overwrites it.
 
   The position is stored as an edge plus an offset rather than as coordinates,
   which is what makes the panel travel with a window edge when that edge moves —

@@ -3,6 +3,8 @@
  * побочным, а пакет заявляет `sideEffects: false`. К тому же CSS уезжает в
  * Shadow DOM, и потребителю не нужно ничего импортировать отдельно.
  */
+import { MIN_H, MIN_W } from './layout'
+
 export const OVERLAY_STYLES = `
 :host { all: initial; }
 * { box-sizing: border-box; }
@@ -33,10 +35,8 @@ export const OVERLAY_STYLES = `
   height: min(460px, calc(100vh - 32px));
   background: #0f1116; border: 1px solid #2b3040; border-radius: 10px;
   box-shadow: 0 18px 48px rgb(0 0 0 / 45%); overflow: hidden;
-  /* Ручка в правом нижнем углу — нативная. Своего кода на растягивание нет. */
   position: relative;
-  resize: both;
-  min-width: 320px; min-height: 200px;
+  min-width: ${MIN_W}px; min-height: ${MIN_H}px;
   max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
 }
 
@@ -50,23 +50,17 @@ export const OVERLAY_STYLES = `
 .head button { cursor: pointer; }
 
 /*
- * Нативная ручка растягивания на тёмном фоне почти не видна, поэтому угол
- * обозначен своими штрихами. pointer-events: none обязателен: жест обслуживает
- * ручка под этим слоем, и перехватывать его нельзя.
+ * Ручка растягивания своя, нативного resize здесь нет — почему, сказано у
+ * startResize. Штрихами угол обозначен потому, что без метки его не найти.
  */
-.panel::after {
-  content: '';
+.grip {
   position: absolute; right: 2px; bottom: 2px;
-  width: 14px; height: 14px;
-  pointer-events: none;
+  width: 16px; height: 16px;
+  cursor: nwse-resize; touch-action: none;
   background: repeating-linear-gradient(-45deg, transparent 0 2px, #4b536b 2px 3px);
 }
-.panel:hover::after { background-image: repeating-linear-gradient(-45deg, transparent 0 2px, #8ab4ff 2px 3px); }
+.grip:hover { background-image: repeating-linear-gradient(-45deg, transparent 0 2px, #8ab4ff 2px 3px); }
 
-/* В Chrome и Safari гасим саму ручку — иначе поверх штрихов проступает вторая. */
-.panel::-webkit-resizer { background: transparent; }
-
-/* Видно, что на отпускании панель прилипнет к краю. */
 .panel.snapping { border-color: #8ab4ff; }
 .head .title { color: #8ab4ff; font-weight: 600; }
 .head .meta { color: #6b7280; }

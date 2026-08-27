@@ -133,9 +133,13 @@ bottom-right corner, and remembers where you left it.
   the panel settles 16 px away from it. There is deliberately no magnet during
   the drag: it tugs the panel under the cursor and makes precise placement
   harder. While a release would snap, the panel's border lights up.
-- **Size** — the bottom-right corner: it is marked with hatching, the gesture
-  itself is native (`resize: both`). From 320×200 and never larger than the
-  window.
+- **Size** — the bottom-right corner, marked with hatching. From 320×200 and
+  never larger than the window. The gesture is implemented rather than taken
+  from CSS `resize`: the native one computes the size as "size at gesture start
+  plus total pointer travel", so once it hits the minimum it keeps driving the
+  inline value past it — drag 240 px too far and the way back is dead for
+  exactly those 240 px. Here each step is applied to the already-clamped size,
+  so a limit releases on the first pixel back.
 - **Reset** — double-click the header: the panel returns to the corner from the
   options and to its original size, and the record is dropped.
 - **The collapsed badge** always sits in the corner from the options and does

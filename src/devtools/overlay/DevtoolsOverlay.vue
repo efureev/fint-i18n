@@ -3,8 +3,11 @@ import { computed, nextTick, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import {
   anchorFrom,
   clampPosition,
+  MIN_H,
+  MIN_W,
   clampSize,
   clearLayout,
+  isUsableViewport,
   readLayout,
   resolveStorage,
   toPosition,
@@ -157,32 +160,73 @@ function startDrag(event: PointerEvent) {
   window.addEventListener('pointerup', onPointerUp)
 }
 
-/** Нативный `resize` не даёт события — снимаем размер там, где жест кончается. */
-let lastSize = ''
+let resizing: { pointerX: number, pointerY: number, w: number, h: number } | null = null
 
-function rememberSize() {
-  if (!panel.value?.style.width) return
+/** В окружении без раскладки (прогон тестов) измерение даёт нули — берём инлайн. */
+function currentSize(): Size {
+  const rect = panel.value?.getBoundingClientRect()
 
-  /*
-   * Браузер продолжает писать инлайновый размер и после того, как коробка
-   * упёрлась в `min-*`: инлайн уезжает ниже отрисованного, угол отъезжает от
-   * курсора, и следующее растягивание «не работает» ровно на величину
-   * перебега. Поэтому инлайну возвращается фактический размер.
-   */
-  const rect = panel.value.getBoundingClientRect()
-  const w = Math.round(rect.width) || Number.parseFloat(panel.value.style.width)
-  const h = Math.round(rect.height) || Number.parseFloat(panel.value.style.height)
-
-  if (rect.width > 0) {
-    panel.value.style.width = `${w}px`
-    panel.value.style.height = `${h}px`
+  return {
+    w: Math.round(rect?.width ?? 0) || Number.parseFloat(panel.value?.style.width ?? '') || MIN_W,
+    h: Math.round(rect?.height ?? 0) || Number.parseFloat(panel.value?.style.height ?? '') || MIN_H,
   }
+}
 
-  const signature = `${w}|${h}`
-  if (signature === lastSize) return
+/**
+ * Растягивание своё, хотя CSS `resize: both` дал бы его даром. Нативная ручка
+ * считает размер как «размер на старте плюс полное смещение курсора» и, упершись
+ * в `min-*`, продолжает уводить инлайновое значение за упор: уехав на 240px ниже
+ * минимума, обратный ход внутри того же жеста мёртв ровно на эти 240px. Правкой
+ * инлайна по ходу это не лечится — следующее движение пересчитывает всё от
+ * размера на старте и коррекцию затирает. Здесь шаг применяется к уже
+ * ограниченному размеру, поэтому упор отпускает с первого пикселя назад.
+ */
+function startResize(event: PointerEvent) {
+  if (!panel.value) return
 
-  lastSize = signature
-  writeLayout(storage, { size: { w, h } })
+  resizing = { pointerX: event.clientX, pointerY: event.clientY, ...currentSize() }
+
+  event.preventDefault()
+  window.addEventListener('pointermove', onResizeMove)
+  window.addEventListener('pointerup', onResizeUp)
+}
+
+function onResizeMove(event: PointerEvent) {
+  if (!resizing || !panel.value) return
+
+  const size = clampSize({
+    w: resizing.w + event.clientX - resizing.pointerX,
+    h: resizing.h + event.clientY - resizing.pointerY,
+  }, viewport())
+
+  resizing = { pointerX: event.clientX, pointerY: event.clientY, ...size }
+  panel.value.style.width = `${size.w}px`
+  panel.value.style.height = `${size.h}px`
+}
+
+function onResizeUp() {
+  if (!resizing) return
+
+  const size = { w: resizing.w, h: resizing.h }
+
+  resizing = null
+  window.removeEventListener('pointermove', onResizeMove)
+  window.removeEventListener('pointerup', onResizeUp)
+
+  writeLayout(storage, { size })
+  keepInside()
+}
+
+/**
+ * Выросшая панель могла уехать за край окна, а вместе с ней и ручка в её углу —
+ * растягивать становится нечем, и со стороны это тот же «жест перестал работать».
+ */
+function keepInside() {
+  if (!pinned.value) return
+
+  const { x, y } = currentPosition()
+
+  place(x, y)
 }
 
 /** Снять инлайновое положение — дальше место определяет угловой класс. */
@@ -203,7 +247,6 @@ function resetLayout() {
     panel.value.style.height = ''
   }
 
-  lastSize = ''
   clearLayout(storage)
 }
 
@@ -226,10 +269,15 @@ function applyStored() {
  * постоянен, и она едет вместе с ним.
  */
 function followViewport() {
-  if (!pinned.value) return
+  // Свёрнутое окно отдаёт нулевые размеры: пересчёт по ним записал бы в панель
+  // координаты и размеры, которых не бывает, и она осталась бы такой уже после
+  // разворачивания.
+  if (!pinned.value || !isUsableViewport(viewport())) return
 
   const stored = applyStored()
+
   if (stored?.anchor) applyAnchor(stored.anchor)
+  else keepInside()
 }
 
 window.addEventListener('resize', followViewport)
@@ -237,6 +285,8 @@ onScopeDispose(() => {
   window.removeEventListener('resize', followViewport)
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
+  window.removeEventListener('pointermove', onResizeMove)
+  window.removeEventListener('pointerup', onResizeUp)
 })
 
 // Восстановление ждёт появления панели в DOM: до него измерять и красить нечего.
@@ -487,7 +537,7 @@ function exportReport() {
       <span v-if="failing" class="chip bad">{{ failing }}</span>
     </button>
 
-    <div v-else ref="panel" class="panel" :class="{ snapping }" @pointerup="rememberSize">
+    <div v-else ref="panel" class="panel" :class="{ snapping }">
       <div
         class="head"
         :title="t('head.hint')"
@@ -837,6 +887,8 @@ function exportReport() {
           </p>
         </template>
       </div>
+
+      <div class="grip" :title="t('grip.hint')" @pointerdown="startResize" />
     </div>
   </div>
 </template>
