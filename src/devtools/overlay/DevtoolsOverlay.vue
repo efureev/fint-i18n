@@ -163,13 +163,26 @@ let lastSize = ''
 function rememberSize() {
   if (!panel.value?.style.width) return
 
-  const signature = `${panel.value.style.width}|${panel.value.style.height}`
+  /*
+   * Браузер продолжает писать инлайновый размер и после того, как коробка
+   * упёрлась в `min-*`: инлайн уезжает ниже отрисованного, угол отъезжает от
+   * курсора, и следующее растягивание «не работает» ровно на величину
+   * перебега. Поэтому инлайну возвращается фактический размер.
+   */
+  const rect = panel.value.getBoundingClientRect()
+  const w = Math.round(rect.width) || Number.parseFloat(panel.value.style.width)
+  const h = Math.round(rect.height) || Number.parseFloat(panel.value.style.height)
+
+  if (rect.width > 0) {
+    panel.value.style.width = `${w}px`
+    panel.value.style.height = `${h}px`
+  }
+
+  const signature = `${w}|${h}`
   if (signature === lastSize) return
 
   lastSize = signature
-  writeLayout(storage, {
-    size: { w: Number.parseFloat(panel.value.style.width), h: Number.parseFloat(panel.value.style.height) },
-  })
+  writeLayout(storage, { size: { w, h } })
 }
 
 /** Снять инлайновое положение — дальше место определяет угловой класс. */

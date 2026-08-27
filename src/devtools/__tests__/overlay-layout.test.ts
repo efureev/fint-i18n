@@ -298,6 +298,33 @@ describe('панель: восстановление, край и сброс', (
   })
 })
 
+describe('панель: растягивание', () => {
+  it('после перебега за минимум возвращает инлайну фактический размер', async () => {
+    const { storage, spies } = fakeStorage()
+    const { unmount } = await mountPanel(storage)
+
+    const panel = el('.panel')
+
+    // Так ведёт себя браузер: коробка встала на `min-*`, а инлайновый размер он
+    // продолжает уменьшать. Расхождение превращается в мёртвый ход — следующее
+    // растягивание не отзывается ровно на величину перебега.
+    panel.style.width = '195px'
+    panel.style.height = '143px'
+    panel.getBoundingClientRect = () => ({
+      width: 320, height: 200, left: 0, top: 0, right: 320, bottom: 200, x: 0, y: 0, toJSON: () => ({}),
+    })
+
+    panel.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    await settle()
+
+    expect(panel.style.width).toBe('320px')
+    expect(panel.style.height).toBe('200px')
+    expect(stored(spies).size).toEqual({ w: 320, h: 200 })
+
+    unmount()
+  })
+})
+
 describe('свёрнутый значок', () => {
   it('садится в угол и не тащит за собой положение панели', async () => {
     const { storage } = fakeStorage({
