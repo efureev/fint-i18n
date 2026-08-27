@@ -1,9 +1,7 @@
 {
   "header": {
-    "eyebrow": "escaparate",
     "title": "@feugene/fint-i18n",
     "description": "Un banco de pruebas centrado en el comportamiento en tiempo de ejecución, los bloques diferidos, la integración con Vue y la ergonomía del paquete.",
-    "localeLabel": "Idioma",
     "localeSwitcher": "Elegir idioma",
     "toggleHint": "Elige un idioma y observa cómo toda la página se actualiza de forma reactiva."
   },

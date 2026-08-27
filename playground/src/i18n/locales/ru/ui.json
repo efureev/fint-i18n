@@ -1,9 +1,7 @@
 {
   "header": {
-    "eyebrow": "витрина",
     "title": "@feugene/fint-i18n",
     "description": "Компактная песочница для проверки runtime-поведения, lazy-блоков, Vue-интеграции и DX пакета.",
-    "localeLabel": "Язык",
     "localeSwitcher": "Выбрать язык",
     "toggleHint": "Выберите локаль и наблюдайте, как реактивно обновляется вся страница."
   },

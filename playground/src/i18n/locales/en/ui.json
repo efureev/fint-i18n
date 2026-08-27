@@ -1,9 +1,7 @@
 {
   "header": {
-    "eyebrow": "playground",
     "title": "@feugene/fint-i18n",
     "description": "A focused sandbox for validating runtime behavior, lazy blocks, Vue integration and developer ergonomics.",
-    "localeLabel": "Locale",
     "localeSwitcher": "Choose a language",
     "toggleHint": "Pick a locale and watch the whole page update reactively."
   },
