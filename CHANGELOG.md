@@ -7,6 +7,8 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-10-16
+
 ### Fixed
 
 - **Docs: a package that reads its block through `t()` needs the application to
