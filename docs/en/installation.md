@@ -107,7 +107,7 @@ import { createFintI18n } from '@feugene/fint-i18n/core'
 import { installI18n } from '@feugene/fint-i18n/vue'
 // Import only the locales the application actually ships.
 import { en as appEn, ru as appRu } from './i18n/messages'
-import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
+import { GRANULARITY_I18N_BLOCK, en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'en',           // Initial language
@@ -116,10 +116,25 @@ const i18n = createFintI18n({
   loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 
+// granularity components read `gr.*` through `t()` and never call
+// `useI18nScope`, so nobody else asks for their block.
+i18n.registerBlocks([GRANULARITY_I18N_BLOCK])
+await i18n.loadUsedBlocks(i18n.locale.value)
+
 const app = createApp(App)
 installI18n(app, i18n)
 app.mount('#app')
 ```
+
+A loader alone loads nothing: a block is fetched when someone registers it —
+a component through `useI18nScope`, or the application through
+`registerBlocks()`. A package that reads its keys through `t()` without a scope
+leaves that to the application; skip it and the package's components quietly
+stay on their built-in strings. Registered blocks for a new language are loaded
+by `setLocale()` before it switches — see [Blocks](./blocks.md).
+
+`setLocale()` is also what switches the language. `GrConfigProvider` from
+`@feugene/granularity` 1.1.0 calls it for you when its `locale` prop changes.
 
 > [!TIP]
 > If you have only one locale and one package with translations, `loaders`

@@ -195,7 +195,7 @@ createFintI18n({
 ```ts
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { en as appEn, ru as appRu } from './i18n/messages'
-import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
+import { GRANULARITY_I18N_BLOCK, en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'ru',
@@ -203,12 +203,22 @@ const i18n = createFintI18n({
   // Пакеты-доноры подключаются ровно теми локалями, что нужны проекту.
   loaders: [appEn, appRu, granularityEn, granularityRu],
 })
+
+i18n.registerBlocks([GRANULARITY_I18N_BLOCK])
+await i18n.loadUsedBlocks(i18n.locale.value)
 ```
 
 При совпадении блоков `fint-i18n` смерджит loaders слева направо —
 поэтому переводы приложения, поставленные раньше пакета-донора, будут
 переопределяться его значениями (а пришедшие позже — наоборот). Подробные
 правила см. в [Defining Messages](./defining-messages.md).
+
+Лоадер сам свой блок не грузит — его должен кто-то зарегистрировать. Если
+компоненты пакета зовут `useI18nScope`, они делают это сами. Если читают ключи
+одним `t()`, как granularity, блок регистрирует приложение через
+`registerBlocks()`: экспортируйте имя блока рядом с локалями
+(`GRANULARITY_I18N_BLOCK`) и скажите об этом в доке пакета — иначе компоненты
+молча останутся на встроенных строках.
 
 ## Чек-лист
 
@@ -221,3 +231,6 @@ const i18n = createFintI18n({
       друга.
 - [ ] Опциональный `all` экспортируется отдельным подпутём
       (`<package>/i18n/all`), а не из основного барелла.
+- [ ] Если компоненты читают ключи через `t()` без `useI18nScope`, имя блока
+      экспортируется рядом с локалями, а дока пакета просит приложение
+      зарегистрировать его через `registerBlocks()`.

@@ -194,7 +194,7 @@ createFintI18n({
 ```ts
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { en as appEn, ru as appRu } from './i18n/messages'
-import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
+import { GRANULARITY_I18N_BLOCK, en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'ru',
@@ -202,11 +202,21 @@ const i18n = createFintI18n({
   // Donor packages are wired in with exactly the locales the project ships.
   loaders: [appEn, appRu, granularityEn, granularityRu],
 })
+
+i18n.registerBlocks([GRANULARITY_I18N_BLOCK])
+await i18n.loadUsedBlocks(i18n.locale.value)
 ```
 
 When blocks collide, `fint-i18n` merges their loaders left to right —
 later entries override earlier ones. See [Defining
 Messages](./defining-messages.md) for the full rule set.
+
+A loader does not load its block by itself — someone has to register it. When
+the package's components call `useI18nScope`, they do it themselves. When they
+read keys through `t()` alone, as granularity does, the application registers
+the block with `registerBlocks()`: export the block name next to the locales
+(`GRANULARITY_I18N_BLOCK`) and say so in the package's docs, or the components
+silently stay on their built-in strings.
 
 ## Checklist
 
@@ -218,3 +228,6 @@ Messages](./defining-messages.md) for the full rule set.
 - [ ] Locale modules are side-effect free and do not import each other.
 - [ ] The optional aggregate is exposed under a separate subpath
       (`<package>/i18n/all`), not from the main barrel.
+- [ ] If components read keys through `t()` without `useI18nScope`, the
+      block name is exported next to the locales and the docs tell the
+      application to `registerBlocks()` it.

@@ -109,7 +109,7 @@ export {ru} from './ru'
 ```typescript
 import {createFintI18n} from '@feugene/fint-i18n/core'
 import {en as appEn, ru as appRu} from './messages'
-import {en as granularityEn, ru as granularityRu} from '@feugene/granularity/i18n'
+import {GRANULARITY_I18N_BLOCK, en as granularityEn, ru as granularityRu} from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
     locale: 'en',
@@ -117,10 +117,15 @@ const i18n = createFintI18n({
     // Указываем только те локали, что реально нужны приложению.
     loaders: [appEn, appRu, granularityEn, granularityRu],
 })
+
+// Пакет читает свой блок через `t()`, поэтому его регистрирует приложение.
+i18n.registerBlocks([GRANULARITY_I18N_BLOCK])
+await i18n.loadUsedBlocks(i18n.locale.value)
 ```
 
 Если несколько коллекций объявляют один и тот же block, их loaders будут выполнены последовательно в порядке массива
-`loaders: [...]`.
+`loaders: [...]`. Объявленный лоадер блок не загружает — см.
+[Установка](./installation.md#3-инициализация-в-maints).
 
 ### 3. Несколько loaders для одного блока
 

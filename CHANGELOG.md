@@ -7,6 +7,19 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **Docs: a package that reads its block through `t()` needs the application to
+  register it.** The granularity integration example put the package's loaders
+  into `loaders` and stopped there, but a loader alone loads nothing: a block is
+  fetched once someone registers it, and granularity's components read `gr.*`
+  through `t()` without calling `useI18nScope`. Built from the docs, the
+  application never asked for the block and the design system stayed on its
+  built-in English. Installation, defining messages and the authoring guide now
+  call `registerBlocks([GRANULARITY_I18N_BLOCK])` and `loadUsedBlocks()`, in both
+  languages, and say that `setLocale()` loads registered blocks before it
+  switches. `doc-examples.test.ts` runs that flow.
+
 ## [0.9.0] — 2026-08-27
 
 ### Added

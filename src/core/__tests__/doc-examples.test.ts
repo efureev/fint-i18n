@@ -149,3 +149,31 @@ describe('docs: plugins → onWarning', () => {
     ])
   })
 })
+
+describe('docs: installation → a package that reads its block through t()', () => {
+  // Пакет-донор вроде `@feugene/granularity`: компоненты читают `gr.*` через
+  // `t()` и `useI18nScope` не зовут, поэтому блок регистрирует приложение.
+  const GRANULARITY_I18N_BLOCK = 'gr'
+  const granularityEn = { en: { gr: () => Promise.resolve({ pagination: { prev: 'Prev' } }) } }
+  const granularityRu = { ru: { gr: () => Promise.resolve({ pagination: { prev: 'Назад' } }) } }
+
+  it('leaves the block unloaded when nobody registers it', async () => {
+    const i18n = createFintI18n({ locale: 'ru', fallbackLocale: 'en', loaders: [granularityEn, granularityRu] })
+
+    await i18n.loadUsedBlocks(i18n.locale.value)
+
+    expect(i18n.te('gr.pagination.prev')).toBe(false)
+  })
+
+  it('runs the registerBlocks example as written', async () => {
+    const i18n = createFintI18n({ locale: 'ru', fallbackLocale: 'en', loaders: [granularityEn, granularityRu] })
+
+    i18n.registerBlocks([GRANULARITY_I18N_BLOCK])
+    await i18n.loadUsedBlocks(i18n.locale.value)
+    expect(i18n.t('gr.pagination.prev')).toBe('Назад')
+
+    // `setLocale()` догружает зарегистрированные блоки до переключения.
+    await i18n.setLocale('en')
+    expect(i18n.t('gr.pagination.prev')).toBe('Prev')
+  })
+})

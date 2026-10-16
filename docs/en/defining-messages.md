@@ -107,7 +107,7 @@ packages](./authoring-localization-packages.md) for the full guideline.
 ```typescript
 import { createFintI18n } from '@feugene/fint-i18n/core'
 import { en as appEn, ru as appRu } from './messages'
-import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
+import { GRANULARITY_I18N_BLOCK, en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'en',
@@ -115,10 +115,16 @@ const i18n = createFintI18n({
   // Only the locales the application actually ships are bundled.
   loaders: [appEn, appRu, granularityEn, granularityRu],
 })
+
+// The package reads its block through `t()`, so the application registers it.
+i18n.registerBlocks([GRANULARITY_I18N_BLOCK])
+await i18n.loadUsedBlocks(i18n.locale.value)
 ```
 
 If multiple collections declare the same block, their loaders will be
-executed sequentially in the order of the `loaders: [...]` array.
+executed sequentially in the order of the `loaders: [...]` array. Declaring a
+loader does not load its block — see
+[Installation](./installation.md#3-initialization-in-maints).
 
 ### 3. Multiple Loaders for a Single Block
 

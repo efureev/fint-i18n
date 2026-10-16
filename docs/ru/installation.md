@@ -108,7 +108,7 @@ import { installI18n } from '@feugene/fint-i18n/vue'
 
 // Импортируем только те локали, которые реально нужны приложению.
 import { en as appEn, ru as appRu } from './i18n/messages'
-import { en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
+import { GRANULARITY_I18N_BLOCK, en as granularityEn, ru as granularityRu } from '@feugene/granularity/i18n'
 
 const i18n = createFintI18n({
   locale: 'ru',           // Начальный язык
@@ -117,10 +117,25 @@ const i18n = createFintI18n({
   loaders: [appEn, appRu, granularityEn, granularityRu],
 })
 
+// Компоненты granularity читают `gr.*` через `t()` и `useI18nScope` не зовут —
+// кроме приложения, их блок никто не попросит.
+i18n.registerBlocks([GRANULARITY_I18N_BLOCK])
+await i18n.loadUsedBlocks(i18n.locale.value)
+
 const app = createApp(App)
 installI18n(app, i18n)
 app.mount('#app')
 ```
+
+Лоадер сам по себе ничего не грузит: блок загружается, когда его кто-то
+зарегистрировал, — компонент через `useI18nScope` или приложение через
+`registerBlocks()`. Пакет, который читает свои ключи через `t()` без скоупа,
+оставляет это приложению; пропустите шаг — и компоненты пакета молча останутся
+на встроенных строках. Зарегистрированные блоки для нового языка `setLocale()`
+догружает до переключения — см. [Блоки](./blocks.md).
+
+Язык переключает тот же `setLocale()`. `GrConfigProvider` из
+`@feugene/granularity` 1.1.0 зовёт его сам при смене пропа `locale`.
 
 > [!TIP]
 > Если у вас только одна локаль и один пакет с переводами, `loaders`
